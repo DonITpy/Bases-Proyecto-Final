@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Reportes y Descargas</h1>
+    <div style="width:80%; margin:auto; background:#fff; padding:30px; border-radius:10px; box-shadow:0 2px 8px #bbb;">
+        <h2>Descargar Reportes en CSV</h2>
+        <ul style="font-size:1.1em;">
+            <li><a href="/descargar_vehiculos_csv" style="color:#336699; text-decoration:none;">📥 Descargar Vehículos</a></li>
+            <li><a href="/descargar_conductores_csv" style="color:#336699; text-decoration:none;">📥 Descargar Conductores</a></li>
+            <li><a href="/descargar_viajes_csv" style="color:#336699; text-decoration:none;">📥 Descargar Viajes</a></li>
+            <li><a href="/descargar_consumo_csv" style="color:#336699; text-decoration:none;">📥 Descargar Consumo</a></li>
+        </ul>
+    </div>
+{% endblock %}

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flota Logística</title>
+    <style>
+        nav {
+            background: #336699;
+            padding: 12px;
+            text-align: center;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        body { font-family: Arial, sans-serif; background: #f4f4f4;}
+        h1 { text-align: center;}
+        table { border-collapse: collapse; width: 80%; margin: 30px auto;}
+        th, td { border: 1px solid #444; padding: 6px 12px;}
+        th { background: #eee;}
+        .error { color: red; text-align: center; }
+        form { width: 400px; margin: 20px auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px #bbb;}
+        input, select, textarea { width: 100%; padding: 8px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;}
+        button { background: #336699; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; width: 100%;}
+        button:hover { background: #224466;}
+        .delete-btn { background: #d32f2f; font-size: 0.8em; padding: 5px 10px; width: auto;}
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/home">🏠 Inicio</a>
+        {% if usuario and usuario["rol"] == "admin" %}
+            <a href="/usuarios_web">👥 Usuarios</a>
+        {% endif %}
+        <a href="/vehiculos_web">🚗 Vehículos</a>
+        <a href="/conductores_web">👤 Conductores</a>
+        <a href="/viajes_web">🛣️ Viajes</a>
+        <a href="/mantenimiento_web">🔧 Mantenimiento</a>
+        <a href="/consumo_web">⛽ Consumo</a>
+        <a href="/flota_web">📦 Flota</a>
+        <a href="/incidentes_web">⚠️ Incidentes</a>
+        <a href="/ordenes_web">📋 Órdenes</a>
+        <a href="/reportes_web">📊 Reportes</a>
+        {% if usuario %}
+            <a href="/logout">🚪 Salir ({{usuario["nombre"]}})</a>
+        {% endif %}
+    </nav>
+    {% block content %}{% endblock %}
+</body>
+</html>

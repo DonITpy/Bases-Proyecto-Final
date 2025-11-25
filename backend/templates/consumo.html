@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Consumo de Combustible</h1>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>ID Vehículo</th>
+            <th>Litros</th>
+            <th>Fecha</th>
+            {% if usuario and usuario["rol"] == "mecanico" %}
+                <th>Acciones</th>
+            {% endif %}
+        </tr>
+        {% for c in consumo %}
+        <tr>
+            <td>{{ c.id_consumo }}</td>
+            <td>{{ c.id_vehiculo }}</td>
+            <td>{{ c.litros }}</td>
+            <td>{{ c.fecha }}</td>
+            {% if usuario and usuario["rol"] == "mecanico" %}
+                <td><a href="/consumo_delete/{{c.id_consumo}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">🗑️</a></td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+    {% if usuario and usuario["rol"] == "mecanico" %}
+    <h2 style="text-align:center;">Registrar Consumo</h2>
+    <form method="post" action="/consumo_create">
+        <input type="number" name="id_vehiculo" placeholder="ID Vehículo" required>
+        <input type="number" step="0.1" name="litros" placeholder="Litros" required>
+        <input type="date" name="fecha" required>
+        <button type="submit">Registrar Consumo</button>
+    </form>
+    {% endif %}
+{% endblock %}

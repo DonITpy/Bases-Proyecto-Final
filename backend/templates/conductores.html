@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Conductores Registrados</h1>
+    
+    {% if error %}
+        <div style="background:#ffcccc; color:#cc0000; padding:15px; margin:20px auto; width:80%; text-align:center; border-radius:5px; border:2px solid #cc0000;">
+            <strong>⚠️ Error:</strong> {{ error }}
+        </div>
+    {% endif %}
+    
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Teléfono</th>
+            <th>Dirección</th>
+            <th>Fecha Nacimiento</th>
+            {% if usuario and usuario["rol"] == "admin" %}
+                <th>Acciones</th>
+            {% endif %}
+        </tr>
+        {% for c in conductores %}
+        <tr>
+            <td>{{ c.id_conductor }}</td>
+            <td>{{ c.nombre }}</td>
+            <td>{{ c.apellido }}</td>
+            <td>{{ c.telefono }}</td>
+            <td>{{ c.direccion }}</td>
+            <td>{{ c.fecha_nacimiento }}</td>
+            {% if usuario and usuario["rol"] == "admin" %}
+                <td>
+                    <a href="/conductores_edit/{{c.id_conductor}}" style="color:#336699; margin-right:10px;">✏️ Editar</a>
+                    <a href="/conductores_delete/{{c.id_conductor}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">🗑️ Eliminar</a>
+                </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+    {% if usuario and usuario["rol"] == "admin" %}
+    <h2 style="text-align:center;">Agregar Conductor</h2>
+    <form method="post" action="/conductores_create">
+        <input type="text" name="nombre" placeholder="Nombre" required>
+        <input type="text" name="apellido" placeholder="Apellido" required>
+        <input type="tel" name="telefono" placeholder="Teléfono" required>
+        <input type="text" name="direccion" placeholder="Dirección" required>
+        <input type="date" name="fecha_nacimiento" required>
+        <button type="submit">Agregar Conductor</button>
+    </form>
+    {% endif %}
+{% endblock %}

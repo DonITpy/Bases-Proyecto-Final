@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Incidentes</h1>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>ID Vehículo</th>
+            <th>Tipo</th>
+            <th>Fecha</th>
+            <th>Descripción</th>
+            {% if usuario and usuario["rol"] == "mecanico" %}
+                <th>Acciones</th>
+            {% endif %}
+        </tr>
+        {% for inc in incidentes %}
+        <tr>
+            <td>{{ inc.id_incidente }}</td>
+            <td>{{ inc.id_vehiculo }}</td>
+            <td>{{ inc.tipo }}</td>
+            <td>{{ inc.fecha }}</td>
+            <td>{{ inc.descripcion }}</td>
+            {% if usuario and usuario["rol"] == "mecanico" %}
+                <td><a href="/incidentes_delete/{{inc.id_incidente}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">🗑️</a></td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+    {% if usuario and usuario["rol"] == "mecanico" %}
+    <h2 style="text-align:center;">Registrar Incidente</h2>
+    <form method="post" action="/incidentes_create">
+        <input type="number" name="id_vehiculo" placeholder="ID Vehículo" required>
+        <input type="text" name="tipo" placeholder="Tipo de incidente" required>
+        <input type="date" name="fecha" required>
+        <textarea name="descripcion" placeholder="Descripción del incidente" required></textarea>
+        <button type="submit">Registrar Incidente</button>
+    </form>
+    {% endif %}
+{% endblock %}

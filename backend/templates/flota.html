@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Flotas</h1>
+    
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Descripción</th>
+            {% if usuario and usuario["rol"] == "admin" %}
+                <th>Acciones</th>
+            {% endif %}
+        </tr>
+        {% for f in flota %}
+        <tr>
+            <td>{{ f.id_flota }}</td>
+            <td>{{ f.nombre }}</td>
+            <td>{{ f.descripcion }}</td>
+            {% if usuario and usuario["rol"] == "admin" %}
+                <td>
+                    <a href="/flota_edit/{{f.id_flota}}" style="color:#336699; margin-right:10px;">✏️ Editar</a>
+                    <a href="/flota_delete/{{f.id_flota}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">🗑️ Eliminar</a>
+                </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+    {% if usuario and usuario["rol"] == "admin" %}
+    <h2 style="text-align:center;">Agregar Flota</h2>
+    <form method="post" action="/flota_create">
+        <input type="text" name="nombre" placeholder="Nombre de la flota" required>
+        <textarea name="descripcion" placeholder="Descripción" required></textarea>
+        <button type="submit">Agregar Flota</button>
+    </form>
+    {% endif %}
+{% endblock %}

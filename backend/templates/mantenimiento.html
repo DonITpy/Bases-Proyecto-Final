@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Mantenimiento</h1>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>ID Vehículo</th>
+            <th>Descripción</th>
+            <th>Fecha</th>
+            {% if usuario and usuario["rol"] == "mecanico" %}
+                <th>Acciones</th>
+            {% endif %}
+        </tr>
+        {% for m in mantenimiento %}
+        <tr>
+            <td>{{ m.id_mantenimiento }}</td>
+            <td>{{ m.id_vehiculo }}</td>
+            <td>{{ m.descripcion }}</td>
+            <td>{{ m.fecha }}</td>
+            {% if usuario and usuario["rol"] == "mecanico" %}
+                <td><a href="/mantenimiento_delete/{{m.id_mantenimiento}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">🗑️</a></td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+    {% if usuario and usuario["rol"] == "mecanico" %}
+    <h2 style="text-align:center;">Registrar Mantenimiento</h2>
+    <form method="post" action="/mantenimiento_create">
+        <input type="number" name="id_vehiculo" placeholder="ID Vehículo" required>
+        <textarea name="descripcion" placeholder="Descripción del mantenimiento" required></textarea>
+        <input type="date" name="fecha" required>
+        <button type="submit">Registrar Mantenimiento</button>
+    </form>
+    {% endif %}
+{% endblock %}

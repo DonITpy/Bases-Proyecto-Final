@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Bienvenido al Sistema de Flota Logística</h1>
+    {% if usuario %}
+        <div style="text-align:center; background:#fff; padding:20px; margin:20px auto; width:80%; border-radius:8px; box-shadow:0 2px 8px #bbb;">
+            <p style="font-size:1.2em;">Hola <b>{{usuario["nombre"]}}</b></p>
+            <p>Rol: <b>{% if usuario["rol"] == "admin" %}Administrador{% else %}Mecánico{% endif %}</b></p>
+        </div>
+    {% endif %}
+    <div style="width: 80%; margin: auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 8px #bbb;">
+        <p style="font-size:1.2em;">Consulta y gestiona la operación logística fácilmente.</p>
+        <ul style="font-size:1.1em;">
+            <li><b>Administrador:</b> Puede crear, eliminar vehículos, conductores, viajes, flotas y órdenes</li>
+            <li><b>Mecánico:</b> Solo puede registrar mantenimiento, consumo e incidentes</li>
+            <li>Navega entre las secciones usando el menú superior</li>
+        </ul>
+    </div>
+{% endblock %}

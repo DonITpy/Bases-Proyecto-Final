@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 style="text-align:center;">Iniciar sesión</h2>
+<form method="post" action="/login">
+    <input type="email" name="correo" placeholder="Correo" required>
+    <input type="password" name="password" placeholder="Contraseña" required>
+    <button type="submit">Entrar</button>
+</form>
+{% if error %}<div class="error">{{error}}</div>{% endif %}
+<div style="text-align:center; margin-top:20px; font-size:0.9em;">
+    <p><b>Credenciales de prueba:</b></p>
+    <p><b>Admin:</b> admin@correo.com / admin123</p>
+    <p><b>Mecánico:</b> mecanico@correo.com / mecanico123</p>
+</div>
+{% endblock %}

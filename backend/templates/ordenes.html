@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Órdenes de Servicio</h1>
+    
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Descripción</th>
+            <th>Fecha</th>
+            {% if usuario and usuario["rol"] == "admin" %}
+                <th>Acciones</th>
+            {% endif %}
+        </tr>
+        {% for o in ordenes %}
+        <tr>
+            <td>{{ o.id_orden }}</td>
+            <td>{{ o.descripcion }}</td>
+            <td>{{ o.fecha }}</td>
+            {% if usuario and usuario["rol"] == "admin" %}
+                <td>
+                    <a href="/ordenes_edit/{{o.id_orden}}" style="color:#336699; margin-right:10px;">✏️ Editar</a>
+                    <a href="/ordenes_delete/{{o.id_orden}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">🗑️ Eliminar</a>
+                </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+    {% if usuario and usuario["rol"] == "admin" %}
+    <h2 style="text-align:center;">Agregar Orden de Servicio</h2>
+    <form method="post" action="/ordenes_create">
+        <textarea name="descripcion" placeholder="Descripción de la orden" required></textarea>
+        <input type="date" name="fecha" required>
+        <button type="submit">Agregar Orden</button>
+    </form>
+    {% endif %}
+{% endblock %}

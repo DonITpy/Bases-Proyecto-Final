@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Editar Vehículo</h1>
+    
+    {% if error %}
+        <div style="background:#ffcccc; color:#cc0000; padding:15px; margin:20px auto; width:80%; text-align:center; border-radius:5px;">
+            {{ error }}
+        </div>
+    {% endif %}
+    
+    <form method="post" action="/vehiculos_update/{{vehiculo.id_vehiculo}}" style="width:400px; margin:auto;">
+        <input type="text" name="matricula" value="{{vehiculo.matricula}}" placeholder="Matrícula" required>
+        <input type="text" name="modelo" value="{{vehiculo.modelo}}" placeholder="Modelo" required>
+        <input type="text" name="tipo" value="{{vehiculo.tipo}}" placeholder="Tipo" required>
+        <input type="number" name="capacidad" value="{{vehiculo.capacidad}}" placeholder="Capacidad" required>
+        <input type="text" name="marca" value="{{vehiculo.marca}}" placeholder="Marca" required>
+        <input type="text" name="estado" value="{{vehiculo.estado}}" placeholder="Estado" required>
+        <input type="number" name="kilometraje" value="{{vehiculo.kilometraje}}" placeholder="Kilometraje" required>
+        <button type="submit">Guardar Cambios</button>
+    </form>
+    <div style="text-align:center; margin-top:20px;">
+        <a href="/vehiculos_web" style="color:#336699; text-decoration:none;">Volver</a>
+    </div>
+{% endblock %}

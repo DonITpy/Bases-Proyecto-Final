@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Gestión de Usuarios</h1>
+    
+    {% if error %}
+        <div style="background:#ffcccc; color:#cc0000; padding:15px; margin:20px auto; width:80%; text-align:center; border-radius:5px; border:2px solid #cc0000;">
+            <strong>⚠️ Error:</strong> {{ error }}
+        </div>
+    {% endif %}
+    
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Correo</th>
+            <th>Rol</th>
+            <th>Acciones</th>
+        </tr>
+        {% for u in usuarios %}
+        <tr>
+            <td>{{ u.id_usuario }}</td>
+            <td>{{ u.nombre }}</td>
+            <td>{{ u.correo }}</td>
+            <td>{{ u.rol }}</td>
+            <td><a href="/usuarios_delete/{{u.id_usuario}}" onclick="return confirm('¿Eliminar usuario?');" class="delete-btn">🗑️</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+    
+    <h2 style="text-align:center;">Crear Nuevo Usuario</h2>
+    <form method="post" action="/usuarios_create">
+        <input type="text" name="nombre" placeholder="Nombre" required>
+        <input type="email" name="correo" placeholder="Correo" required>
+        <input type="password" name="password" placeholder="Contraseña" required>
+        <select name="rol" required>
+            <option value="">Seleccionar rol</option>
+            <option value="admin">Admin</option>
+            <option value="mecanico">Mecánico</option>
+        </select>
+        <button type="submit">Crear Usuario</button>
+    </form>
+{% endblock %}

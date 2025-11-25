@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Vehículos Registrados</h1>
+    
+    {% if error %}
+        <div style="background:#ffcccc; color:#cc0000; padding:15px; margin:20px auto; width:80%; text-align:center; border-radius:5px; border:2px solid #cc0000;">
+            <strong>⚠️ Error:</strong> {{ error }}
+        </div>
+    {% endif %}
+    
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Matrícula</th>
+            <th>Modelo</th>
+            <th>Tipo</th>
+            <th>Marca</th>
+            <th>Estado</th>
+            <th>Capacidad</th>
+            <th>Kilometraje</th>
+            {% if usuario and usuario["rol"] == "admin" %}
+                <th>Acciones</th>
+            {% endif %}
+        </tr>
+        {% for v in vehiculos %}
+        <tr>
+            <td>{{ v.id_vehiculo }}</td>
+            <td>{{ v.matricula }}</td>
+            <td>{{ v.modelo }}</td>
+            <td>{{ v.tipo }}</td>
+            <td>{{ v.marca }}</td>
+            <td>{{ v.estado }}</td>
+            <td>{{ v.capacidad }}</td>
+            <td>{{ v.kilometraje }}</td>
+            {% if usuario and usuario["rol"] == "admin" %}
+                <td>
+                    <a href="/vehiculos_edit/{{v.id_vehiculo}}" style="color:#336699; margin-right:10px;">✏️ Editar</a>
+                    <a href="/vehiculos_delete/{{v.id_vehiculo}}" onclick="return confirm('¿Eliminar? Este vehículo no debe tener registros vinculados.');" class="delete-btn">🗑️ Eliminar</a>
+                </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+    {% if usuario and usuario["rol"] == "admin" %}
+    <h2 style="text-align:center;">Agregar Vehículo</h2>
+    <form method="post" action="/vehiculos_create">
+        <input type="text" name="matricula" placeholder="Matrícula" required>
+        <input type="text" name="modelo" placeholder="Modelo" required>
+        <input type="text" name="tipo" placeholder="Tipo" required>
+        <input type="number" name="capacidad" placeholder="Capacidad" required>
+        <input type="text" name="marca" placeholder="Marca" required>
+        <input type="text" name="estado" placeholder="Estado" required>
+        <input type="number" name="kilometraje" placeholder="Kilometraje" required>
+        <button type="submit">Agregar Vehículo</button>
+    </form>
+    {% endif %}
+{% endblock %}

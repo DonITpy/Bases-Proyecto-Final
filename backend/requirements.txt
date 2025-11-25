@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+mysql-connector-python==8.0.33
+jinja2
+python-multipart
+starlette
+itsdangerous
+reportlab

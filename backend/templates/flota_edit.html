@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Editar Flota</h1>
+    
+    {% if error %}
+        <div style="background:#ffcccc; color:#cc0000; padding:15px; margin:20px auto; width:80%; text-align:center; border-radius:5px;">
+            {{ error }}
+        </div>
+    {% endif %}
+    
+    <form method="post" action="/flota_update/{{flota.id_flota}}" style="width:400px; margin:auto;">
+        <input type="text" name="nombre" value="{{flota.nombre}}" placeholder="Nombre" required>
+        <textarea name="descripcion" placeholder="Descripción" required>{{flota.descripcion}}</textarea>
+        <button type="submit">Guardar Cambios</button>
+    </form>
+    <div style="text-align:center; margin-top:20px;">
+        <a href="/flota_web" style="color:#336699; text-decoration:none;">Volver</a>
+    </div>
+{% endblock %}

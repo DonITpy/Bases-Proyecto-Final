@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Editar Viaje</h1>
+    
+    {% if error %}
+        <div style="background:#ffcccc; color:#cc0000; padding:15px; margin:20px auto; width:80%; text-align:center; border-radius:5px;">
+            {{ error }}
+        </div>
+    {% endif %}
+    
+    <form method="post" action="/viajes_update/{{viaje.id_viaje}}" style="width:400px; margin:auto;">
+        <input type="text" name="origen" value="{{viaje.origen}}" placeholder="Origen" required>
+        <input type="text" name="destino" value="{{viaje.destino}}" placeholder="Destino" required>
+        <input type="date" name="fecha_salida" value="{{viaje.fecha_salida}}" required>
+        <select name="estado" required>
+            <option value="">Seleccionar estado</option>
+            <option value="pendiente" {% if viaje.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+            <option value="en progreso" {% if viaje.estado == 'en progreso' %}selected{% endif %}>En progreso</option>
+            <option value="completado" {% if viaje.estado == 'completado' %}selected{% endif %}>Completado</option>
+        </select>
+        <button type="submit">Guardar Cambios</button>
+    </form>
+    <div style="text-align:center; margin-top:20px;">
+        <a href="/viajes_web" style="color:#336699; text-decoration:none;">Volver</a>
+    </div>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Editar Conductor</h1>
+    
+    {% if error %}
+        <div style="background:#ffcccc; color:#cc0000; padding:15px; margin:20px auto; width:80%; text-align:center; border-radius:5px;">
+            {{ error }}
+        </div>
+    {% endif %}
+    
+    <form method="post" action="/conductores_update/{{conductor.id_conductor}}" style="width:400px; margin:auto;">
+        <input type="text" name="nombre" value="{{conductor.nombre}}" placeholder="Nombre" required>
+        <input type="text" name="apellido" value="{{conductor.apellido}}" placeholder="Apellido" required>
+        <input type="tel" name="telefono" value="{{conductor.telefono}}" placeholder="Teléfono" required>
+        <input type="text" name="direccion" value="{{conductor.direccion}}" placeholder="Dirección" required>
+        <input type="date" name="fecha_nacimiento" value="{{conductor.fecha_nacimiento}}" required>
+        <button type="submit">Guardar Cambios</button>
+    </form>
+    <div style="text-align:center; margin-top:20px;">
+        <a href="/conductores_web" style="color:#336699; text-decoration:none;">Volver</a>
+    </div>
+{% endblock %}
