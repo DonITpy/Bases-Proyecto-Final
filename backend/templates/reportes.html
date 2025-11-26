@@ -3,11 +3,38 @@
     <h1>Reportes y Descargas</h1>
     <div style="width:80%; margin:auto; background:#fff; padding:30px; border-radius:10px; box-shadow:0 2px 8px #bbb;">
         <h2>Descargar Reportes en CSV</h2>
-        <ul style="font-size:1.1em;">
-            <li><a href="/descargar_vehiculos_csv" style="color:#336699; text-decoration:none;">📥 Descargar Vehículos</a></li>
-            <li><a href="/descargar_conductores_csv" style="color:#336699; text-decoration:none;">📥 Descargar Conductores</a></li>
-            <li><a href="/descargar_viajes_csv" style="color:#336699; text-decoration:none;">📥 Descargar Viajes</a></li>
-            <li><a href="/descargar_consumo_csv" style="color:#336699; text-decoration:none;">📥 Descargar Consumo</a></li>
-        </ul>
+        <p style="color:#666;">Descarga los datos de tus registros en formato CSV para análisis en Excel u otras herramientas.</p>
+        
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:15px; margin-top:20px;">
+            <div style="background:#e3f2fd; padding:15px; border-radius:8px; text-align:center;">
+                <h3>📥 Vehículos</h3>
+                <a href="/descargar_vehiculos_csv" style="display:inline-block; background:#336699; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; margin-top:10px;">Descargar CSV</a>
+            </div>
+            
+            <div style="background:#e8f5e9; padding:15px; border-radius:8px; text-align:center;">
+                <h3>📥 Conductores</h3>
+                <a href="/descargar_conductores_csv" style="display:inline-block; background:#336699; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; margin-top:10px;">Descargar CSV</a>
+            </div>
+            
+            <div style="background:#fff3e0; padding:15px; border-radius:8px; text-align:center;">
+                <h3>📥 Viajes</h3>
+                <a href="/descargar_viajes_csv" style="display:inline-block; background:#336699; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; margin-top:10px;">Descargar CSV</a>
+            </div>
+            
+            <div style="background:#fce4ec; padding:15px; border-radius:8px; text-align:center;">
+                <h3>📥 Consumo</h3>
+                <a href="/descargar_consumo_csv" style="display:inline-block; background:#336699; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; margin-top:10px;">Descargar CSV</a>
+            </div>
+        </div>
+        
+        <div style="margin-top:30px; padding:20px; background:#f5f5f5; border-radius:8px;">
+            <h3>ℹ️ Información</h3>
+            <ul>
+                <li>Los archivos CSV se pueden abrir en Excel, Google Sheets o cualquier editor de hojas de cálculo</li>
+                <li>Los datos incluyen todos los registros filtrados en el sistema</li>
+                <li>Los acentos y caracteres especiales están codificados correctamente</li>
+                <li>Descarga los reportes regularmente para respaldar tus datos</li>
+            </ul>
+        </div>
     </div>
 {% endblock %}

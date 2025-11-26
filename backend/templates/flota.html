@@ -2,6 +2,17 @@
 {% block content %}
     <h1>Flotas</h1>
     
+    <!-- BÚSQUEDA -->
+    <div class="search-container">
+        <form method="get" action="/flota_web" class="search-form">
+            <input type="text" name="buscar" placeholder="🔍 Buscar por nombre..." value="{{buscar}}" style="flex:1; min-width:200px;">
+            <button type="submit">Buscar</button>
+            <a href="/flota_web" style="background:#666; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; text-align:center;">Limpiar</a>
+        </form>
+    </div>
+    
+    <p class="result-count">Se encontraron {{flota|length}} flotas</p>
+    
     <table>
         <tr>
             <th>ID</th>
@@ -25,8 +36,13 @@
         </tr>
         {% endfor %}
     </table>
+    
+    {% if not flota %}
+        <p style="text-align:center; color:#999; margin:30px 0;">No se encontraron flotas que coincidan con tu búsqueda.</p>
+    {% endif %}
+    
     {% if usuario and usuario["rol"] == "admin" %}
-    <h2 style="text-align:center;">Agregar Flota</h2>
+    <h2>Agregar Flota</h2>
     <form method="post" action="/flota_create">
         <input type="text" name="nombre" placeholder="Nombre de la flota" required>
         <textarea name="descripcion" placeholder="Descripción" required></textarea>

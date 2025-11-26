@@ -8,6 +8,8 @@
         </div>
     {% endif %}
     
+    <p style="text-align:center; color:#666;">Total de usuarios: {{usuarios|length}}</p>
+    
     <table>
         <tr>
             <th>ID</th>
@@ -22,7 +24,7 @@
             <td>{{ u.nombre }}</td>
             <td>{{ u.correo }}</td>
             <td>{{ u.rol }}</td>
-            <td><a href="/usuarios_delete/{{u.id_usuario}}" onclick="return confirm('¿Eliminar usuario?');" class="delete-btn">🗑️</a></td>
+            <td><a href="/usuarios_delete/{{u.id_usuario}}" onclick="return confirm('¿Eliminar usuario?');" class="delete-btn">🗑️ Eliminar</a></td>
         </tr>
         {% endfor %}
     </table>

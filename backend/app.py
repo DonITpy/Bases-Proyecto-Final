@@ -93,6 +93,58 @@ def vehiculos_create(request: Request, matricula: str = Form(...), modelo: str =
     if not usuario or usuario["rol"] != "admin":
         return RedirectResponse("/vehiculos_web", status_code=303)
     
+    # VALIDACIONES
+    error_msg = None
+    
+    # Validar matrícula
+    if not matricula or len(matricula) < 3 or len(matricula) > 20:
+        error_msg = "La matrícula debe tener entre 3 y 20 caracteres"
+    elif not matricula.isalnum() or not matricula.isupper():
+        error_msg = "La matrícula debe contener solo mayúsculas y números"
+    
+    # Validar modelo
+    elif not modelo or len(modelo) < 1 or len(modelo) > 50:
+        error_msg = "El modelo debe tener entre 1 y 50 caracteres"
+    elif not all(c.isalnum() or c.isspace() or c == '-' for c in modelo):
+        error_msg = "El modelo contiene caracteres inválidos"
+    
+    # Validar tipo
+    elif not tipo or len(tipo) < 1 or len(tipo) > 30:
+        error_msg = "El tipo debe tener entre 1 y 30 caracteres"
+    elif not all(c.isalpha() or c.isspace() or c == '-' for c in tipo):
+        error_msg = "El tipo debe contener solo letras, espacios y guiones"
+    
+    # Validar capacidad
+    elif capacidad < 1 or capacidad > 100000:
+        error_msg = "La capacidad debe estar entre 1 y 100,000"
+    
+    # Validar marca
+    elif not marca or len(marca) < 1 or len(marca) > 30:
+        error_msg = "La marca debe tener entre 1 y 30 caracteres"
+    elif not all(c.isalpha() or c.isspace() or c == '-' for c in marca):
+        error_msg = "La marca debe contener solo letras, espacios y guiones"
+    
+    # Validar estado
+    elif estado not in ['activo', 'inactivo', 'mantenimiento']:
+        error_msg = "El estado no es válido"
+    
+    # Validar kilometraje
+    elif kilometraje < 0 or kilometraje > 9999999:
+        error_msg = "El kilometraje debe estar entre 0 y 9,999,999"
+    
+    if error_msg:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM vehiculo")
+        vehiculos = cursor.fetchall()
+        db.close()
+        return templates.TemplateResponse("vehiculos.html", {
+            "request": request, 
+            "vehiculos": vehiculos, 
+            "usuario": usuario,
+            "error": error_msg
+        })
+    
     db = get_db()
     cursor = db.cursor()
     
@@ -185,8 +237,77 @@ def vehiculos_update(request: Request, id: int, matricula: str = Form(...), mode
     if not usuario or usuario["rol"] != "admin":
         return RedirectResponse("/vehiculos_web", status_code=303)
     
+    # VALIDACIONES
+    error_msg = None
+    
+    # Validar matrícula
+    if not matricula or len(matricula) < 3 or len(matricula) > 20:
+        error_msg = "La matrícula debe tener entre 3 y 20 caracteres"
+    elif not matricula.isalnum() or not matricula.isupper():
+        error_msg = "La matrícula debe contener solo mayúsculas y números"
+    
+    # Validar modelo
+    elif not modelo or len(modelo) < 1 or len(modelo) > 50:
+        error_msg = "El modelo debe tener entre 1 y 50 caracteres"
+    elif not all(c.isalnum() or c.isspace() or c == '-' for c in modelo):
+        error_msg = "El modelo contiene caracteres inválidos"
+    
+    # Validar tipo
+    elif not tipo or len(tipo) < 1 or len(tipo) > 30:
+        error_msg = "El tipo debe tener entre 1 y 30 caracteres"
+    elif not all(c.isalpha() or c.isspace() or c == '-' for c in tipo):
+        error_msg = "El tipo debe contener solo letras, espacios y guiones"
+    
+    # Validar capacidad
+    elif capacidad < 1 or capacidad > 100000:
+        error_msg = "La capacidad debe estar entre 1 y 100,000"
+    
+    # Validar marca
+    elif not marca or len(marca) < 1 or len(marca) > 30:
+        error_msg = "La marca debe tener entre 1 y 30 caracteres"
+    elif not all(c.isalpha() or c.isspace() or c == '-' for c in marca):
+        error_msg = "La marca debe contener solo letras, espacios y guiones"
+    
+    # Validar estado
+    elif estado not in ['activo', 'inactivo', 'mantenimiento']:
+        error_msg = "El estado no es válido"
+    
+    # Validar kilometraje
+    elif kilometraje < 0 or kilometraje > 9999999:
+        error_msg = "El kilometraje debe estar entre 0 y 9,999,999"
+    
+    if error_msg:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM vehiculo WHERE id_vehiculo=%s", (id,))
+        vehiculo = cursor.fetchone()
+        db.close()
+        return templates.TemplateResponse("vehiculos_edit.html", {
+            "request": request,
+            "vehiculo": vehiculo,
+            "usuario": usuario,
+            "error": error_msg
+        })
+    
     db = get_db()
     cursor = db.cursor()
+    
+    # Validar que la matrícula no exista (excepto la del vehículo actual)
+    cursor.execute("SELECT * FROM vehiculo WHERE matricula=%s AND id_vehiculo!=%s", (matricula, id))
+    if cursor.fetchone():
+        db.close()
+        db2 = get_db()
+        cursor2 = db2.cursor(dictionary=True)
+        cursor2.execute("SELECT * FROM vehiculo WHERE id_vehiculo=%s", (id,))
+        vehiculo = cursor2.fetchone()
+        db2.close()
+        return templates.TemplateResponse("vehiculos_edit.html", {
+            "request": request,
+            "vehiculo": vehiculo,
+            "usuario": usuario,
+            "error": "La matrícula ya existe en otro vehículo"
+        })
+    
     try:
         cursor.execute(
             "UPDATE vehiculo SET matricula=%s, modelo=%s, tipo=%s, capacidad=%s, marca=%s, estado=%s, kilometraje=%s WHERE id_vehiculo=%s",
@@ -206,7 +327,7 @@ def vehiculos_update(request: Request, id: int, matricula: str = Form(...), mode
             "request": request,
             "vehiculo": vehiculo,
             "usuario": usuario,
-            "error": "Error al actualizar vehículo"
+            "error": f"Error al actualizar: {str(e)}"
         })
 
 # ==================== CONDUCTORES ====================
@@ -836,3 +957,255 @@ def descargar_consumo_csv(request: Request):
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=consumo.csv"}
     )
+
+# ==================== BUSQUEDA Y FILTROS ====================
+
+@app.get("/vehiculos_web")
+def vehiculos_web(request: Request, buscar: str = "", filtro_estado: str = ""):
+    usuario = request.session.get("usuario")
+    if not usuario:
+        return RedirectResponse("/login", status_code=303)
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    query = "SELECT * FROM vehiculo WHERE 1=1"
+    params = []
+    
+    # Búsqueda por matrícula o modelo
+    if buscar:
+        query += " AND (matricula LIKE %s OR modelo LIKE %s OR marca LIKE %s)"
+        params.extend([f"%{buscar}%", f"%{buscar}%", f"%{buscar}%"])
+    
+    # Filtro por estado
+    if filtro_estado:
+        query += " AND estado = %s"
+        params.append(filtro_estado)
+    
+    cursor.execute(query, params)
+    vehiculos = cursor.fetchall()
+    db.close()
+    
+    return templates.TemplateResponse("vehiculos.html", {
+        "request": request, 
+        "vehiculos": vehiculos, 
+        "usuario": usuario,
+        "buscar": buscar,
+        "filtro_estado": filtro_estado
+    })
+
+@app.get("/conductores_web")
+def conductores_web(request: Request, buscar: str = ""):
+    usuario = request.session.get("usuario")
+    if not usuario:
+        return RedirectResponse("/login", status_code=303)
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    query = "SELECT * FROM conductor WHERE 1=1"
+    params = []
+    
+    # Búsqueda por nombre o apellido
+    if buscar:
+        query += " AND (nombre LIKE %s OR apellido LIKE %s)"
+        params.extend([f"%{buscar}%", f"%{buscar}%"])
+    
+    cursor.execute(query, params)
+    conductores = cursor.fetchall()
+    db.close()
+    
+    return templates.TemplateResponse("conductores.html", {
+        "request": request, 
+        "conductores": conductores, 
+        "usuario": usuario,
+        "buscar": buscar
+    })
+
+@app.get("/viajes_web")
+def viajes_web(request: Request, buscar: str = "", filtro_estado: str = ""):
+    usuario = request.session.get("usuario")
+    if not usuario:
+        return RedirectResponse("/login", status_code=303)
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    query = "SELECT * FROM viaje WHERE 1=1"
+    params = []
+    
+    # Búsqueda por origen o destino
+    if buscar:
+        query += " AND (origen LIKE %s OR destino LIKE %s)"
+        params.extend([f"%{buscar}%", f"%{buscar}%"])
+    
+    # Filtro por estado
+    if filtro_estado:
+        query += " AND estado = %s"
+        params.append(filtro_estado)
+    
+    cursor.execute(query, params)
+    viajes = cursor.fetchall()
+    db.close()
+    
+    return templates.TemplateResponse("viajes.html", {
+        "request": request, 
+        "viajes": viajes, 
+        "usuario": usuario,
+        "buscar": buscar,
+        "filtro_estado": filtro_estado
+    })
+
+@app.get("/mantenimiento_web")
+def mantenimiento_web(request: Request, buscar: str = "", filtro_vehiculo: str = ""):
+    usuario = request.session.get("usuario")
+    if not usuario:
+        return RedirectResponse("/login", status_code=303)
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    query = "SELECT * FROM mantenimiento WHERE 1=1"
+    params = []
+    
+    # Búsqueda por descripción
+    if buscar:
+        query += " AND descripcion LIKE %s"
+        params.append(f"%{buscar}%")
+    
+    # Filtro por vehículo
+    if filtro_vehiculo:
+        query += " AND id_vehiculo = %s"
+        params.append(int(filtro_vehiculo))
+    
+    cursor.execute(query, params)
+    mant = cursor.fetchall()
+    
+    # Obtener lista de vehículos para el filtro
+    cursor.execute("SELECT id_vehiculo, matricula FROM vehiculo ORDER BY matricula")
+    vehiculos_list = cursor.fetchall()
+    db.close()
+    
+    return templates.TemplateResponse("mantenimiento.html", {
+        "request": request, 
+        "mantenimiento": mant, 
+        "usuario": usuario,
+        "buscar": buscar,
+        "filtro_vehiculo": filtro_vehiculo,
+        "vehiculos_list": vehiculos_list
+    })
+
+@app.get("/consumo_web")
+def consumo_web(request: Request, buscar: str = "", filtro_vehiculo: str = ""):
+    usuario = request.session.get("usuario")
+    if not usuario:
+        return RedirectResponse("/login", status_code=303)
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    query = "SELECT * FROM consumo WHERE 1=1"
+    params = []
+    
+    # Filtro por vehículo
+    if filtro_vehiculo:
+        query += " AND id_vehiculo = %s"
+        params.append(int(filtro_vehiculo))
+    
+    cursor.execute(query, params)
+    cons = cursor.fetchall()
+    
+    # Obtener lista de vehículos para el filtro
+    cursor.execute("SELECT id_vehiculo, matricula FROM vehiculo ORDER BY matricula")
+    vehiculos_list = cursor.fetchall()
+    db.close()
+    
+    return templates.TemplateResponse("consumo.html", {
+        "request": request, 
+        "consumo": cons, 
+        "usuario": usuario,
+        "filtro_vehiculo": filtro_vehiculo,
+        "vehiculos_list": vehiculos_list
+    })
+
+@app.get("/incidentes_web")
+def incidentes_web(request: Request, buscar: str = "", filtro_tipo: str = ""):
+    usuario = request.session.get("usuario")
+    if not usuario:
+        return RedirectResponse("/login", status_code=303)
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    query = "SELECT * FROM incidente WHERE 1=1"
+    params = []
+    
+    # Búsqueda por descripción
+    if buscar:
+        query += " AND descripcion LIKE %s"
+        params.append(f"%{buscar}%")
+    
+    # Filtro por tipo
+    if filtro_tipo:
+        query += " AND tipo = %s"
+        params.append(filtro_tipo)
+    
+    cursor.execute(query, params)
+    inc = cursor.fetchall()
+    db.close()
+    
+    return templates.TemplateResponse("incidentes.html", {
+        "request": request, 
+        "incidentes": inc, 
+        "usuario": usuario,
+        "buscar": buscar,
+        "filtro_tipo": filtro_tipo
+    })
+
+@app.get("/ordenes_web")
+def ordenes_web(request: Request, buscar: str = ""):
+    usuario = request.session.get("usuario")
+    if not usuario:
+        return RedirectResponse("/login", status_code=303)
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    query = "SELECT * FROM orden_servicio WHERE 1=1"
+    params = []
+    
+    # Búsqueda por descripción
+    if buscar:
+        query += " AND descripcion LIKE %s"
+        params.append(f"%{buscar}%")
+    
+    cursor.execute(query, params)
+    ordenes = cursor.fetchall()
+    db.close()
+    
+    return templates.TemplateResponse("ordenes.html", {
+        "request": request, 
+        "ordenes": ordenes, 
+        "usuario": usuario,
+        "buscar": buscar
+    })
+
+@app.get("/flota_web")
+def flota_web(request: Request, buscar: str = ""):
+    usuario = request.session.get("usuario")
+    if not usuario:
+        return RedirectResponse("/login", status_code=303)
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    query = "SELECT * FROM flota WHERE 1=1"
+    params = []
+    
+    # Búsqueda por nombre
+    if buscar:
+        query += " AND nombre LIKE %s"
+        params.append(f"%{buscar}%")
+    
+    cursor.execute(query, params)
+    flotas = cursor.fetchall()
+    db.close()
+    
+    return templates.TemplateResponse("flota.html", {
+        "request": request, 
+        "flota": flotas, 
+        "usuario": usuario,
+        "buscar": buscar
+    })

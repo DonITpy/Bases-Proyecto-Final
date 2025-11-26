@@ -1,15 +1,32 @@
 {% extends "base.html" %}
 {% block content %}
-<h2 style="text-align:center;">Iniciar sesión</h2>
-<form method="post" action="/login">
-    <input type="email" name="correo" placeholder="Correo" required>
-    <input type="password" name="password" placeholder="Contraseña" required>
-    <button type="submit">Entrar</button>
-</form>
-{% if error %}<div class="error">{{error}}</div>{% endif %}
-<div style="text-align:center; margin-top:20px; font-size:0.9em;">
-    <p><b>Credenciales de prueba:</b></p>
-    <p><b>Admin:</b> admin@correo.com / admin123</p>
-    <p><b>Mecánico:</b> mecanico@correo.com / mecanico123</p>
+<div style="min-height:100vh; display:flex; align-items:center; justify-content:center;">
+    <div style="background:white; padding:40px; border-radius:12px; box-shadow:0 8px 16px rgba(0,0,0,0.1); width:100%; max-width:400px;">
+        <h1 style="text-align:center; margin-top:0; color:#1a237e;">🚚 Flota Logística</h1>
+        
+        <h2 style="text-align:center; margin-bottom:30px; font-size:1.3em; color:#666;">Iniciar Sesión</h2>
+        
+        <form method="post" action="/login" style="width:100%; margin:0;">
+            <input type="email" name="correo" placeholder="📧 Correo" required style="margin-bottom:15px;">
+            <input type="password" name="password" placeholder="🔐 Contraseña" required style="margin-bottom:20px;">
+            <button type="submit" style="width:100%; padding:12px; font-size:1.1em;">Entrar</button>
+        </form>
+        
+        {% if error %}
+            <div class="error" style="width:100%; margin-top:20px;">{{error}}</div>
+        {% endif %}
+        
+        <div style="background:#f5f5f5; padding:20px; border-radius:8px; margin-top:25px; font-size:0.9em; color:#666;">
+            <strong>📝 Credenciales de prueba:</strong>
+            <hr style="margin:10px 0;">
+            <p><strong>👨‍💼 Admin:</strong><br>
+            correo: admin@correo.com<br>
+            contraseña: admin123</p>
+            <hr style="margin:10px 0;">
+            <p><strong>🔧 Mecánico:</strong><br>
+            correo: mecanico@correo.com<br>
+            contraseña: mecanico123</p>
+        </div>
+    </div>
 </div>
 {% endblock %}

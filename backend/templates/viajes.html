@@ -1,12 +1,27 @@
 {% extends "base.html" %}
 {% block content %}
-    <h1>Viajes Registrados</h1>
+    <h1>🛣️ Viajes Registrados</h1>
+    
+    <!-- BÚSQUEDA Y FILTROS -->
+    <div class="search-container">
+        <form method="get" action="/viajes_web" class="search-form">
+            <input type="text" name="buscar" placeholder="🔍 Buscar por origen o destino..." value="{{buscar}}" style="flex:1; min-width:200px;">
+            <select name="filtro_estado" style="padding:10px; border:2px solid #e0e0e0; border-radius:6px;">
+                <option value="">Todos los estados</option>
+                <option value="pendiente" {% if filtro_estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                <option value="en progreso" {% if filtro_estado == 'en progreso' %}selected{% endif %}>En progreso</option>
+                <option value="completado" {% if filtro_estado == 'completado' %}selected{% endif %}>Completado</option>
+            </select>
+            <button type="submit">Buscar</button>
+            <a href="/viajes_web" style="background:#666; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; text-align:center;">Limpiar</a>
+        </form>
+    </div>
     
     {% if error %}
-        <div style="background:#ffcccc; color:#cc0000; padding:15px; margin:20px auto; width:80%; text-align:center; border-radius:5px; border:2px solid #cc0000;">
-            <strong>⚠️ Error:</strong> {{ error }}
-        </div>
+        <div class="error">{{ error }}</div>
     {% endif %}
+    
+    <p class="result-count">Se encontraron {{viajes|length}} viajes</p>
     
     <table>
         <tr>
@@ -25,21 +40,34 @@
             <td>{{ v.origen }}</td>
             <td>{{ v.destino }}</td>
             <td>{{ v.fecha_salida }}</td>
-            <td>{{ v.estado }}</td>
+            <td>
+                {% if v.estado == 'completado' %}
+                    <span style="background:#4CAF50; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;">✅ {{ v.estado }}</span>
+                {% elif v.estado == 'en progreso' %}
+                    <span style="background:#2196F3; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;">🚗 {{ v.estado }}</span>
+                {% else %}
+                    <span style="background:#FF9800; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;">⏳ {{ v.estado }}</span>
+                {% endif %}
+            </td>
             {% if usuario and usuario["rol"] == "admin" %}
                 <td>
                     <a href="/viajes_edit/{{v.id_viaje}}" style="color:#336699; margin-right:10px;">✏️ Editar</a>
-                    <a href="/viajes_delete/{{v.id_viaje}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">🗑️ Eliminar</a>
+                    <a href="/viajes_delete/{{v.id_viaje}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">🗑️</a>
                 </td>
             {% endif %}
         </tr>
         {% endfor %}
     </table>
+    
+    {% if not viajes %}
+        <p style="text-align:center; color:#999; margin:30px 0;">No se encontraron viajes que coincidan con tu búsqueda.</p>
+    {% endif %}
+    
     {% if usuario and usuario["rol"] == "admin" %}
-    <h2 style="text-align:center;">Agregar Viaje</h2>
+    <h2>Agregar Viaje</h2>
     <form method="post" action="/viajes_create">
-        <input type="text" name="origen" placeholder="Origen" required>
-        <input type="text" name="destino" placeholder="Destino" required>
+        <input type="text" name="origen" placeholder="Origen (ej: CDMX)" required>
+        <input type="text" name="destino" placeholder="Destino (ej: Puebla)" required>
         <input type="date" name="fecha_salida" required>
         <select name="estado" required>
             <option value="">Seleccionar estado</option>

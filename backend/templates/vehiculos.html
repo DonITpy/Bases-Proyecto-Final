@@ -1,12 +1,27 @@
 {% extends "base.html" %}
 {% block content %}
-    <h1>Vehículos Registrados</h1>
+    <h1>🚗 Vehículos Registrados</h1>
+    
+    <!-- BÚSQUEDA Y FILTROS -->
+    <div class="search-container">
+        <form method="get" action="/vehiculos_web" class="search-form">
+            <input type="text" name="buscar" placeholder="🔍 Buscar por matrícula, modelo o marca..." value="{{buscar}}" style="flex:1; min-width:200px;">
+            <select name="filtro_estado" style="padding:10px; border:2px solid #e0e0e0; border-radius:6px;">
+                <option value="">Todos los estados</option>
+                <option value="activo" {% if filtro_estado == 'activo' %}selected{% endif %}>Activo</option>
+                <option value="inactivo" {% if filtro_estado == 'inactivo' %}selected{% endif %}>Inactivo</option>
+                <option value="mantenimiento" {% if filtro_estado == 'mantenimiento' %}selected{% endif %}>Mantenimiento</option>
+            </select>
+            <button type="submit">Buscar</button>
+            <a href="/vehiculos_web" style="background:#666; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; text-align:center;">Limpiar</a>
+        </form>
+    </div>
     
     {% if error %}
-        <div style="background:#ffcccc; color:#cc0000; padding:15px; margin:20px auto; width:80%; text-align:center; border-radius:5px; border:2px solid #cc0000;">
-            <strong>⚠️ Error:</strong> {{ error }}
-        </div>
+        <div class="error">{{ error }}</div>
     {% endif %}
+    
+    <p class="result-count">Se encontraron {{vehiculos|length}} vehículos</p>
     
     <table>
         <tr>
@@ -29,28 +44,46 @@
             <td>{{ v.modelo }}</td>
             <td>{{ v.tipo }}</td>
             <td>{{ v.marca }}</td>
-            <td>{{ v.estado }}</td>
+            <td>
+                {% if v.estado == 'activo' %}
+                    <span style="background:#4CAF50; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;">✅ {{ v.estado }}</span>
+                {% elif v.estado == 'inactivo' %}
+                    <span style="background:#f44336; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;">❌ {{ v.estado }}</span>
+                {% else %}
+                    <span style="background:#FF9800; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;">🔧 {{ v.estado }}</span>
+                {% endif %}
+            </td>
             <td>{{ v.capacidad }}</td>
             <td>{{ v.kilometraje }}</td>
             {% if usuario and usuario["rol"] == "admin" %}
                 <td>
                     <a href="/vehiculos_edit/{{v.id_vehiculo}}" style="color:#336699; margin-right:10px;">✏️ Editar</a>
-                    <a href="/vehiculos_delete/{{v.id_vehiculo}}" onclick="return confirm('¿Eliminar? Este vehículo no debe tener registros vinculados.');" class="delete-btn">🗑️ Eliminar</a>
+                    <a href="/vehiculos_delete/{{v.id_vehiculo}}" onclick="return confirm('¿Eliminar? Este vehículo no debe tener registros vinculados.');" class="delete-btn">🗑️</a>
                 </td>
             {% endif %}
         </tr>
         {% endfor %}
     </table>
+    
+    {% if not vehiculos %}
+        <p style="text-align:center; color:#999; margin:30px 0;">No se encontraron vehículos que coincidan con tu búsqueda.</p>
+    {% endif %}
+    
     {% if usuario and usuario["rol"] == "admin" %}
-    <h2 style="text-align:center;">Agregar Vehículo</h2>
+    <h2>Agregar Vehículo</h2>
     <form method="post" action="/vehiculos_create">
-        <input type="text" name="matricula" placeholder="Matrícula" required>
-        <input type="text" name="modelo" placeholder="Modelo" required>
-        <input type="text" name="tipo" placeholder="Tipo" required>
-        <input type="number" name="capacidad" placeholder="Capacidad" required>
-        <input type="text" name="marca" placeholder="Marca" required>
-        <input type="text" name="estado" placeholder="Estado" required>
-        <input type="number" name="kilometraje" placeholder="Kilometraje" required>
+        <input type="text" name="matricula" placeholder="Matrícula (ej: ABC123)" maxlength="20" pattern="[A-Z0-9]{3,20}" title="Solo mayúsculas y números, 3-20 caracteres" required>
+        <input type="text" name="modelo" placeholder="Modelo (ej: Sprinter 2020)" maxlength="50" pattern="[A-Za-z0-9\s\-]{1,50}" title="Solo letras, números y espacios" required>
+        <input type="text" name="tipo" placeholder="Tipo (ej: Camioneta, Camión, SUV)" maxlength="30" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{1,30}" title="Solo letras y espacios" required>
+        <input type="number" name="capacidad" placeholder="Capacidad (litros o kg)" min="1" max="100000" title="Debe ser un número entre 1 y 100000" required>
+        <input type="text" name="marca" placeholder="Marca (ej: Mercedes-Benz)" maxlength="30" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{1,30}" title="Solo letras, espacios y guiones" required>
+        <select name="estado" required>
+            <option value="">Seleccionar estado</option>
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+            <option value="mantenimiento">Mantenimiento</option>
+        </select>
+        <input type="number" name="kilometraje" placeholder="Kilometraje actual" min="0" max="9999999" title="Debe ser un número entre 0 y 9,999,999" required>
         <button type="submit">Agregar Vehículo</button>
     </form>
     {% endif %}

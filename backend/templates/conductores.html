@@ -2,11 +2,20 @@
 {% block content %}
     <h1>Conductores Registrados</h1>
     
+    <!-- BÚSQUEDA -->
+    <div class="search-container">
+        <form method="get" action="/conductores_web" class="search-form">
+            <input type="text" name="buscar" placeholder="🔍 Buscar por nombre o apellido..." value="{{buscar}}" style="flex:1; min-width:200px;">
+            <button type="submit">Buscar</button>
+            <a href="/conductores_web" style="background:#666; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; text-align:center;">Limpiar</a>
+        </form>
+    </div>
+    
     {% if error %}
-        <div style="background:#ffcccc; color:#cc0000; padding:15px; margin:20px auto; width:80%; text-align:center; border-radius:5px; border:2px solid #cc0000;">
-            <strong>⚠️ Error:</strong> {{ error }}
-        </div>
+        <div class="error">{{ error }}</div>
     {% endif %}
+    
+    <p class="result-count">Se encontraron {{conductores|length}} conductores</p>
     
     <table>
         <tr>
@@ -37,8 +46,13 @@
         </tr>
         {% endfor %}
     </table>
+    
+    {% if not conductores %}
+        <p style="text-align:center; color:#999; margin:30px 0;">No se encontraron conductores que coincidan con tu búsqueda.</p>
+    {% endif %}
+    
     {% if usuario and usuario["rol"] == "admin" %}
-    <h2 style="text-align:center;">Agregar Conductor</h2>
+    <h2>Agregar Conductor</h2>
     <form method="post" action="/conductores_create">
         <input type="text" name="nombre" placeholder="Nombre" required>
         <input type="text" name="apellido" placeholder="Apellido" required>
