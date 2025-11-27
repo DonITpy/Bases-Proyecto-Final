@@ -66,8 +66,8 @@
     {% if usuario and usuario["rol"] == "admin" %}
     <h2>Agregar Viaje</h2>
     <form method="post" action="/viajes_create">
-        <input type="text" name="origen" placeholder="Origen (ej: CDMX)" required>
-        <input type="text" name="destino" placeholder="Destino (ej: Puebla)" required>
+        <input type="text" name="origen" placeholder="Origen (ej: CDMX)" required minlength="2" maxlength="50" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{2,50}" title="Solo letras, espacios y guiones, 2-50 caracteres">
+        <input type="text" name="destino" placeholder="Destino (ej: Puebla)" required minlength="2" maxlength="50" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{2,50}" title="Solo letras, espacios y guiones, 2-50 caracteres">
         <input type="date" name="fecha_salida" required>
         <select name="estado" required>
             <option value="">Seleccionar estado</option>

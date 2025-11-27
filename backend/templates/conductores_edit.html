@@ -9,10 +9,10 @@
     {% endif %}
     
     <form method="post" action="/conductores_update/{{conductor.id_conductor}}" style="width:400px; margin:auto;">
-        <input type="text" name="nombre" value="{{conductor.nombre}}" placeholder="Nombre" required>
-        <input type="text" name="apellido" value="{{conductor.apellido}}" placeholder="Apellido" required>
-        <input type="tel" name="telefono" value="{{conductor.telefono}}" placeholder="Teléfono" required>
-        <input type="text" name="direccion" value="{{conductor.direccion}}" placeholder="Dirección" required>
+        <input type="text" name="nombre" value="{{conductor.nombre}}" placeholder="Nombre" required minlength="2" maxlength="60" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{2,60}" title="Solo letras, espacios y guiones">
+        <input type="text" name="apellido" value="{{conductor.apellido}}" placeholder="Apellido" required minlength="2" maxlength="60" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{2,60}" title="Solo letras, espacios y guiones">
+        <input type="tel" name="telefono" value="{{conductor.telefono}}" placeholder="Teléfono" required minlength="7" maxlength="20" pattern="[0-9\-\+\s\(\)]{7,20}" title="Solo números y caracteres - + ( ) espacios">
+        <input type="text" name="direccion" value="{{conductor.direccion}}" placeholder="Dirección" required minlength="5" maxlength="100" title="Dirección, 5-100 caracteres">
         <input type="date" name="fecha_nacimiento" value="{{conductor.fecha_nacimiento}}" required>
         <button type="submit">Guardar Cambios</button>
     </form>

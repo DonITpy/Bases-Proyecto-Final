@@ -31,13 +31,16 @@
     
     <h2 style="text-align:center;">Crear Nuevo Usuario</h2>
     <form method="post" action="/usuarios_create">
-        <input type="text" name="nombre" placeholder="Nombre" required>
-        <input type="email" name="correo" placeholder="Correo" required>
-        <input type="password" name="password" placeholder="Contraseña" required>
+        <input type="text" name="nombre" placeholder="Nombre" required minlength="2" maxlength="50" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{2,50}" title="Solo letras, espacios y guiones">
+        <input type="email" name="correo" placeholder="Correo" required maxlength="50" title="Correo válido">
+        <input type="password" name="password" placeholder="Contraseña" required minlength="6" maxlength="128" title="6-128 caracteres">
         <select name="rol" required>
             <option value="">Seleccionar rol</option>
             <option value="admin">Admin</option>
             <option value="mecanico">Mecánico</option>
+            <option value="conductor">Conductor</option>
+            <option value="logistica">Logística</option>
+            <option value="observador">Observador</option>
         </select>
         <button type="submit">Crear Usuario</button>
     </form>

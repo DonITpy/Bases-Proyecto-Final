@@ -44,8 +44,8 @@
     {% if usuario and usuario["rol"] == "mecanico" %}
     <h2 style="text-align:center;">Registrar Mantenimiento</h2>
     <form method="post" action="/mantenimiento_create">
-        <input type="number" name="id_vehiculo" placeholder="ID Vehículo" required>
-        <textarea name="descripcion" placeholder="Descripción del mantenimiento" required></textarea>
+        <input type="number" name="id_vehiculo" placeholder="ID Vehículo" required min="1" title="ID de vehículo válido">
+        <textarea name="descripcion" placeholder="Descripción del mantenimiento" required minlength="5" maxlength="255" title="Descripción, 5-255 caracteres; se permiten -,.,()">{{''}}</textarea>
         <input type="date" name="fecha" required>
         <button type="submit">Registrar Mantenimiento</button>
     </form>

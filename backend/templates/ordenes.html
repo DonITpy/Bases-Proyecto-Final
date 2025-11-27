@@ -39,7 +39,7 @@
     {% if usuario and usuario["rol"] == "admin" %}
     <h2 style="text-align:center;">Agregar Orden de Servicio</h2>
     <form method="post" action="/ordenes_create">
-        <textarea name="descripcion" placeholder="Descripción de la orden" required></textarea>
+        <textarea name="descripcion" placeholder="Descripción de la orden" required minlength="5" maxlength="255" title="Descripción, 5-255 caracteres"></textarea>
         <input type="date" name="fecha" required>
         <button type="submit">Agregar Orden</button>
     </form>

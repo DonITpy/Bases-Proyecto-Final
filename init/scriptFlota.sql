@@ -1,4 +1,3 @@
--- Configurar charset a UTF-8 para soportar acentos correctamente
 SET NAMES utf8mb4;
 SET CHARACTER SET utf8mb4;
 SET COLLATION_CONNECTION=utf8mb4_unicode_ci;

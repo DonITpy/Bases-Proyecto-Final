@@ -9,8 +9,8 @@
     {% endif %}
     
     <form method="post" action="/viajes_update/{{viaje.id_viaje}}" style="width:400px; margin:auto;">
-        <input type="text" name="origen" value="{{viaje.origen}}" placeholder="Origen" required>
-        <input type="text" name="destino" value="{{viaje.destino}}" placeholder="Destino" required>
+        <input type="text" name="origen" value="{{viaje.origen}}" placeholder="Origen" required minlength="2" maxlength="50" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{2,50}" title="Solo letras, espacios y guiones">
+        <input type="text" name="destino" value="{{viaje.destino}}" placeholder="Destino" required minlength="2" maxlength="50" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{2,50}" title="Solo letras, espacios y guiones">
         <input type="date" name="fecha_salida" value="{{viaje.fecha_salida}}" required>
         <select name="estado" required>
             <option value="">Seleccionar estado</option>

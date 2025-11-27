@@ -348,13 +348,81 @@ def conductores_create(request: Request, nombre: str = Form(...), apellido: str 
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] != "admin":
         return RedirectResponse("/conductores_web", status_code=303)
+    
+    # VALIDACIONES
+    error_msg = None
+    
+    # Validar nombre
+    if not nombre or len(nombre) < 2 or len(nombre) > 60:
+        error_msg = "El nombre debe tener entre 2 y 60 caracteres"
+    elif not all(c.isalpha() or c.isspace() or c == '-' for c in nombre):
+        error_msg = "El nombre solo debe contener letras, espacios y guiones"
+    
+    # Validar apellido
+    elif not apellido or len(apellido) < 2 or len(apellido) > 60:
+        error_msg = "El apellido debe tener entre 2 y 60 caracteres"
+    elif not all(c.isalpha() or c.isspace() or c == '-' for c in apellido):
+        error_msg = "El apellido solo debe contener letras, espacios y guiones"
+    
+    # Validar teléfono
+    elif not telefono or len(telefono) < 7 or len(telefono) > 20:
+        error_msg = "El teléfono debe tener entre 7 y 20 caracteres"
+    elif not all(c.isdigit() or c in ['-', '+', ' ', '(', ')'] for c in telefono):
+        error_msg = "El teléfono contiene caracteres inválidos"
+    
+    # Validar dirección
+    elif not direccion or len(direccion) < 5 or len(direccion) > 100:
+        error_msg = "La dirección debe tener entre 5 y 100 caracteres"
+    
+    # Validar fecha de nacimiento
+    elif not fecha_nacimiento:
+        error_msg = "La fecha de nacimiento es obligatoria"
+    else:
+        try:
+            from datetime import datetime
+            fecha_obj = datetime.strptime(fecha_nacimiento, "%Y-%m-%d")
+            edad = (datetime.now() - fecha_obj).days // 365
+            if edad < 18:
+                error_msg = "El conductor debe ser mayor de 18 años"
+            elif edad > 120:
+                error_msg = "La fecha de nacimiento no es válida"
+        except:
+            error_msg = "Formato de fecha inválido (use YYYY-MM-DD)"
+    
+    if error_msg:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM conductor")
+        conductores = cursor.fetchall()
+        db.close()
+        return templates.TemplateResponse("conductores.html", {
+            "request": request, 
+            "conductores": conductores, 
+            "usuario": usuario,
+            "error": error_msg
+        })
+    
     db = get_db()
     cursor = db.cursor()
-    cursor.execute("INSERT INTO conductor (nombre, apellido, telefono, direccion, fecha_nacimiento) VALUES (%s,%s,%s,%s,%s)",
-                   (nombre, apellido, telefono, direccion, fecha_nacimiento))
-    db.commit()
-    db.close()
-    return RedirectResponse("/conductores_web", status_code=303)
+    try:
+        cursor.execute("INSERT INTO conductor (nombre, apellido, telefono, direccion, fecha_nacimiento) VALUES (%s,%s,%s,%s,%s)",
+                       (nombre, apellido, telefono, direccion, fecha_nacimiento))
+        db.commit()
+        db.close()
+        return RedirectResponse("/conductores_web", status_code=303)
+    except Exception as e:
+        db.close()
+        db2 = get_db()
+        cursor2 = db2.cursor(dictionary=True)
+        cursor2.execute("SELECT * FROM conductor")
+        conductores = cursor2.fetchall()
+        db2.close()
+        return templates.TemplateResponse("conductores.html", {
+            "request": request, 
+            "conductores": conductores, 
+            "usuario": usuario,
+            "error": f"Error al crear conductor: {str(e)}"
+        })
 
 @app.get("/conductores_delete/{id}")
 def conductores_delete(request: Request, id: int):
@@ -390,6 +458,59 @@ def conductores_update(request: Request, id: int, nombre: str = Form(...), apell
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] != "admin":
         return RedirectResponse("/conductores_web", status_code=303)
+    
+    # VALIDACIONES (mismo patrón que create)
+    error_msg = None
+    
+    # Validar nombre
+    if not nombre or len(nombre) < 2 or len(nombre) > 60:
+        error_msg = "El nombre debe tener entre 2 y 60 caracteres"
+    elif not all(c.isalpha() or c.isspace() or c == '-' for c in nombre):
+        error_msg = "El nombre solo debe contener letras, espacios y guiones"
+    
+    # Validar apellido
+    elif not apellido or len(apellido) < 2 or len(apellido) > 60:
+        error_msg = "El apellido debe tener entre 2 y 60 caracteres"
+    elif not all(c.isalpha() or c.isspace() or c == '-' for c in apellido):
+        error_msg = "El apellido solo debe contener letras, espacios y guiones"
+    
+    # Validar teléfono
+    elif not telefono or len(telefono) < 7 or len(telefono) > 20:
+        error_msg = "El teléfono debe tener entre 7 y 20 caracteres"
+    elif not all(c.isdigit() or c in ['-', '+', ' ', '(', ')'] for c in telefono):
+        error_msg = "El teléfono contiene caracteres inválidos"
+    
+    # Validar dirección
+    elif not direccion or len(direccion) < 5 or len(direccion) > 100:
+        error_msg = "La dirección debe tener entre 5 y 100 caracteres"
+    
+    # Validar fecha de nacimiento
+    elif not fecha_nacimiento:
+        error_msg = "La fecha de nacimiento es obligatoria"
+    else:
+        try:
+            from datetime import datetime
+            fecha_obj = datetime.strptime(fecha_nacimiento, "%Y-%m-%d")
+            edad = (datetime.now() - fecha_obj).days // 365
+            if edad < 18:
+                error_msg = "El conductor debe ser mayor de 18 años"
+            elif edad > 120:
+                error_msg = "La fecha de nacimiento no es válida"
+        except:
+            error_msg = "Formato de fecha inválido (use YYYY-MM-DD)"
+    
+    if error_msg:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM conductor WHERE id_conductor=%s", (id,))
+        conductor = cursor.fetchone()
+        db.close()
+        return templates.TemplateResponse("conductores_edit.html", {
+            "request": request,
+            "conductor": conductor,
+            "usuario": usuario,
+            "error": error_msg
+        })
     
     db = get_db()
     cursor = db.cursor()
@@ -433,13 +554,77 @@ def viajes_create(request: Request, origen: str = Form(...), destino: str = Form
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] not in ["admin", "logistica"]:
         return RedirectResponse("/viajes_web", status_code=303)
+    
+    # VALIDACIONES
+    error_msg = None
+    
+    # Validar origen
+    if not origen or len(origen) < 2 or len(origen) > 50:
+        error_msg = "El origen debe tener entre 2 y 50 caracteres"
+    elif not all(c.isalpha() or c.isspace() or c == '-' for c in origen):
+        error_msg = "El origen solo debe contener letras, espacios y guiones"
+    
+    # Validar destino
+    elif not destino or len(destino) < 2 or len(destino) > 50:
+        error_msg = "El destino debe tener entre 2 y 50 caracteres"
+    elif not all(c.isalpha() or c.isspace() or c == '-' for c in destino):
+        error_msg = "El destino solo debe contener letras, espacios y guiones"
+    
+    # Validar que origen y destino sean diferentes
+    elif origen.lower() == destino.lower():
+        error_msg = "El origen y destino no pueden ser iguales"
+    
+    # Validar fecha de salida
+    elif not fecha_salida:
+        error_msg = "La fecha de salida es obligatoria"
+    else:
+        try:
+            from datetime import datetime
+            fecha_obj = datetime.strptime(fecha_salida, "%Y-%m-%d")
+            if fecha_obj.date() < datetime.now().date():
+                error_msg = "La fecha de salida no puede ser en el pasado"
+        except:
+            error_msg = "Formato de fecha inválido (use YYYY-MM-DD)"
+    
+    # Validar estado
+    if not error_msg:
+        if estado not in ['pendiente', 'en progreso', 'completado', 'cancelado']:
+            error_msg = "El estado no es válido"
+    
+    if error_msg:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM viaje")
+        viajes = cursor.fetchall()
+        db.close()
+        return templates.TemplateResponse("viajes.html", {
+            "request": request, 
+            "viajes": viajes, 
+            "usuario": usuario,
+            "error": error_msg
+        })
+    
     db = get_db()
     cursor = db.cursor()
-    cursor.execute("INSERT INTO viaje (origen, destino, fecha_salida, estado) VALUES (%s,%s,%s,%s)",
-                   (origen, destino, fecha_salida, estado))
-    db.commit()
-    db.close()
-    return RedirectResponse("/viajes_web", status_code=303)
+    try:
+        cursor.execute("INSERT INTO viaje (origen, destino, fecha_salida, estado) VALUES (%s,%s,%s,%s)",
+                       (origen, destino, fecha_salida, estado))
+        db.commit()
+        db.close()
+        return RedirectResponse("/viajes_web", status_code=303)
+    except Exception as e:
+        db.close()
+        db2 = get_db()
+        cursor2 = db2.cursor(dictionary=True)
+        cursor2.execute("SELECT * FROM viaje")
+        viajes = cursor2.fetchall()
+        db2.close()
+        return templates.TemplateResponse("viajes.html", {
+            "request": request, 
+            "viajes": viajes, 
+            "usuario": usuario,
+            "error": f"Error al crear viaje: {str(e)}"
+        })
 
 @app.get("/viajes_delete/{id}")
 def viajes_delete(request: Request, id: int):
@@ -475,6 +660,55 @@ def viajes_update(request: Request, id: int, origen: str = Form(...), destino: s
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] != "admin":
         return RedirectResponse("/viajes_web", status_code=303)
+    
+    # VALIDACIONES (mismo patrón que create)
+    error_msg = None
+    
+    # Validar origen
+    if not origen or len(origen) < 2 or len(origen) > 50:
+        error_msg = "El origen debe tener entre 2 y 50 caracteres"
+    elif not all(c.isalpha() or c.isspace() or c == '-' for c in origen):
+        error_msg = "El origen solo debe contener letras, espacios y guiones"
+    
+    # Validar destino
+    elif not destino or len(destino) < 2 or len(destino) > 50:
+        error_msg = "El destino debe tener entre 2 y 50 caracteres"
+    elif not all(c.isalpha() or c.isspace() or c == '-' for c in destino):
+        error_msg = "El destino solo debe contener letras, espacios y guiones"
+    
+    # Validar que origen y destino sean diferentes
+    elif origen.lower() == destino.lower():
+        error_msg = "El origen y destino no pueden ser iguales"
+    
+    # Validar fecha de salida
+    elif not fecha_salida:
+        error_msg = "La fecha de salida es obligatoria"
+    else:
+        try:
+            from datetime import datetime
+            fecha_obj = datetime.strptime(fecha_salida, "%Y-%m-%d")
+            if fecha_obj.date() < datetime.now().date():
+                error_msg = "La fecha de salida no puede ser en el pasado"
+        except:
+            error_msg = "Formato de fecha inválido (use YYYY-MM-DD)"
+    
+    # Validar estado
+    if not error_msg:
+        if estado not in ['pendiente', 'en progreso', 'completado', 'cancelado']:
+            error_msg = "El estado no es válido"
+    
+    if error_msg:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM viaje WHERE id_viaje=%s", (id,))
+        viaje = cursor.fetchone()
+        db.close()
+        return templates.TemplateResponse("viajes_edit.html", {
+            "request": request,
+            "viaje": viaje,
+            "usuario": usuario,
+            "error": error_msg
+        })
     
     db = get_db()
     cursor = db.cursor()
@@ -518,13 +752,86 @@ def mantenimiento_create(request: Request, id_vehiculo: int = Form(...), descrip
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] != "mecanico":
         return RedirectResponse("/mantenimiento_web", status_code=303)
+    
+    # VALIDACIONES
+    error_msg = None
+    
+    # Validar id_vehiculo
+    if not id_vehiculo or id_vehiculo < 1:
+        error_msg = "Debe seleccionar un vehículo válido"
+    
+    # Validar descripción
+    elif not descripcion or len(descripcion) < 5 or len(descripcion) > 255:
+        error_msg = "La descripción debe tener entre 5 y 255 caracteres"
+    elif not all(c.isalnum() or c.isspace() or c in ['-', '.', ',', '(', ')'] for c in descripcion):
+        error_msg = "La descripción contiene caracteres inválidos"
+    
+    # Validar fecha
+    elif not fecha:
+        error_msg = "La fecha es obligatoria"
+    else:
+        try:
+            from datetime import datetime
+            fecha_obj = datetime.strptime(fecha, "%Y-%m-%d")
+            if fecha_obj.date() > datetime.now().date():
+                error_msg = "La fecha de mantenimiento no puede ser en el futuro"
+        except:
+            error_msg = "Formato de fecha inválido (use YYYY-MM-DD)"
+    
+    # Validar que el vehículo exista
+    if not error_msg:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT id_vehiculo FROM vehiculo WHERE id_vehiculo=%s", (id_vehiculo,))
+        if not cursor.fetchone():
+            db.close()
+            db2 = get_db()
+            cursor2 = db2.cursor(dictionary=True)
+            cursor2.execute("SELECT * FROM mantenimiento")
+            mant = cursor2.fetchall()
+            db2.close()
+            return templates.TemplateResponse("mantenimiento.html", {
+                "request": request, 
+                "mantenimiento": mant, 
+                "usuario": usuario,
+                "error": "El vehículo seleccionado no existe"
+            })
+        db.close()
+    
+    if error_msg:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM mantenimiento")
+        mant = cursor.fetchall()
+        db.close()
+        return templates.TemplateResponse("mantenimiento.html", {
+            "request": request, 
+            "mantenimiento": mant, 
+            "usuario": usuario,
+            "error": error_msg
+        })
+    
     db = get_db()
     cursor = db.cursor()
-    cursor.execute("INSERT INTO mantenimiento (id_vehiculo, descripcion, fecha) VALUES (%s,%s,%s)",
-                   (id_vehiculo, descripcion, fecha))
-    db.commit()
-    db.close()
-    return RedirectResponse("/mantenimiento_web", status_code=303)
+    try:
+        cursor.execute("INSERT INTO mantenimiento (id_vehiculo, descripcion, fecha) VALUES (%s,%s,%s)",
+                       (id_vehiculo, descripcion, fecha))
+        db.commit()
+        db.close()
+        return RedirectResponse("/mantenimiento_web", status_code=303)
+    except Exception as e:
+        db.close()
+        db2 = get_db()
+        cursor2 = db2.cursor(dictionary=True)
+        cursor2.execute("SELECT * FROM mantenimiento")
+        mant = cursor2.fetchall()
+        db2.close()
+        return templates.TemplateResponse("mantenimiento.html", {
+            "request": request, 
+            "mantenimiento": mant, 
+            "usuario": usuario,
+            "error": f"Error al crear mantenimiento: {str(e)}"
+        })
 
 @app.get("/mantenimiento_delete/{id}")
 def mantenimiento_delete(request: Request, id: int):
@@ -556,13 +863,84 @@ def consumo_create(request: Request, id_vehiculo: int = Form(...), litros: float
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] != "mecanico":
         return RedirectResponse("/consumo_web", status_code=303)
+    
+    # VALIDACIONES
+    error_msg = None
+    
+    # Validar id_vehiculo
+    if not id_vehiculo or id_vehiculo < 1:
+        error_msg = "Debe seleccionar un vehículo válido"
+    
+    # Validar litros
+    elif not litros or litros <= 0 or litros > 9999.99:
+        error_msg = "Los litros deben estar entre 0.01 y 9,999.99"
+    
+    # Validar fecha
+    elif not fecha:
+        error_msg = "La fecha es obligatoria"
+    else:
+        try:
+            from datetime import datetime
+            fecha_obj = datetime.strptime(fecha, "%Y-%m-%d")
+            if fecha_obj.date() > datetime.now().date():
+                error_msg = "La fecha de consumo no puede ser en el futuro"
+        except:
+            error_msg = "Formato de fecha inválido (use YYYY-MM-DD)"
+    
+    # Validar que el vehículo exista
+    if not error_msg:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT id_vehiculo FROM vehiculo WHERE id_vehiculo=%s", (id_vehiculo,))
+        if not cursor.fetchone():
+            db.close()
+            db2 = get_db()
+            cursor2 = db2.cursor(dictionary=True)
+            cursor2.execute("SELECT * FROM consumo")
+            cons = cursor2.fetchall()
+            db2.close()
+            return templates.TemplateResponse("consumo.html", {
+                "request": request, 
+                "consumo": cons, 
+                "usuario": usuario,
+                "error": "El vehículo seleccionado no existe"
+            })
+        db.close()
+    
+    if error_msg:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM consumo")
+        cons = cursor.fetchall()
+        db.close()
+        return templates.TemplateResponse("consumo.html", {
+            "request": request, 
+            "consumo": cons, 
+            "usuario": usuario,
+            "error": error_msg
+        })
+    
     db = get_db()
     cursor = db.cursor()
-    cursor.execute("INSERT INTO consumo (id_vehiculo, litros, fecha) VALUES (%s,%s,%s)",
-                   (id_vehiculo, litros, fecha))
-    db.commit()
-    db.close()
-    return RedirectResponse("/consumo_web", status_code=303)
+    try:
+        cursor.execute("INSERT INTO consumo (id_vehiculo, litros, fecha) VALUES (%s,%s,%s)",
+                       (id_vehiculo, litros, fecha))
+        db.commit()
+        db.close()
+        return RedirectResponse("/consumo_web", status_code=303)
+    except Exception as e:
+        db.close()
+        db2 = get_db()
+        cursor2 = db2.cursor(dictionary=True)
+        cursor2.execute("SELECT * FROM consumo")
+        cons = cursor2.fetchall()
+        db2.close()
+        return templates.TemplateResponse("consumo.html", {
+            "request": request, 
+            "consumo": cons, 
+            "usuario": usuario,
+            "error": f"Error al crear consumo: {str(e)}"
+        })
 
 @app.get("/consumo_delete/{id}")
 def consumo_delete(request: Request, id: int):
@@ -594,13 +972,73 @@ def flota_create(request: Request, nombre: str = Form(...), descripcion: str = F
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] != "admin":
         return RedirectResponse("/flota_web", status_code=303)
+    
+    # VALIDACIONES
+    error_msg = None
+    
+    # Validar nombre
+    if not nombre or len(nombre) < 2 or len(nombre) > 40:
+        error_msg = "El nombre debe tener entre 2 y 40 caracteres"
+    elif not all(c.isalnum() or c.isspace() or c == '-' for c in nombre):
+        error_msg = "El nombre contiene caracteres inválidos"
+    
+    # Validar descripción
+    elif not descripcion or len(descripcion) < 5 or len(descripcion) > 100:
+        error_msg = "La descripción debe tener entre 5 y 100 caracteres"
+    elif not all(c.isalnum() or c.isspace() or c in ['-', '.', ','] for c in descripcion):
+        error_msg = "La descripción contiene caracteres inválidos"
+    
+    if error_msg:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM flota")
+        flotas = cursor.fetchall()
+        db.close()
+        return templates.TemplateResponse("flota.html", {
+            "request": request, 
+            "flota": flotas, 
+            "usuario": usuario,
+            "error": error_msg
+        })
+    
     db = get_db()
     cursor = db.cursor()
-    cursor.execute("INSERT INTO flota (nombre, descripcion) VALUES (%s,%s)",
-                   (nombre, descripcion))
-    db.commit()
-    db.close()
-    return RedirectResponse("/flota_web", status_code=303)
+    
+    # Validar que el nombre no exista
+    cursor.execute("SELECT * FROM flota WHERE nombre=%s", (nombre,))
+    if cursor.fetchone():
+        db.close()
+        db2 = get_db()
+        cursor2 = db2.cursor(dictionary=True)
+        cursor2.execute("SELECT * FROM flota")
+        flotas = cursor2.fetchall()
+        db2.close()
+        return templates.TemplateResponse("flota.html", {
+            "request": request, 
+            "flota": flotas, 
+            "usuario": usuario,
+            "error": "Ya existe una flota con ese nombre"
+        })
+    
+    try:
+        cursor.execute("INSERT INTO flota (nombre, descripcion) VALUES (%s,%s)",
+                       (nombre, descripcion))
+        db.commit()
+        db.close()
+        return RedirectResponse("/flota_web", status_code=303)
+    except Exception as e:
+        db.close()
+        db2 = get_db()
+        cursor2 = db2.cursor(dictionary=True)
+        cursor2.execute("SELECT * FROM flota")
+        flotas = cursor2.fetchall()
+        db2.close()
+        return templates.TemplateResponse("flota.html", {
+            "request": request, 
+            "flota": flotas, 
+            "usuario": usuario,
+            "error": f"Error al crear flota: {str(e)}"
+        })
 
 @app.get("/flota_delete/{id}")
 def flota_delete(request: Request, id: int):
@@ -637,8 +1075,53 @@ def flota_update(request: Request, id: int, nombre: str = Form(...), descripcion
     if not usuario or usuario["rol"] != "admin":
         return RedirectResponse("/flota_web", status_code=303)
     
+    # VALIDACIONES (mismo patrón que create)
+    error_msg = None
+    
+    # Validar nombre
+    if not nombre or len(nombre) < 2 or len(nombre) > 40:
+        error_msg = "El nombre debe tener entre 2 y 40 caracteres"
+    elif not all(c.isalnum() or c.isspace() or c == '-' for c in nombre):
+        error_msg = "El nombre contiene caracteres inválidos"
+    
+    # Validar descripción
+    elif not descripcion or len(descripcion) < 5 or len(descripcion) > 100:
+        error_msg = "La descripción debe tener entre 5 y 100 caracteres"
+    elif not all(c.isalnum() or c.isspace() or c in ['-', '.', ','] for c in descripcion):
+        error_msg = "La descripción contiene caracteres inválidos"
+    
+    if error_msg:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM flota WHERE id_flota=%s", (id,))
+        flota = cursor.fetchone()
+        db.close()
+        return templates.TemplateResponse("flota_edit.html", {
+            "request": request,
+            "flota": flota,
+            "usuario": usuario,
+            "error": error_msg
+        })
+    
     db = get_db()
     cursor = db.cursor()
+    
+    # Validar que el nombre no exista (excepto la flota actual)
+    cursor.execute("SELECT * FROM flota WHERE nombre=%s AND id_flota!=%s", (nombre, id))
+    if cursor.fetchone():
+        db.close()
+        db2 = get_db()
+        cursor2 = db2.cursor(dictionary=True)
+        cursor2.execute("SELECT * FROM flota WHERE id_flota=%s", (id,))
+        flota = cursor2.fetchone()
+        db2.close()
+        return templates.TemplateResponse("flota_edit.html", {
+            "request": request,
+            "flota": flota,
+            "usuario": usuario,
+            "error": "Ya existe otra flota con ese nombre"
+        })
+    
     try:
         cursor.execute(
             "UPDATE flota SET nombre=%s, descripcion=%s WHERE id_flota=%s",
@@ -679,13 +1162,92 @@ def incidentes_create(request: Request, id_vehiculo: int = Form(...), tipo: str 
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] != "mecanico":
         return RedirectResponse("/incidentes_web", status_code=303)
+    
+    # VALIDACIONES
+    error_msg = None
+    
+    # Validar id_vehiculo
+    if not id_vehiculo or id_vehiculo < 1:
+        error_msg = "Debe seleccionar un vehículo válido"
+    
+    # Validar tipo
+    elif not tipo or len(tipo) < 2 or len(tipo) > 50:
+        error_msg = "El tipo debe tener entre 2 y 50 caracteres"
+    elif tipo not in ['accidente', 'infracción', 'daño', 'retraso', 'otro']:
+        error_msg = "El tipo de incidente no es válido"
+    
+    # Validar descripción
+    elif not descripcion or len(descripcion) < 5 or len(descripcion) > 255:
+        error_msg = "La descripción debe tener entre 5 y 255 caracteres"
+    elif not all(c.isalnum() or c.isspace() or c in ['-', '.', ',', '(', ')', ':', ';'] for c in descripcion):
+        error_msg = "La descripción contiene caracteres inválidos"
+    
+    # Validar fecha
+    elif not fecha:
+        error_msg = "La fecha es obligatoria"
+    else:
+        try:
+            from datetime import datetime
+            fecha_obj = datetime.strptime(fecha, "%Y-%m-%d")
+            if fecha_obj.date() > datetime.now().date():
+                error_msg = "La fecha del incidente no puede ser en el futuro"
+        except:
+            error_msg = "Formato de fecha inválido (use YYYY-MM-DD)"
+    
+    # Validar que el vehículo exista
+    if not error_msg:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT id_vehiculo FROM vehiculo WHERE id_vehiculo=%s", (id_vehiculo,))
+        if not cursor.fetchone():
+            db.close()
+            db2 = get_db()
+            cursor2 = db2.cursor(dictionary=True)
+            cursor2.execute("SELECT * FROM incidente")
+            inc = cursor2.fetchall()
+            db2.close()
+            return templates.TemplateResponse("incidentes.html", {
+                "request": request, 
+                "incidentes": inc, 
+                "usuario": usuario,
+                "error": "El vehículo seleccionado no existe"
+            })
+        db.close()
+    
+    if error_msg:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM incidente")
+        inc = cursor.fetchall()
+        db.close()
+        return templates.TemplateResponse("incidentes.html", {
+            "request": request, 
+            "incidentes": inc, 
+            "usuario": usuario,
+            "error": error_msg
+        })
+    
     db = get_db()
     cursor = db.cursor()
-    cursor.execute("INSERT INTO incidente (id_vehiculo, tipo, fecha, descripcion) VALUES (%s,%s,%s,%s)",
-                   (id_vehiculo, tipo, fecha, descripcion))
-    db.commit()
-    db.close()
-    return RedirectResponse("/incidentes_web", status_code=303)
+    try:
+        cursor.execute("INSERT INTO incidente (id_vehiculo, tipo, fecha, descripcion) VALUES (%s,%s,%s,%s)",
+                       (id_vehiculo, tipo, fecha, descripcion))
+        db.commit()
+        db.close()
+        return RedirectResponse("/incidentes_web", status_code=303)
+    except Exception as e:
+        db.close()
+        db2 = get_db()
+        cursor2 = db2.cursor(dictionary=True)
+        cursor2.execute("SELECT * FROM incidente")
+        inc = cursor2.fetchall()
+        db2.close()
+        return templates.TemplateResponse("incidentes.html", {
+            "request": request, 
+            "incidentes": inc, 
+            "usuario": usuario,
+            "error": f"Error al crear incidente: {str(e)}"
+        })
 
 @app.get("/incidentes_delete/{id}")
 def incidentes_delete(request: Request, id: int):
@@ -717,13 +1279,62 @@ def ordenes_create(request: Request, descripcion: str = Form(...), fecha: str = 
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] not in ["admin", "logistica"]:
         return RedirectResponse("/ordenes_web", status_code=303)
+    
+    # VALIDACIONES
+    error_msg = None
+    
+    # Validar descripción
+    if not descripcion or len(descripcion) < 5 or len(descripcion) > 255:
+        error_msg = "La descripción debe tener entre 5 y 255 caracteres"
+    elif not all(c.isalnum() or c.isspace() or c in ['-', '.', ',', '(', ')', ':', ';'] for c in descripcion):
+        error_msg = "La descripción contiene caracteres inválidos"
+    
+    # Validar fecha
+    elif not fecha:
+        error_msg = "La fecha es obligatoria"
+    else:
+        try:
+            from datetime import datetime
+            fecha_obj = datetime.strptime(fecha, "%Y-%m-%d")
+            if fecha_obj.date() > datetime.now().date():
+                error_msg = "La fecha de la orden no puede ser en el futuro"
+        except:
+            error_msg = "Formato de fecha inválido (use YYYY-MM-DD)"
+    
+    if error_msg:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM orden_servicio")
+        ordenes = cursor.fetchall()
+        db.close()
+        return templates.TemplateResponse("ordenes.html", {
+            "request": request, 
+            "ordenes": ordenes, 
+            "usuario": usuario,
+            "error": error_msg
+        })
+    
     db = get_db()
     cursor = db.cursor()
-    cursor.execute("INSERT INTO orden_servicio (descripcion, fecha) VALUES (%s,%s)",
-                   (descripcion, fecha))
-    db.commit()
-    db.close()
-    return RedirectResponse("/ordenes_web", status_code=303)
+    try:
+        cursor.execute("INSERT INTO orden_servicio (descripcion, fecha) VALUES (%s,%s)",
+                       (descripcion, fecha))
+        db.commit()
+        db.close()
+        return RedirectResponse("/ordenes_web", status_code=303)
+    except Exception as e:
+        db.close()
+        db2 = get_db()
+        cursor2 = db2.cursor(dictionary=True)
+        cursor2.execute("SELECT * FROM orden_servicio")
+        ordenes = cursor2.fetchall()
+        db2.close()
+        return templates.TemplateResponse("ordenes.html", {
+            "request": request, 
+            "ordenes": ordenes, 
+            "usuario": usuario,
+            "error": f"Error al crear orden: {str(e)}"
+        })
 
 @app.get("/ordenes_delete/{id}")
 def ordenes_delete(request: Request, id: int):
@@ -759,6 +1370,40 @@ def ordenes_update(request: Request, id: int, descripcion: str = Form(...), fech
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] != "admin":
         return RedirectResponse("/ordenes_web", status_code=303)
+    
+    # VALIDACIONES (mismo patrón que create)
+    error_msg = None
+    
+    # Validar descripción
+    if not descripcion or len(descripcion) < 5 or len(descripcion) > 255:
+        error_msg = "La descripción debe tener entre 5 y 255 caracteres"
+    elif not all(c.isalnum() or c.isspace() or c in ['-', '.', ',', '(', ')', ':', ';'] for c in descripcion):
+        error_msg = "La descripción contiene caracteres inválidos"
+    
+    # Validar fecha
+    elif not fecha:
+        error_msg = "La fecha es obligatoria"
+    else:
+        try:
+            from datetime import datetime
+            fecha_obj = datetime.strptime(fecha, "%Y-%m-%d")
+            if fecha_obj.date() > datetime.now().date():
+                error_msg = "La fecha de la orden no puede ser en el futuro"
+        except:
+            error_msg = "Formato de fecha inválido (use YYYY-MM-DD)"
+    
+    if error_msg:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM orden_servicio WHERE id_orden=%s", (id,))
+        orden = cursor.fetchone()
+        db.close()
+        return templates.TemplateResponse("ordenes_edit.html", {
+            "request": request,
+            "orden": orden,
+            "usuario": usuario,
+            "error": error_msg
+        })
     
     db = get_db()
     cursor = db.cursor()
@@ -802,6 +1447,42 @@ def usuarios_create(request: Request, nombre: str = Form(...), correo: str = For
     usuario_session = request.session.get("usuario")
     if not usuario_session or usuario_session["rol"] != "admin":
         return RedirectResponse("/usuarios_web", status_code=303)
+    
+    # VALIDACIONES
+    error_msg = None
+    
+    # Validar nombre
+    if not nombre or len(nombre) < 2 or len(nombre) > 50:
+        error_msg = "El nombre debe tener entre 2 y 50 caracteres"
+    elif not all(c.isalpha() or c.isspace() or c == '-' for c in nombre):
+        error_msg = "El nombre solo debe contener letras, espacios y guiones"
+    
+    # Validar correo
+    elif not correo or len(correo) < 5 or len(correo) > 50:
+        error_msg = "El correo debe tener entre 5 y 50 caracteres"
+    elif '@' not in correo or '.' not in correo:
+        error_msg = "El correo debe tener un formato válido (ejemplo@correo.com)"
+    
+    # Validar password
+    elif not password or len(password) < 6 or len(password) > 128:
+        error_msg = "La contraseña debe tener entre 6 y 128 caracteres"
+    
+    # Validar rol
+    elif rol not in ['admin', 'mecanico', 'conductor', 'logistica', 'observador']:
+        error_msg = "El rol no es válido"
+    
+    if error_msg:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM usuario")
+        usuarios = cursor.fetchall()
+        db.close()
+        return templates.TemplateResponse("usuarios.html", {
+            "request": request, 
+            "usuarios": usuarios, 
+            "usuario": usuario_session,
+            "error": error_msg
+        })
     
     db = get_db()
     cursor = db.cursor()

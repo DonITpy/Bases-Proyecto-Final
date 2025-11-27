@@ -9,7 +9,7 @@
     {% endif %}
     
     <form method="post" action="/ordenes_update/{{orden.id_orden}}" style="width:400px; margin:auto;">
-        <textarea name="descripcion" placeholder="Descripción" required>{{orden.descripcion}}</textarea>
+        <textarea name="descripcion" placeholder="Descripción" required minlength="5" maxlength="255" title="Descripción, 5-255 caracteres">{{orden.descripcion}}</textarea>
         <input type="date" name="fecha" value="{{orden.fecha}}" required>
         <button type="submit">Guardar Cambios</button>
     </form>

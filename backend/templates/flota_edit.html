@@ -9,8 +9,8 @@
     {% endif %}
     
     <form method="post" action="/flota_update/{{flota.id_flota}}" style="width:400px; margin:auto;">
-        <input type="text" name="nombre" value="{{flota.nombre}}" placeholder="Nombre" required>
-        <textarea name="descripcion" placeholder="Descripción" required>{{flota.descripcion}}</textarea>
+        <input type="text" name="nombre" value="{{flota.nombre}}" placeholder="Nombre" required minlength="2" maxlength="40" pattern="[A-Za-z0-9\s\-]{2,40}" title="Letras, números, espacios y guiones, 2-40 caracteres">
+        <textarea name="descripcion" placeholder="Descripción" required minlength="5" maxlength="100" title="Descripción, 5-100 caracteres">{{flota.descripcion}}</textarea>
         <button type="submit">Guardar Cambios</button>
     </form>
     <div style="text-align:center; margin-top:20px;">

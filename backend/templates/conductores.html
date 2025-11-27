@@ -54,11 +54,11 @@
     {% if usuario and usuario["rol"] == "admin" %}
     <h2>Agregar Conductor</h2>
     <form method="post" action="/conductores_create">
-        <input type="text" name="nombre" placeholder="Nombre" required>
-        <input type="text" name="apellido" placeholder="Apellido" required>
-        <input type="tel" name="telefono" placeholder="Teléfono" required>
-        <input type="text" name="direccion" placeholder="Dirección" required>
-        <input type="date" name="fecha_nacimiento" required>
+        <input type="text" name="nombre" placeholder="Nombre" required maxlength="60" pattern="[A-Za-záéíóúÁÉÍÓÚñÑ\s\-]{2,60}" title="Solo letras, espacios y guiones. 2-60 caracteres.">
+        <input type="text" name="apellido" placeholder="Apellido" required maxlength="60" pattern="[A-Za-záéíóúÁÉÍÓÚñÑ\s\-]{2,60}" title="Solo letras, espacios y guiones. 2-60 caracteres.">
+        <input type="tel" name="telefono" placeholder="Teléfono" required maxlength="20" pattern="[0-9+\-\s()]{7,20}" title="Dígitos y caracteres + - ( ) y espacios. 7-20 caracteres.">
+        <input type="text" name="direccion" placeholder="Dirección" required minlength="5" maxlength="100" pattern="[A-Za-z0-9áéíóúÁÉÍÓÚñÑ\s\-\.,#\/]{5,100}" title="Dirección válida (5-100 caracteres).">
+        <input type="date" name="fecha_nacimiento" required title="Fecha de nacimiento (YYYY-MM-DD)">
         <button type="submit">Agregar Conductor</button>
     </form>
     {% endif %}

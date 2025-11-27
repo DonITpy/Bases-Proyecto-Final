@@ -9,13 +9,18 @@
     {% endif %}
     
     <form method="post" action="/vehiculos_update/{{vehiculo.id_vehiculo}}" style="width:400px; margin:auto;">
-        <input type="text" name="matricula" value="{{vehiculo.matricula}}" placeholder="Matrícula" required>
-        <input type="text" name="modelo" value="{{vehiculo.modelo}}" placeholder="Modelo" required>
-        <input type="text" name="tipo" value="{{vehiculo.tipo}}" placeholder="Tipo" required>
-        <input type="number" name="capacidad" value="{{vehiculo.capacidad}}" placeholder="Capacidad" required>
-        <input type="text" name="marca" value="{{vehiculo.marca}}" placeholder="Marca" required>
-        <input type="text" name="estado" value="{{vehiculo.estado}}" placeholder="Estado" required>
-        <input type="number" name="kilometraje" value="{{vehiculo.kilometraje}}" placeholder="Kilometraje" required>
+        <input type="text" name="matricula" value="{{vehiculo.matricula}}" placeholder="Matrícula" required maxlength="20" pattern="[A-Z0-9]{3,20}" title="Solo mayúsculas y números, 3-20 caracteres">
+        <input type="text" name="modelo" value="{{vehiculo.modelo}}" placeholder="Modelo" required maxlength="50" pattern="[A-Za-z0-9\s\-]{1,50}" title="Solo letras, números y espacios">
+        <input type="text" name="tipo" value="{{vehiculo.tipo}}" placeholder="Tipo" required maxlength="30" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{1,30}" title="Solo letras y espacios">
+        <input type="number" name="capacidad" value="{{vehiculo.capacidad}}" placeholder="Capacidad" required min="1" max="100000" title="Debe ser un número entre 1 y 100000">
+        <input type="text" name="marca" value="{{vehiculo.marca}}" placeholder="Marca" required maxlength="30" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{1,30}" title="Solo letras, espacios y guiones">
+        <select name="estado" required>
+            <option value="">Seleccionar estado</option>
+            <option value="activo" {% if vehiculo.estado == 'activo' %}selected{% endif %}>Activo</option>
+            <option value="inactivo" {% if vehiculo.estado == 'inactivo' %}selected{% endif %}>Inactivo</option>
+            <option value="mantenimiento" {% if vehiculo.estado == 'mantenimiento' %}selected{% endif %}>Mantenimiento</option>
+        </select>
+        <input type="number" name="kilometraje" value="{{vehiculo.kilometraje}}" placeholder="Kilometraje" required min="0" max="9999999" title="Debe ser un número entre 0 y 9,999,999">
         <button type="submit">Guardar Cambios</button>
     </form>
     <div style="text-align:center; margin-top:20px;">
