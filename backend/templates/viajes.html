@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
-    <h1>🛣️ Viajes Registrados</h1>
+    <h1>Viajes Registrados</h1>
     
     <!-- BÚSQUEDA Y FILTROS -->
     <div class="search-container">
         <form method="get" action="/viajes_web" class="search-form">
-            <input type="text" name="buscar" placeholder="🔍 Buscar por origen o destino..." value="{{buscar}}" style="flex:1; min-width:200px;">
+            <input type="text" name="buscar" placeholder="Buscar por origen o destino..." value="{{buscar}}" style="flex:1; min-width:200px;">
             <select name="filtro_estado" style="padding:10px; border:2px solid #e0e0e0; border-radius:6px;">
                 <option value="">Todos los estados</option>
                 <option value="pendiente" {% if filtro_estado == 'pendiente' %}selected{% endif %}>Pendiente</option>

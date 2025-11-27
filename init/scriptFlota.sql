@@ -16,7 +16,10 @@ CREATE TABLE usuario (
 
 INSERT INTO usuario (nombre, correo, password, rol) VALUES
 ('Admin Principal', 'admin@correo.com', 'admin123', 'admin'),
-('Mecánico Juan', 'mecanico@correo.com', 'mecanico123', 'mecanico');
+('Mecánico Juan', 'mecanico@correo.com', 'mecanico123', 'mecanico'),
+('Pedro Ramírez', 'conductor@correo.com', 'conductor123', 'conductor'),
+('Carlos López', 'logistica@correo.com', 'logistica123', 'logistica'),
+('Laura Martínez', 'observador@correo.com', 'observador123', 'observador');
 
 CREATE TABLE vehiculo (
     id_vehiculo INT PRIMARY KEY AUTO_INCREMENT,

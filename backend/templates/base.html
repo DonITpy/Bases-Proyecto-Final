@@ -42,6 +42,7 @@
         nav a:hover {
             background: #336699;
             transform: translateY(-2px);
+            color:white;
         }
 
         body {
@@ -133,6 +134,7 @@
         button:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            
         }
 
         button:active {
@@ -266,21 +268,21 @@
 </head>
 <body>
     <nav>
-        <a href="/home">🏠 Inicio</a>
+        <a href="/home">Inicio</a>
         {% if usuario and usuario["rol"] == "admin" %}
-            <a href="/usuarios_web">👥 Usuarios</a>
+            <a href="/usuarios_web">Usuarios</a>
         {% endif %}
-        <a href="/vehiculos_web">🚗 Vehículos</a>
-        <a href="/conductores_web">👤 Conductores</a>
-        <a href="/viajes_web">🛣️ Viajes</a>
-        <a href="/mantenimiento_web">🔧 Mantenimiento</a>
-        <a href="/consumo_web">⛽ Consumo</a>
-        <a href="/flota_web">📦 Flota</a>
-        <a href="/incidentes_web">⚠️ Incidentes</a>
-        <a href="/ordenes_web">📋 Órdenes</a>
-        <a href="/reportes_web">📊 Reportes</a>
+        <a href="/vehiculos_web">Vehículos</a>
+        <a href="/conductores_web">Conductores</a>
+        <a href="/viajes_web">Viajes</a>
+        <a href="/mantenimiento_web">Mantenimiento</a>
+        <a href="/consumo_web">Consumo</a>
+        <a href="/flota_web">Flota</a>
+        <a href="/incidentes_web">Incidentes</a>
+        <a href="/ordenes_web">Órdenes</a>
+        <a href="/reportes_web">Reportes</a>
         {% if usuario %}
-            <a href="/logout" style="background: #d32f2f;">🚪 Salir ({{usuario["nombre"]}})</a>
+            <a href="/logout" style="background: #d32f2f;">Salir ({{usuario["nombre"]}})</a>
         {% endif %}
     </nav>
     {% block content %}{% endblock %}

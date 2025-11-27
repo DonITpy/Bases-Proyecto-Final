@@ -90,7 +90,7 @@ def vehiculos_web(request: Request):
 @app.post("/vehiculos_create")
 def vehiculos_create(request: Request, matricula: str = Form(...), modelo: str = Form(...), tipo: str = Form(...), capacidad: int = Form(...), marca: str = Form(...), estado: str = Form(...), kilometraje: int = Form(...)):
     usuario = request.session.get("usuario")
-    if not usuario or usuario["rol"] != "admin":
+    if not usuario or usuario["rol"] not in ["admin"]:
         return RedirectResponse("/vehiculos_web", status_code=303)
     
     # VALIDACIONES
@@ -431,7 +431,7 @@ def viajes_web(request: Request):
 @app.post("/viajes_create")
 def viajes_create(request: Request, origen: str = Form(...), destino: str = Form(...), fecha_salida: str = Form(...), estado: str = Form(...)):
     usuario = request.session.get("usuario")
-    if not usuario or usuario["rol"] != "admin":
+    if not usuario or usuario["rol"] not in ["admin", "logistica"]:
         return RedirectResponse("/viajes_web", status_code=303)
     db = get_db()
     cursor = db.cursor()
@@ -715,7 +715,7 @@ def ordenes_web(request: Request):
 @app.post("/ordenes_create")
 def ordenes_create(request: Request, descripcion: str = Form(...), fecha: str = Form(...)):
     usuario = request.session.get("usuario")
-    if not usuario or usuario["rol"] != "admin":
+    if not usuario or usuario["rol"] not in ["admin", "logistica"]:
         return RedirectResponse("/ordenes_web", status_code=303)
     db = get_db()
     cursor = db.cursor()
