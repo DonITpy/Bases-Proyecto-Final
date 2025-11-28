@@ -57,8 +57,8 @@
             <td>{{ v.kilometraje }}</td>
             {% if usuario and usuario["rol"] == "admin" %}
                 <td>
-                    <a href="/vehiculos_edit/{{v.id_vehiculo}}" style="color:#336699; margin-right:10px;">✏️ Editar</a>
-                    <a href="/vehiculos_delete/{{v.id_vehiculo}}" onclick="return confirm('¿Eliminar? Este vehículo no debe tener registros vinculados.');" class="delete-btn">🗑️</a>
+                    <a href="/vehiculos_edit/{{v.id_vehiculo}}" style="color:#336699; margin-right:10px;">Editar</a>
+                    <a href="/vehiculos_delete/{{v.id_vehiculo}}" onclick="return confirm('¿Eliminar? Este vehículo no debe tener registros vinculados.');" class="delete-btn"></a>
                 </td>
             {% endif %}
         </tr>

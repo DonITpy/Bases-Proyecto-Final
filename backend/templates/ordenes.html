@@ -6,8 +6,8 @@
     <div style="background:#fff; padding:20px; margin:20px auto; width:80%; border-radius:8px; box-shadow:0 2px 8px #bbb;">
         <form method="get" action="/ordenes_web" style="display:flex; gap:10px;">
             <input type="text" name="buscar" placeholder="Buscar por descripción..." value="{{buscar}}" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
-            <button type="submit" style="padding:8px 20px; background:#336699; color:white; border:none; border-radius:4px; cursor:pointer;">🔍 Buscar</button>
-            <a href="/ordenes_web" style="padding:8px 20px; background:#666; color:white; border:none; border-radius:4px; cursor:pointer; text-decoration:none;">🔄 Limpiar</a>
+            <button type="submit" style="padding:8px 20px; background:#336699; color:white; border:none; border-radius:4px; cursor:pointer;">Buscar</button>
+            <a href="/ordenes_web" style="padding:8px 20px; background:#666; color:white; border:none; border-radius:4px; cursor:pointer; text-decoration:none;">Limpiar</a>
         </form>
     </div>
     
@@ -29,8 +29,8 @@
             <td>{{ o.fecha }}</td>
             {% if usuario and usuario["rol"] == "admin" %}
                 <td>
-                    <a href="/ordenes_edit/{{o.id_orden}}" style="color:#336699; margin-right:10px;">✏️ Editar</a>
-                    <a href="/ordenes_delete/{{o.id_orden}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">🗑️ Eliminar</a>
+                    <a href="/ordenes_edit/{{o.id_orden}}" style="color:#336699; margin-right:10px;">Editar</a>
+                    <a href="/ordenes_delete/{{o.id_orden}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">Eliminar</a>
                 </td>
             {% endif %}
         </tr>

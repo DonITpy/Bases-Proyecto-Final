@@ -76,16 +76,37 @@ def home(request: Request):
 
 # ==================== VEHICULOS ====================
 @app.get("/vehiculos_web")
-def vehiculos_web(request: Request):
+def vehiculos_web(request: Request, buscar: str = "", filtro_estado: str = ""):
     usuario = request.session.get("usuario")
     if not usuario:
         return RedirectResponse("/login", status_code=303)
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM vehiculo")
+    
+    query = "SELECT * FROM vehiculo WHERE 1=1"
+    params = []
+    
+    # Búsqueda por matrícula o modelo
+    if buscar:
+        query += " AND (matricula LIKE %s OR modelo LIKE %s OR marca LIKE %s)"
+        params.extend([f"%{buscar}%", f"%{buscar}%", f"%{buscar}%"])
+    
+    # Filtro por estado
+    if filtro_estado:
+        query += " AND estado = %s"
+        params.append(filtro_estado)
+    
+    cursor.execute(query, params)
     vehiculos = cursor.fetchall()
     db.close()
-    return templates.TemplateResponse("vehiculos.html", {"request": request, "vehiculos": vehiculos, "usuario": usuario})
+    
+    return templates.TemplateResponse("vehiculos.html", {
+        "request": request, 
+        "vehiculos": vehiculos, 
+        "usuario": usuario,
+        "buscar": buscar,
+        "filtro_estado": filtro_estado
+    })
 
 @app.post("/vehiculos_create")
 def vehiculos_create(request: Request, matricula: str = Form(...), modelo: str = Form(...), tipo: str = Form(...), capacidad: int = Form(...), marca: str = Form(...), estado: str = Form(...), kilometraje: int = Form(...)):
@@ -332,16 +353,31 @@ def vehiculos_update(request: Request, id: int, matricula: str = Form(...), mode
 
 # ==================== CONDUCTORES ====================
 @app.get("/conductores_web")
-def conductores_web(request: Request):
+def conductores_web(request: Request, buscar: str = ""):
     usuario = request.session.get("usuario")
     if not usuario:
         return RedirectResponse("/login", status_code=303)
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM conductor")
+    
+    query = "SELECT * FROM conductor WHERE 1=1"
+    params = []
+    
+    # Búsqueda por nombre o apellido
+    if buscar:
+        query += " AND (nombre LIKE %s OR apellido LIKE %s)"
+        params.extend([f"%{buscar}%", f"%{buscar}%"])
+    
+    cursor.execute(query, params)
     conductores = cursor.fetchall()
     db.close()
-    return templates.TemplateResponse("conductores.html", {"request": request, "conductores": conductores, "usuario": usuario})
+    
+    return templates.TemplateResponse("conductores.html", {
+        "request": request, 
+        "conductores": conductores, 
+        "usuario": usuario,
+        "buscar": buscar
+    })
 
 @app.post("/conductores_create")
 def conductores_create(request: Request, nombre: str = Form(...), apellido: str = Form(...), telefono: str = Form(...), direccion: str = Form(...), fecha_nacimiento: str = Form(...)):
@@ -538,16 +574,37 @@ def conductores_update(request: Request, id: int, nombre: str = Form(...), apell
 
 # ==================== VIAJES ====================
 @app.get("/viajes_web")
-def viajes_web(request: Request):
+def viajes_web(request: Request, buscar: str = "", filtro_estado: str = ""):
     usuario = request.session.get("usuario")
     if not usuario:
         return RedirectResponse("/login", status_code=303)
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM viaje")
+    
+    query = "SELECT * FROM viaje WHERE 1=1"
+    params = []
+    
+    # Búsqueda por origen o destino
+    if buscar:
+        query += " AND (origen LIKE %s OR destino LIKE %s)"
+        params.extend([f"%{buscar}%", f"%{buscar}%"])
+    
+    # Filtro por estado
+    if filtro_estado:
+        query += " AND estado = %s"
+        params.append(filtro_estado)
+    
+    cursor.execute(query, params)
     viajes = cursor.fetchall()
     db.close()
-    return templates.TemplateResponse("viajes.html", {"request": request, "viajes": viajes, "usuario": usuario})
+    
+    return templates.TemplateResponse("viajes.html", {
+        "request": request, 
+        "viajes": viajes, 
+        "usuario": usuario,
+        "buscar": buscar,
+        "filtro_estado": filtro_estado
+    })
 
 @app.post("/viajes_create")
 def viajes_create(request: Request, origen: str = Form(...), destino: str = Form(...), fecha_salida: str = Form(...), estado: str = Form(...)):
@@ -736,16 +793,42 @@ def viajes_update(request: Request, id: int, origen: str = Form(...), destino: s
 
 # ==================== MANTENIMIENTO ====================
 @app.get("/mantenimiento_web")
-def mantenimiento_web(request: Request):
+def mantenimiento_web(request: Request, buscar: str = "", filtro_vehiculo: str = ""):
     usuario = request.session.get("usuario")
     if not usuario:
         return RedirectResponse("/login", status_code=303)
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM mantenimiento")
+    
+    query = "SELECT * FROM mantenimiento WHERE 1=1"
+    params = []
+    
+    # Búsqueda por descripción
+    if buscar:
+        query += " AND descripcion LIKE %s"
+        params.append(f"%{buscar}%")
+    
+    # Filtro por vehículo
+    if filtro_vehiculo:
+        query += " AND id_vehiculo = %s"
+        params.append(int(filtro_vehiculo))
+    
+    cursor.execute(query, params)
     mant = cursor.fetchall()
+    
+    # Obtener lista de vehículos para el filtro
+    cursor.execute("SELECT id_vehiculo, matricula FROM vehiculo ORDER BY matricula")
+    vehiculos_list = cursor.fetchall()
     db.close()
-    return templates.TemplateResponse("mantenimiento.html", {"request": request, "mantenimiento": mant, "usuario": usuario})
+    
+    return templates.TemplateResponse("mantenimiento.html", {
+        "request": request, 
+        "mantenimiento": mant, 
+        "usuario": usuario,
+        "buscar": buscar,
+        "filtro_vehiculo": filtro_vehiculo,
+        "vehiculos_list": vehiculos_list
+    })
 
 @app.post("/mantenimiento_create")
 def mantenimiento_create(request: Request, id_vehiculo: int = Form(...), descripcion: str = Form(...), fecha: str = Form(...)):
@@ -847,16 +930,36 @@ def mantenimiento_delete(request: Request, id: int):
 
 # ==================== CONSUMO ====================
 @app.get("/consumo_web")
-def consumo_web(request: Request):
+def consumo_web(request: Request, buscar: str = "", filtro_vehiculo: str = ""):
     usuario = request.session.get("usuario")
     if not usuario:
         return RedirectResponse("/login", status_code=303)
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM consumo")
+    
+    query = "SELECT * FROM consumo WHERE 1=1"
+    params = []
+    
+    # Filtro por vehículo
+    if filtro_vehiculo:
+        query += " AND id_vehiculo = %s"
+        params.append(int(filtro_vehiculo))
+    
+    cursor.execute(query, params)
     cons = cursor.fetchall()
+    
+    # Obtener lista de vehículos para el filtro
+    cursor.execute("SELECT id_vehiculo, matricula FROM vehiculo ORDER BY matricula")
+    vehiculos_list = cursor.fetchall()
     db.close()
-    return templates.TemplateResponse("consumo.html", {"request": request, "consumo": cons, "usuario": usuario})
+    
+    return templates.TemplateResponse("consumo.html", {
+        "request": request, 
+        "consumo": cons, 
+        "usuario": usuario,
+        "filtro_vehiculo": filtro_vehiculo,
+        "vehiculos_list": vehiculos_list
+    })
 
 @app.post("/consumo_create")
 def consumo_create(request: Request, id_vehiculo: int = Form(...), litros: float = Form(...), fecha: str = Form(...)):
@@ -956,16 +1059,31 @@ def consumo_delete(request: Request, id: int):
 
 # ==================== FLOTA ====================
 @app.get("/flota_web")
-def flota_web(request: Request):
+def flota_web(request: Request, buscar: str = ""):
     usuario = request.session.get("usuario")
     if not usuario:
         return RedirectResponse("/login", status_code=303)
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM flota")
+    
+    query = "SELECT * FROM flota WHERE 1=1"
+    params = []
+    
+    # Búsqueda por nombre
+    if buscar:
+        query += " AND nombre LIKE %s"
+        params.append(f"%{buscar}%")
+    
+    cursor.execute(query, params)
     flotas = cursor.fetchall()
     db.close()
-    return templates.TemplateResponse("flota.html", {"request": request, "flota": flotas, "usuario": usuario})
+    
+    return templates.TemplateResponse("flota.html", {
+        "request": request, 
+        "flota": flotas, 
+        "usuario": usuario,
+        "buscar": buscar
+    })
 
 @app.post("/flota_create")
 def flota_create(request: Request, nombre: str = Form(...), descripcion: str = Form(...)):
@@ -1146,16 +1264,37 @@ def flota_update(request: Request, id: int, nombre: str = Form(...), descripcion
     
 # ==================== INCIDENTES ====================
 @app.get("/incidentes_web")
-def incidentes_web(request: Request):
+def incidentes_web(request: Request, buscar: str = "", filtro_tipo: str = ""):
     usuario = request.session.get("usuario")
     if not usuario:
         return RedirectResponse("/login", status_code=303)
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM incidente")
+    
+    query = "SELECT * FROM incidente WHERE 1=1"
+    params = []
+    
+    # Búsqueda por descripción
+    if buscar:
+        query += " AND descripcion LIKE %s"
+        params.append(f"%{buscar}%")
+    
+    # Filtro por tipo
+    if filtro_tipo:
+        query += " AND tipo = %s"
+        params.append(filtro_tipo)
+    
+    cursor.execute(query, params)
     inc = cursor.fetchall()
     db.close()
-    return templates.TemplateResponse("incidentes.html", {"request": request, "incidentes": inc, "usuario": usuario})
+    
+    return templates.TemplateResponse("incidentes.html", {
+        "request": request, 
+        "incidentes": inc, 
+        "usuario": usuario,
+        "buscar": buscar,
+        "filtro_tipo": filtro_tipo
+    })
 
 @app.post("/incidentes_create")
 def incidentes_create(request: Request, id_vehiculo: int = Form(...), tipo: str = Form(...), fecha: str = Form(...), descripcion: str = Form(...)):
@@ -1263,16 +1402,31 @@ def incidentes_delete(request: Request, id: int):
 
 # ==================== ORDENES ====================
 @app.get("/ordenes_web")
-def ordenes_web(request: Request):
+def ordenes_web(request: Request, buscar: str = ""):
     usuario = request.session.get("usuario")
     if not usuario:
         return RedirectResponse("/login", status_code=303)
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM orden_servicio")
+    
+    query = "SELECT * FROM orden_servicio WHERE 1=1"
+    params = []
+    
+    # Búsqueda por descripción
+    if buscar:
+        query += " AND descripcion LIKE %s"
+        params.append(f"%{buscar}%")
+    
+    cursor.execute(query, params)
     ordenes = cursor.fetchall()
     db.close()
-    return templates.TemplateResponse("ordenes.html", {"request": request, "ordenes": ordenes, "usuario": usuario})
+    
+    return templates.TemplateResponse("ordenes.html", {
+        "request": request, 
+        "ordenes": ordenes, 
+        "usuario": usuario,
+        "buscar": buscar
+    })
 
 @app.post("/ordenes_create")
 def ordenes_create(request: Request, descripcion: str = Form(...), fecha: str = Form(...)):
@@ -1641,252 +1795,11 @@ def descargar_consumo_csv(request: Request):
 
 # ==================== BUSQUEDA Y FILTROS ====================
 
-@app.get("/vehiculos_web")
-def vehiculos_web(request: Request, buscar: str = "", filtro_estado: str = ""):
-    usuario = request.session.get("usuario")
-    if not usuario:
-        return RedirectResponse("/login", status_code=303)
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-    
-    query = "SELECT * FROM vehiculo WHERE 1=1"
-    params = []
-    
-    # Búsqueda por matrícula o modelo
-    if buscar:
-        query += " AND (matricula LIKE %s OR modelo LIKE %s OR marca LIKE %s)"
-        params.extend([f"%{buscar}%", f"%{buscar}%", f"%{buscar}%"])
-    
-    # Filtro por estado
-    if filtro_estado:
-        query += " AND estado = %s"
-        params.append(filtro_estado)
-    
-    cursor.execute(query, params)
-    vehiculos = cursor.fetchall()
-    db.close()
-    
-    return templates.TemplateResponse("vehiculos.html", {
-        "request": request, 
-        "vehiculos": vehiculos, 
-        "usuario": usuario,
-        "buscar": buscar,
-        "filtro_estado": filtro_estado
-    })
 
-@app.get("/conductores_web")
-def conductores_web(request: Request, buscar: str = ""):
-    usuario = request.session.get("usuario")
-    if not usuario:
-        return RedirectResponse("/login", status_code=303)
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-    
-    query = "SELECT * FROM conductor WHERE 1=1"
-    params = []
-    
-    # Búsqueda por nombre o apellido
-    if buscar:
-        query += " AND (nombre LIKE %s OR apellido LIKE %s)"
-        params.extend([f"%{buscar}%", f"%{buscar}%"])
-    
-    cursor.execute(query, params)
-    conductores = cursor.fetchall()
-    db.close()
-    
-    return templates.TemplateResponse("conductores.html", {
-        "request": request, 
-        "conductores": conductores, 
-        "usuario": usuario,
-        "buscar": buscar
-    })
 
-@app.get("/viajes_web")
-def viajes_web(request: Request, buscar: str = "", filtro_estado: str = ""):
-    usuario = request.session.get("usuario")
-    if not usuario:
-        return RedirectResponse("/login", status_code=303)
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-    
-    query = "SELECT * FROM viaje WHERE 1=1"
-    params = []
-    
-    # Búsqueda por origen o destino
-    if buscar:
-        query += " AND (origen LIKE %s OR destino LIKE %s)"
-        params.extend([f"%{buscar}%", f"%{buscar}%"])
-    
-    # Filtro por estado
-    if filtro_estado:
-        query += " AND estado = %s"
-        params.append(filtro_estado)
-    
-    cursor.execute(query, params)
-    viajes = cursor.fetchall()
-    db.close()
-    
-    return templates.TemplateResponse("viajes.html", {
-        "request": request, 
-        "viajes": viajes, 
-        "usuario": usuario,
-        "buscar": buscar,
-        "filtro_estado": filtro_estado
-    })
 
-@app.get("/mantenimiento_web")
-def mantenimiento_web(request: Request, buscar: str = "", filtro_vehiculo: str = ""):
-    usuario = request.session.get("usuario")
-    if not usuario:
-        return RedirectResponse("/login", status_code=303)
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-    
-    query = "SELECT * FROM mantenimiento WHERE 1=1"
-    params = []
-    
-    # Búsqueda por descripción
-    if buscar:
-        query += " AND descripcion LIKE %s"
-        params.append(f"%{buscar}%")
-    
-    # Filtro por vehículo
-    if filtro_vehiculo:
-        query += " AND id_vehiculo = %s"
-        params.append(int(filtro_vehiculo))
-    
-    cursor.execute(query, params)
-    mant = cursor.fetchall()
-    
-    # Obtener lista de vehículos para el filtro
-    cursor.execute("SELECT id_vehiculo, matricula FROM vehiculo ORDER BY matricula")
-    vehiculos_list = cursor.fetchall()
-    db.close()
-    
-    return templates.TemplateResponse("mantenimiento.html", {
-        "request": request, 
-        "mantenimiento": mant, 
-        "usuario": usuario,
-        "buscar": buscar,
-        "filtro_vehiculo": filtro_vehiculo,
-        "vehiculos_list": vehiculos_list
-    })
 
-@app.get("/consumo_web")
-def consumo_web(request: Request, buscar: str = "", filtro_vehiculo: str = ""):
-    usuario = request.session.get("usuario")
-    if not usuario:
-        return RedirectResponse("/login", status_code=303)
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-    
-    query = "SELECT * FROM consumo WHERE 1=1"
-    params = []
-    
-    # Filtro por vehículo
-    if filtro_vehiculo:
-        query += " AND id_vehiculo = %s"
-        params.append(int(filtro_vehiculo))
-    
-    cursor.execute(query, params)
-    cons = cursor.fetchall()
-    
-    # Obtener lista de vehículos para el filtro
-    cursor.execute("SELECT id_vehiculo, matricula FROM vehiculo ORDER BY matricula")
-    vehiculos_list = cursor.fetchall()
-    db.close()
-    
-    return templates.TemplateResponse("consumo.html", {
-        "request": request, 
-        "consumo": cons, 
-        "usuario": usuario,
-        "filtro_vehiculo": filtro_vehiculo,
-        "vehiculos_list": vehiculos_list
-    })
 
-@app.get("/incidentes_web")
-def incidentes_web(request: Request, buscar: str = "", filtro_tipo: str = ""):
-    usuario = request.session.get("usuario")
-    if not usuario:
-        return RedirectResponse("/login", status_code=303)
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-    
-    query = "SELECT * FROM incidente WHERE 1=1"
-    params = []
-    
-    # Búsqueda por descripción
-    if buscar:
-        query += " AND descripcion LIKE %s"
-        params.append(f"%{buscar}%")
-    
-    # Filtro por tipo
-    if filtro_tipo:
-        query += " AND tipo = %s"
-        params.append(filtro_tipo)
-    
-    cursor.execute(query, params)
-    inc = cursor.fetchall()
-    db.close()
-    
-    return templates.TemplateResponse("incidentes.html", {
-        "request": request, 
-        "incidentes": inc, 
-        "usuario": usuario,
-        "buscar": buscar,
-        "filtro_tipo": filtro_tipo
-    })
 
-@app.get("/ordenes_web")
-def ordenes_web(request: Request, buscar: str = ""):
-    usuario = request.session.get("usuario")
-    if not usuario:
-        return RedirectResponse("/login", status_code=303)
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-    
-    query = "SELECT * FROM orden_servicio WHERE 1=1"
-    params = []
-    
-    # Búsqueda por descripción
-    if buscar:
-        query += " AND descripcion LIKE %s"
-        params.append(f"%{buscar}%")
-    
-    cursor.execute(query, params)
-    ordenes = cursor.fetchall()
-    db.close()
-    
-    return templates.TemplateResponse("ordenes.html", {
-        "request": request, 
-        "ordenes": ordenes, 
-        "usuario": usuario,
-        "buscar": buscar
-    })
 
-@app.get("/flota_web")
-def flota_web(request: Request, buscar: str = ""):
-    usuario = request.session.get("usuario")
-    if not usuario:
-        return RedirectResponse("/login", status_code=303)
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-    
-    query = "SELECT * FROM flota WHERE 1=1"
-    params = []
-    
-    # Búsqueda por nombre
-    if buscar:
-        query += " AND nombre LIKE %s"
-        params.append(f"%{buscar}%")
-    
-    cursor.execute(query, params)
-    flotas = cursor.fetchall()
-    db.close()
-    
-    return templates.TemplateResponse("flota.html", {
-        "request": request, 
-        "flota": flotas, 
-        "usuario": usuario,
-        "buscar": buscar
-    })
+
