@@ -42,7 +42,7 @@
     {% endif %}
     
     {% if usuario and usuario["rol"] == "admin" %}
-    <h2>Agregar Flota</h2>
+    <h2 style="text-align:center;">Agregar Flota</h2>
     <form method="post" action="/flota_create">
         <input type="text" name="nombre" placeholder="Nombre de la flota" required minlength="2" maxlength="40" pattern="[A-Za-z0-9\s\-]{2,40}" title="Letras, números, espacios y guiones, 2-40 caracteres">
         <textarea name="descripcion" placeholder="Descripción" required minlength="5" maxlength="100" title="Descripción, 5-100 caracteres"></textarea>

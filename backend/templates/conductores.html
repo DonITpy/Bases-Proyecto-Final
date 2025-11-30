@@ -52,7 +52,7 @@
     {% endif %}
     
     {% if usuario and usuario["rol"] == "admin" %}
-    <h2>Agregar Conductor</h2>
+    <h2 style="text-align:center;">Agregar Conductor</h2>
     <form method="post" action="/conductores_create">
         <input type="text" name="nombre" placeholder="Nombre" required maxlength="60" pattern="[A-Za-záéíóúÁÉÍÓÚñÑ\s\-]{2,60}" title="Solo letras, espacios y guiones. 2-60 caracteres.">
         <input type="text" name="apellido" placeholder="Apellido" required maxlength="60" pattern="[A-Za-záéíóúÁÉÍÓÚñÑ\s\-]{2,60}" title="Solo letras, espacios y guiones. 2-60 caracteres.">

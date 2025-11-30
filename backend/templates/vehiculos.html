@@ -70,7 +70,7 @@
     {% endif %}
     
     {% if usuario and usuario["rol"] == "admin" %}
-    <h2>Agregar Vehículo</h2>
+    <h2 style="text-align:center;">Agregar Vehículo</h2>
     <form method="post" action="/vehiculos_create">
         <input type="text" name="matricula" placeholder="Matrícula (ej: ABC123)" maxlength="20" pattern="[A-Z0-9]{3,20}" title="Solo mayúsculas y números, 3-20 caracteres" required>
         <input type="text" name="modelo" placeholder="Modelo (ej: Sprinter 2020)" maxlength="50" pattern="[A-Za-z0-9\s\-]{1,50}" title="Solo letras, números y espacios" required>

@@ -276,11 +276,6 @@
             <a href="/incidentes_web">Incidentes</a>
         {% endif %}
         
-        <!-- Mecánico y Conductor -->
-        {% if usuario and usuario["rol"] in ["mecanico"] %}
-            <a href="/consumo_web">Consumo</a>
-        {% endif %}
-        
         <!-- Observador -->
         {% if usuario and usuario["rol"] in ["observador"] %}
             <a href="/reportes_web">Reportes</a>
