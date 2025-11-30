@@ -5,7 +5,7 @@
     <!-- BÚSQUEDA -->
     <div class="search-container">
         <form method="get" action="/conductores_web" class="search-form">
-            <input type="text" name="buscar" placeholder="🔍 Buscar por nombre o apellido..." value="{{buscar}}" style="flex:1; min-width:200px;">
+            <input type="text" name="buscar" placeholder="Buscar por nombre o apellido..." value="{{buscar}}" style="flex:1; min-width:200px;">
             <button type="submit">Buscar</button>
             <a href="/conductores_web" style="background:#666; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; text-align:center;">Limpiar</a>
         </form>
@@ -39,8 +39,8 @@
             <td>{{ c.fecha_nacimiento }}</td>
             {% if usuario and usuario["rol"] == "admin" %}
                 <td>
-                    <a href="/conductores_edit/{{c.id_conductor}}" style="color:#336699; margin-right:10px;">✏️ Editar</a>
-                    <a href="/conductores_delete/{{c.id_conductor}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">🗑️ Eliminar</a>
+                    <a href="/conductores_edit/{{c.id_conductor}}" style="color:#336699; margin-right:10px;">Editar</a>
+                    <a href="/conductores_delete/{{c.id_conductor}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">Eliminar</a>
                 </td>
             {% endif %}
         </tr>

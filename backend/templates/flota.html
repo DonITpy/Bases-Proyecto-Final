@@ -5,7 +5,7 @@
     <!-- BÚSQUEDA -->
     <div class="search-container">
         <form method="get" action="/flota_web" class="search-form">
-            <input type="text" name="buscar" placeholder="🔍 Buscar por nombre..." value="{{buscar}}" style="flex:1; min-width:200px;">
+            <input type="text" name="buscar" placeholder="Buscar por nombre..." value="{{buscar}}" style="flex:1; min-width:200px;">
             <button type="submit">Buscar</button>
             <a href="/flota_web" style="background:#666; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; text-align:center;">Limpiar</a>
         </form>
@@ -29,8 +29,8 @@
             <td>{{ f.descripcion }}</td>
             {% if usuario and usuario["rol"] == "admin" %}
                 <td>
-                    <a href="/flota_edit/{{f.id_flota}}" style="color:#336699; margin-right:10px;">✏️ Editar</a>
-                    <a href="/flota_delete/{{f.id_flota}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">🗑️ Eliminar</a>
+                    <a href="/flota_edit/{{f.id_flota}}" style="color:#336699; margin-right:10px;">Editar</a>
+                    <a href="/flota_delete/{{f.id_flota}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">Eliminar</a>
                 </td>
             {% endif %}
         </tr>

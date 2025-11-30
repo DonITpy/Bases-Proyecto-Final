@@ -52,7 +52,12 @@ def login_get(request: Request):
 def login_post(request: Request, correo: str = Form(...), password: str = Form(...)):
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM usuario WHERE correo=%s AND password=%s", (correo, password))
+    cursor.execute("""
+        SELECT u.*, c.id_conductor
+        FROM usuario u
+        LEFT JOIN conductor c ON c.id_usuario = u.id_usuario
+        WHERE u.correo=%s AND u.password=%s
+    """, (correo, password))
     usuario = cursor.fetchone()
     db.close()
     if usuario:
@@ -83,18 +88,28 @@ def vehiculos_web(request: Request, buscar: str = "", filtro_estado: str = ""):
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
-    query = "SELECT * FROM vehiculo WHERE 1=1"
-    params = []
-    
-    # Búsqueda por matrícula o modelo
-    if buscar:
-        query += " AND (matricula LIKE %s OR modelo LIKE %s OR marca LIKE %s)"
-        params.extend([f"%{buscar}%", f"%{buscar}%", f"%{buscar}%"])
-    
-    # Filtro por estado
-    if filtro_estado:
-        query += " AND estado = %s"
-        params.append(filtro_estado)
+    if usuario.get("rol") == "conductor" and usuario.get("id_conductor"):
+        query = """
+            SELECT * FROM vehiculo WHERE id_vehiculo IN (
+                SELECT DISTINCT id_vehiculo FROM viaje WHERE id_conductor = %s AND id_vehiculo IS NOT NULL
+            )
+        """
+        params = [usuario.get("id_conductor")]
+        if buscar:
+            query = "SELECT * FROM (" + query + ") t WHERE (matricula LIKE %s OR modelo LIKE %s OR marca LIKE %s)"
+            params = params + [f"%{buscar}%", f"%{buscar}%", f"%{buscar}%"]
+        if filtro_estado:
+            query = "SELECT * FROM (" + query + ") t WHERE estado = %s" if not buscar else query + " AND estado = %s"
+            params.append(filtro_estado)
+    else:
+        query = "SELECT * FROM vehiculo WHERE 1=1"
+        params = []
+        if buscar:
+            query += " AND (matricula LIKE %s OR modelo LIKE %s OR marca LIKE %s)"
+            params.extend([f"%{buscar}%", f"%{buscar}%", f"%{buscar}%"])
+        if filtro_estado:
+            query += " AND estado = %s"
+            params.append(filtro_estado)
     
     cursor.execute(query, params)
     vehiculos = cursor.fetchall()
@@ -380,10 +395,17 @@ def conductores_web(request: Request, buscar: str = ""):
     })
 
 @app.post("/conductores_create")
-def conductores_create(request: Request, nombre: str = Form(...), apellido: str = Form(...), telefono: str = Form(...), direccion: str = Form(...), fecha_nacimiento: str = Form(...)):
+def conductores_create(request: Request, nombre: str = Form(...), apellido: str = Form(...), telefono: str = Form(...), direccion: str = Form(...), fecha_nacimiento: str = Form(...), id_usuario: int = Form(None)):
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] != "admin":
-        return RedirectResponse("/conductores_web", status_code=303)
+        return RedirectResponse("/login", status_code=303)
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("INSERT INTO conductor (nombre, apellido, telefono, direccion, fecha_nacimiento, id_usuario) VALUES (%s,%s,%s,%s,%s,%s)",
+                   (nombre, apellido, telefono, direccion, fecha_nacimiento, id_usuario))
+    db.commit()
+    db.close()
+    return RedirectResponse("/conductores_web", status_code=303)
     
     # VALIDACIONES
     error_msg = None
@@ -581,18 +603,24 @@ def viajes_web(request: Request, buscar: str = "", filtro_estado: str = ""):
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
-    query = "SELECT * FROM viaje WHERE 1=1"
-    params = []
-    
-    # Búsqueda por origen o destino
-    if buscar:
-        query += " AND (origen LIKE %s OR destino LIKE %s)"
-        params.extend([f"%{buscar}%", f"%{buscar}%"])
-    
-    # Filtro por estado
-    if filtro_estado:
-        query += " AND estado = %s"
-        params.append(filtro_estado)
+    if usuario.get("rol") == "conductor" and usuario.get("id_conductor"):
+        query = "SELECT * FROM viaje WHERE id_conductor = %s"
+        params = [usuario.get("id_conductor")]
+        if buscar:
+            query += " AND (origen LIKE %s OR destino LIKE %s)"
+            params.extend([f"%{buscar}%", f"%{buscar}%"])
+        if filtro_estado:
+            query += " AND estado = %s"
+            params.append(filtro_estado)
+    else:
+        query = "SELECT * FROM viaje WHERE 1=1"
+        params = []
+        if buscar:
+            query += " AND (origen LIKE %s OR destino LIKE %s)"
+            params.extend([f"%{buscar}%", f"%{buscar}%"])
+        if filtro_estado:
+            query += " AND estado = %s"
+            params.append(filtro_estado)
     
     cursor.execute(query, params)
     viajes = cursor.fetchall()
@@ -1598,9 +1626,23 @@ def usuarios_web(request: Request):
 
 @app.post("/usuarios_create")
 def usuarios_create(request: Request, nombre: str = Form(...), correo: str = Form(...), password: str = Form(...), rol: str = Form(...)):
-    usuario_session = request.session.get("usuario")
-    if not usuario_session or usuario_session["rol"] != "admin":
-        return RedirectResponse("/usuarios_web", status_code=303)
+    usuario_sesion = request.session.get("usuario")
+    if not usuario_sesion or usuario_sesion["rol"] != "admin":
+        return RedirectResponse("/login", status_code=303)
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("INSERT INTO usuario (nombre, correo, password, rol) VALUES (%s,%s,%s,%s)", (nombre, correo, password, rol))
+    db.commit()
+    new_id = cursor.lastrowid
+    if rol == "conductor":
+        parts = nombre.split(" ", 1)
+        nombre_c = parts[0]
+        apellido_c = parts[1] if len(parts) > 1 else ""
+        cursor.execute("INSERT INTO conductor (nombre, apellido, telefono, direccion, fecha_nacimiento, id_usuario) VALUES (%s,%s,%s,%s,%s,%s)",
+                       (nombre_c, apellido_c, None, None, None, new_id))
+        db.commit()
+    db.close()
+    return RedirectResponse("/usuarios_web", status_code=303)
     
     # VALIDACIONES
     error_msg = None
@@ -1793,7 +1835,6 @@ def descargar_consumo_csv(request: Request):
         headers={"Content-Disposition": "attachment; filename=consumo.csv"}
     )
 
-# ==================== BUSQUEDA Y FILTROS ====================
 
 
 

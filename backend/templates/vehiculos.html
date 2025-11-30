@@ -46,11 +46,11 @@
             <td>{{ v.marca }}</td>
             <td>
                 {% if v.estado == 'activo' %}
-                    <span style="background:#4CAF50; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;">✅ {{ v.estado }}</span>
+                    <span style="background:#4CAF50; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;"> {{ v.estado }}</span>
                 {% elif v.estado == 'inactivo' %}
-                    <span style="background:#f44336; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;">❌ {{ v.estado }}</span>
+                    <span style="background:#f44336; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;"> {{ v.estado }}</span>
                 {% else %}
-                    <span style="background:#FF9800; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;">🔧 {{ v.estado }}</span>
+                    <span style="background:#FF9800; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;"> {{ v.estado }}</span>
                 {% endif %}
             </td>
             <td>{{ v.capacidad }}</td>
@@ -58,7 +58,7 @@
             {% if usuario and usuario["rol"] == "admin" %}
                 <td>
                     <a href="/vehiculos_edit/{{v.id_vehiculo}}" style="color:#336699; margin-right:10px;">Editar</a>
-                    <a href="/vehiculos_delete/{{v.id_vehiculo}}" onclick="return confirm('¿Eliminar? Este vehículo no debe tener registros vinculados.');" class="delete-btn"></a>
+                    <a href="/vehiculos_delete/{{v.id_vehiculo}}" onclick="return confirm('¿Eliminar? Este vehículo no debe tener registros vinculados.');" class="delete-btn">Eliminar</a>
                 </td>
             {% endif %}
         </tr>

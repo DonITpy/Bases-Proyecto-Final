@@ -11,8 +11,8 @@
                     <option value="{{v.id_vehiculo}}" {% if filtro_vehiculo == v.id_vehiculo|string %}selected{% endif %}>{{v.matricula}}</option>
                 {% endfor %}
             </select>
-            <button type="submit" style="padding:8px 20px; background:#336699; color:white; border:none; border-radius:4px; cursor:pointer;">🔍 Filtrar</button>
-            <a href="/consumo_web" style="padding:8px 20px; background:#666; color:white; border:none; border-radius:4px; cursor:pointer; text-decoration:none;">🔄 Limpiar</a>
+            <button type="submit" style="padding:8px 20px; background:#336699; color:white; border:none; border-radius:4px; cursor:pointer;">Filtrar</button>
+            <a href="/consumo_web" style="padding:8px 20px; background:#666; color:white; border:none; border-radius:4px; cursor:pointer; text-decoration:none;">Limpiar</a>
         </form>
     </div>
     
@@ -35,7 +35,7 @@
             <td>{{ c.litros }}</td>
             <td>{{ c.fecha }}</td>
             {% if usuario and usuario["rol"] == "mecanico" %}
-                <td><a href="/consumo_delete/{{c.id_consumo}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">🗑️ Eliminar</a></td>
+                <td><a href="/consumo_delete/{{c.id_consumo}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">Eliminar</a></td>
             {% endif %}
         </tr>
         {% endfor %}

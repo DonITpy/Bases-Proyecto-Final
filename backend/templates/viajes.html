@@ -42,17 +42,17 @@
             <td>{{ v.fecha_salida }}</td>
             <td>
                 {% if v.estado == 'completado' %}
-                    <span style="background:#4CAF50; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;">✅ {{ v.estado }}</span>
+                    <span style="background:#4CAF50; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;"> {{ v.estado }}</span>
                 {% elif v.estado == 'en progreso' %}
-                    <span style="background:#2196F3; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;">🚗 {{ v.estado }}</span>
+                    <span style="background:#2196F3; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;"> {{ v.estado }}</span>
                 {% else %}
-                    <span style="background:#FF9800; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;">⏳ {{ v.estado }}</span>
+                    <span style="background:#FF9800; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;"> {{ v.estado }}</span>
                 {% endif %}
             </td>
             {% if usuario and usuario["rol"] == "admin" %}
                 <td>
-                    <a href="/viajes_edit/{{v.id_viaje}}" style="color:#336699; margin-right:10px;">✏️ Editar</a>
-                    <a href="/viajes_delete/{{v.id_viaje}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">🗑️</a>
+                    <a href="/viajes_edit/{{v.id_viaje}}" style="color:#336699; margin-right:10px;">Editar</a>
+                    <a href="/viajes_delete/{{v.id_viaje}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">Eliminar</a>
                 </td>
             {% endif %}
         </tr>

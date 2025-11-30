@@ -13,8 +13,12 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(180deg,#9999f9 100%, #1a237e 0%,);
             min-height: 100vh;
+        }
+
+        h1{
+            color:white;
         }
 
         nav {
@@ -253,9 +257,14 @@
             <a href="/flota_web">Flota</a>
             <a href="/ordenes_web">Órdenes</a>
         {% endif %}
+
+        {% if usuario and usuario["rol"] in ["conductor"] %}
+            <a href="/vehiculos_web">Vehículos</a>
+            <a href="/viajes_web">Viajes</a>
+        {% endif %}
         
         <!-- Admin, Logística y Conductor -->
-        {% if usuario and usuario["rol"] in ["admin", "logistica", "conductor"] %}
+        {% if usuario and usuario["rol"] in ["admin", "logistica"] %}
             <a href="/conductores_web">Conductores</a>
             <a href="/viajes_web">Viajes</a>
         {% endif %}
@@ -268,7 +277,7 @@
         {% endif %}
         
         <!-- Mecánico y Conductor -->
-        {% if usuario and usuario["rol"] in ["mecanico", "conductor"] %}
+        {% if usuario and usuario["rol"] in ["mecanico"] %}
             <a href="/consumo_web">Consumo</a>
         {% endif %}
         
