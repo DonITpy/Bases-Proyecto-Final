@@ -11,6 +11,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 import csv
 import io
+from datetime import datetime
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key="supersecret")
@@ -1610,6 +1611,204 @@ def ordenes_update(request: Request, id: int, descripcion: str = Form(...), fech
             "usuario": usuario,
             "error": "Error al actualizar orden"
         })
+
+# ==================== LICENCIAS ====================
+@app.get("/licencias_web")
+def licencias_web(request: Request, buscar: str = ""):
+    usuario = request.session.get("usuario")
+    if not usuario:
+        return RedirectResponse("/login", status_code=303)
+
+    db = get_db()
+    if not db:
+        return templates.TemplateResponse("licencias.html", {
+            "request": request,
+            "licencias": [],
+            "conductores": [],
+            "usuario": usuario,
+            "buscar": buscar,
+            "error": "No se pudo conectar a la base de datos."
+        })
+
+    cursor = db.cursor(dictionary=True)
+
+    # obtener lista de conductores para el select (útil para admin)
+    conductores = []
+    try:
+        cursor.execute("SELECT id_conductor, nombre, apellido FROM conductor ORDER BY nombre, apellido")
+        conductores = cursor.fetchall()
+    except Exception:
+        conductores = []
+
+    # construir consulta de licencias
+    params = []
+    query = """
+        SELECT l.id_licencia, l.id_conductor, l.tipo, l.fecha_emision, l.fecha_vencimiento,
+               c.nombre AS nombre_conductor, c.apellido AS apellido_conductor
+        FROM licencia l
+        JOIN conductor c ON c.id_conductor = l.id_conductor
+        WHERE 1=1
+    """
+
+    if buscar:
+        query += " AND (l.tipo LIKE %s OR c.nombre LIKE %s OR c.apellido LIKE %s)"
+        term = f"%{buscar}%"
+        params.extend([term, term, term])
+
+    # si es conductor, limitar a sus licencias (se asume request.session["usuario"]["id_conductor"] si existe)
+    if usuario.get("rol") == "conductor":
+        id_conductor_usuario = usuario.get("id_conductor")
+        if id_conductor_usuario:
+            query += " AND l.id_conductor = %s"
+            params.append(id_conductor_usuario)
+
+    query += " ORDER BY l.id_licencia DESC"
+
+    try:
+        cursor.execute(query, params)
+        licencias = cursor.fetchall()
+    except Exception:
+        licencias = []
+    finally:
+        db.close()
+
+    return templates.TemplateResponse("licencias.html", {
+        "request": request,
+        "licencias": licencias,
+        "conductores": conductores,
+        "usuario": usuario,
+        "buscar": buscar,
+        "error": ""
+    })
+
+@app.post("/licencias_create")
+def licencias_create(request: Request, id_conductor: int = Form(...), tipo: str = Form(...), fecha_emision: str = Form(...), fecha_vencimiento: str = Form(...)):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario.get("rol") != "admin":
+        return RedirectResponse("/licencias_web", status_code=303)
+
+    # validaciones básicas
+    error = None
+    if not tipo or len(tipo) > 10:
+        error = "Tipo inválido (máx 10 caracteres)."
+    try:
+        fe = datetime.strptime(fecha_emision, "%Y-%m-%d").date()
+        fv = datetime.strptime(fecha_vencimiento, "%Y-%m-%d").date()
+        if fv <= fe:
+            error = "La fecha de vencimiento debe ser posterior a la fecha de emisión."
+    except Exception:
+        error = "Formato de fecha inválido. Use YYYY-MM-DD."
+
+    if error:
+        # volver a la lista con mensaje de error
+        return templates.TemplateResponse("licencias.html", {
+            "request": request,
+            "licencias": [],
+            "usuario": usuario,
+            "buscar": "",
+            "error": error
+        })
+
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute("INSERT INTO licencia (id_conductor, tipo, fecha_emision, fecha_vencimiento) VALUES (%s,%s,%s,%s)",
+                       (id_conductor, tipo, fecha_emision, fecha_vencimiento))
+        db.commit()
+    except mysql.connector.Error as e:
+        db.rollback()
+        db.close()
+        return templates.TemplateResponse("licencias.html", {
+            "request": request,
+            "licencias": [],
+            "usuario": usuario,
+            "buscar": "",
+            "error": f"Error al insertar: {e}"
+        })
+    db.close()
+    return RedirectResponse("/licencias_web", status_code=303)
+
+@app.get("/licencias_delete/{id}")
+def licencias_delete(request: Request, id: int):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario.get("rol") != "admin":
+        return RedirectResponse("/licencias_web", status_code=303)
+
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute("DELETE FROM licencia WHERE id_licencia=%s", (id,))
+        db.commit()
+    except mysql.connector.Error:
+        db.rollback()
+    finally:
+        db.close()
+    return RedirectResponse("/licencias_web", status_code=303)
+
+@app.get("/licencias_edit/{id}")
+def licencias_edit(request: Request, id: int):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario.get("rol") != "admin":
+        return RedirectResponse("/licencias_web", status_code=303)
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM licencia WHERE id_licencia=%s", (id,))
+    licencia = cursor.fetchone()
+
+    # obtener lista de conductores para el select
+    cursor.execute("SELECT id_conductor, nombre, apellido FROM conductor ORDER BY nombre, apellido")
+    conductores = cursor.fetchall()
+    db.close()
+
+    if not licencia:
+        return RedirectResponse("/licencias_web", status_code=303)
+
+    return templates.TemplateResponse("licencias_edit.html", {"request": request, "licencia": licencia, "conductores": conductores, "usuario": usuario, "error": ""})
+
+@app.post("/licencias_update/{id}")
+def licencias_update(request: Request, id: int, id_conductor: int = Form(...), tipo: str = Form(...), fecha_emision: str = Form(...), fecha_vencimiento: str = Form(...)):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario.get("rol") != "admin":
+        return RedirectResponse("/licencias_web", status_code=303)
+
+    # validaciones
+    error = None
+    if not tipo or len(tipo) > 10:
+        error = "Tipo inválido."
+    try:
+        fe = datetime.strptime(fecha_emision, "%Y-%m-%d").date()
+        fv = datetime.strptime(fecha_vencimiento, "%Y-%m-%d").date()
+        if fv <= fe:
+            error = "La fecha de vencimiento debe ser posterior."
+    except Exception:
+        error = "Formato de fecha inválido. Use YYYY-MM-DD."
+
+    if error:
+        # volver a formulario de edición con mensaje
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM licencia WHERE id_licencia=%s", (id,))
+        licencia = cursor.fetchone()
+        cursor.execute("SELECT id_conductor, nombre, apellido FROM conductor ORDER BY nombre, apellido")
+        conductores = cursor.fetchall()
+        db.close()
+        return templates.TemplateResponse("licencias_edit.html", {"request": request, "licencia": licencia, "conductores": conductores, "usuario": usuario, "error": error})
+
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute("""UPDATE licencia
+                          SET id_conductor=%s, tipo=%s, fecha_emision=%s, fecha_vencimiento=%s
+                          WHERE id_licencia=%s""",
+                       (id_conductor, tipo, fecha_emision, fecha_vencimiento, id))
+        db.commit()
+    except mysql.connector.Error as e:
+        db.rollback()
+    finally:
+        db.close()
+
+    return RedirectResponse("/licencias_web", status_code=303)
 
 # ==================== USUARIOS ====================
 @app.get("/usuarios_web")

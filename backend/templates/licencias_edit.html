@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Editar Licencia</h1>
+
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="/licencias_update/{{ licencia.id_licencia }}">
+        <label>Conductor</label>
+        <select name="id_conductor" required>
+            <option value="">Seleccionar conductor</option>
+            {% for c in conductores %}
+                <option value="{{ c.id_conductor }}" {% if c.id_conductor == licencia.id_conductor %}selected{% endif %}>{{ c.nombre }} {{ c.apellido }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Tipo</label>
+        <input type="text" name="tipo" maxlength="10" value="{{ licencia.tipo }}" required>
+
+        <label>Fecha emisión</label>
+        <input type="date" name="fecha_emision" value="{{ licencia.fecha_emision }}" required>
+
+        <label>Fecha vencimiento</label>
+        <input type="date" name="fecha_vencimiento" value="{{ licencia.fecha_vencimiento }}" required>
+
+        <button type="submit">Guardar cambios</button>
+    </form>
+{% endblock %}

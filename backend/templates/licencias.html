@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Licencias</h1>
+
+    <div class="search-container">
+        <form method="get" action="/licencias_web" class="search-form">
+            <input type="text" name="buscar" placeholder="Buscar por tipo o conductor..." value="{{buscar}}" style="flex:1; min-width:200px;">
+            <button type="submit">Buscar</button>
+            <a href="/licencias_web" style="background:#666; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; text-align:center;">Limpiar</a>
+        </form>
+    </div>
+
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <p class="result-count">Se encontraron {{licencias|length}} licencias</p>
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Conductor</th>
+            <th>Tipo</th>
+            <th>Fecha emisión</th>
+            <th>Fecha vencimiento</th>
+            {% if usuario and usuario["rol"] == "admin" %}
+                <th>Acciones</th>
+            {% endif %}
+        </tr>
+        {% for l in licencias %}
+        <tr>
+            <td>{{ l.id_licencia }}</td>
+            <td>{{ l.nombre_conductor }} {{ l.apellido_conductor }}</td>
+            <td>{{ l.tipo }}</td>
+            <td>{{ l.fecha_emision }}</td>
+            <td>{{ l.fecha_vencimiento }}</td>
+            {% if usuario and usuario["rol"] == "admin" %}
+                <td>
+                    <a href="/licencias_edit/{{ l.id_licencia }}" style="color:#336699; margin-right:10px;">Editar</a>
+                    <a href="/licencias_delete/{{ l.id_licencia }}" onclick="return confirm('¿Eliminar licencia?');" class="delete-btn">Eliminar</a>
+                </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+
+    {% if not licencias %}
+        <p style="text-align:center; color:#999; margin:30px 0;">No se encontraron licencias.</p>
+    {% endif %}
+
+    {% if usuario and usuario["rol"] == "admin" %}
+    <h2 style="text-align:center;">Agregar Licencia</h2>
+    <form method="post" action="/licencias_create">
+        <label>Conductor</label>
+        <select name="id_conductor" required>
+            <option value="">Seleccionar conductor</option>
+            {% if conductores %}
+                {% for c in conductores %}
+                    <option value="{{ c.id_conductor }}">{{ c.nombre }} {{ c.apellido }}</option>
+                {% endfor %}
+            {% else %}
+                <option value="" disabled>No hay conductores disponibles. Crea uno desde la sección Conductores.</option>
+            {% endif %}
+        </select>
+        <label>Tipo</label>
+        <input type="text" name="tipo" maxlength="10" placeholder="Ej: A, B, C" required>
+        <label>Fecha emisión</label>
+        <input type="date" name="fecha_emision" required>
+        <label>Fecha vencimiento</label>
+        <input type="date" name="fecha_vencimiento" required>
+        <button type="submit">Agregar Licencia</button>
+    </form>
+    {% endif %}
+{% endblock %}
