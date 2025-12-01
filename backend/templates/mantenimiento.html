@@ -3,17 +3,17 @@
     <h1>Mantenimiento</h1>
     
     <!-- BÚSQUEDA Y FILTROS -->
-    <div style="background:#fff; padding:20px; margin:20px auto; width:80%; border-radius:8px; box-shadow:0 2px 8px #bbb;">
-        <form method="get" action="/mantenimiento_web" style="display:flex; gap:10px; flex-wrap:wrap;">
-            <input type="text" name="buscar" placeholder="Buscar por descripción..." value="{{buscar}}" style="flex:1; min-width:200px; padding:8px; border:1px solid #ccc; border-radius:4px;">
+    <div class="search-container">
+        <form method="get" action="/mantenimiento_web" class="search-form" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <input type="text" name="buscar" placeholder="Buscar por descripción..." value="{{buscar}}" style="flex:1; min-width:200px;">
             <select name="filtro_vehiculo" style="padding:8px; border:1px solid #ccc; border-radius:4px;">
                 <option value="">Todos los vehículos</option>
                 {% for v in vehiculos_list %}
                     <option value="{{v.id_vehiculo}}" {% if filtro_vehiculo == v.id_vehiculo|string %}selected{% endif %}>{{v.matricula}}</option>
                 {% endfor %}
             </select>
-            <button type="submit" style="padding:8px 20px; background:#336699; color:white; border:none; border-radius:4px; cursor:pointer;">Buscar</button>
-            <a href="/mantenimiento_web" style="padding:8px 20px; background:#666; color:white; border:none; border-radius:4px; cursor:pointer; text-decoration:none;">Limpiar</a>
+            <button type="submit">Buscar</button>
+            <a href="/mantenimiento_web" style="background:#666; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; text-align:center;">Limpiar</a>
         </form>
     </div>
     
