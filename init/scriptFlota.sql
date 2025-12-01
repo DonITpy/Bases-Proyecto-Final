@@ -217,25 +217,27 @@ CREATE TABLE consumo (
     matricula VARCHAR(20) COLLATE utf8mb4_unicode_ci,
     litros DECIMAL(10,2),
     fecha DATE,
+    tipo_combustible VARCHAR(30) COLLATE utf8mb4_unicode_ci,
+    costo DECIMAL(10,2),
     FOREIGN KEY (matricula) REFERENCES vehiculo(matricula) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO consumo (matricula, litros, fecha) VALUES
-('ABC123', 60.0, '2024-06-01'),
-('XYZ789', 55.5, '2024-06-02'),
-('DEF456', 48.0, '2024-06-03'),
-('GHI789', 120.5, '2024-06-04'),
-('JKL012', 35.0, '2024-06-05'),
-('MNO345', 110.0, '2024-06-06'),
-('PQR678', 52.5, '2024-06-07'),
-('STU901', 115.0, '2024-06-08'),
-('VWX234', 40.0, '2024-06-09'),
-('YZA567', 58.0, '2024-06-10'),
-('ABC123', 62.5, '2024-06-11'),
-('DEF456', 50.0, '2024-06-12'),
-('JKL012', 38.5, '2024-06-13'),
-('PQR678', 55.0, '2024-06-14'),
-('VWX234', 42.0, '2024-06-15');
+INSERT INTO consumo (matricula, litros, fecha, tipo_combustible, costo) VALUES
+('ABC123', 60.0, '2024-06-01', 'Gasolina', 1200.00),
+('XYZ789', 55.5, '2024-06-02', 'Diésel', 1100.00),
+('DEF456', 48.0, '2024-06-03', 'Gasolina', 980.00),
+('GHI789', 120.5, '2024-06-04', 'Diésel', 2600.00),
+('JKL012', 35.0, '2024-06-05', 'Gasolina', 700.00),
+('MNO345', 110.0, '2024-06-06', 'Diésel', 2350.00),
+('PQR678', 52.5, '2024-06-07', 'Gasolina', 1050.00),
+('STU901', 115.0, '2024-06-08', 'Diésel', 2450.00),
+('VWX234', 40.0, '2024-06-09', 'Gasolina', 820.00),
+('YZA567', 58.0, '2024-06-10', 'Gasolina', 1180.00),
+('ABC123', 62.5, '2024-06-11', 'Gasolina', 1250.00),
+('DEF456', 50.0, '2024-06-12', 'Gasolina', 1000.00),
+('JKL012', 38.5, '2024-06-13', 'Gasolina', 770.00),
+('PQR678', 55.0, '2024-06-14', 'Gasolina', 1100.00),
+('VWX234', 42.0, '2024-06-15', 'Gasolina', 860.00);
 
 -- =====================================================
 -- INCIDENTE

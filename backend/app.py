@@ -1001,11 +1001,17 @@ def consumo_web(request: Request, buscar: str = "", filtro_vehiculo: str = ""):
     query = "SELECT * FROM consumo WHERE 1=1"
     params = []
     
-    # Filtro por vehículo
+    # filtro por matrícula (filtro_vehiculo viene como matrícula desde el template)
     if filtro_vehiculo:
-        query += " AND id_vehiculo = %s"
-        params.append(int(filtro_vehiculo))
+        query += " AND matricula = %s"
+        params.append(filtro_vehiculo)
     
+    # búsqueda por matrícula o tipo de combustible
+    if buscar:
+        query += " AND (matricula LIKE %s OR tipo_combustible LIKE %s)"
+        params.extend([f"%{buscar}%", f"%{buscar}%"])
+    
+    query += " ORDER BY fecha DESC, id_consumo DESC"
     cursor.execute(query, params)
     cons = cursor.fetchall()
     
@@ -1019,11 +1025,12 @@ def consumo_web(request: Request, buscar: str = "", filtro_vehiculo: str = ""):
         "consumo": cons, 
         "usuario": usuario,
         "filtro_vehiculo": filtro_vehiculo,
-        "vehiculos_list": vehiculos_list
+        "vehiculos_list": vehiculos_list,
+        "buscar": buscar
     })
 
 @app.post("/consumo_create")
-def consumo_create(request: Request, id_vehiculo: int = Form(...), litros: float = Form(...), fecha: str = Form(...)):
+def consumo_create(request: Request, matricula: str = Form(...), litros: float = Form(...), fecha: str = Form(...), tipo_combustible: str = Form(...), costo: float = Form(...)):
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] != "mecanico":
         return RedirectResponse("/consumo_web", status_code=303)
@@ -1031,12 +1038,12 @@ def consumo_create(request: Request, id_vehiculo: int = Form(...), litros: float
     # VALIDACIONES
     error_msg = None
     
-    # Validar id_vehiculo
-    if not id_vehiculo or id_vehiculo < 1:
+    # Validar matrícula
+    if not matricula:
         error_msg = "Debe seleccionar un vehículo válido"
     
     # Validar litros
-    elif not litros or litros <= 0 or litros > 9999.99:
+    elif litros <= 0 or litros > 9999.99:
         error_msg = "Los litros deben estar entre 0.01 y 9,999.99"
     
     # Validar fecha
@@ -1044,29 +1051,44 @@ def consumo_create(request: Request, id_vehiculo: int = Form(...), litros: float
         error_msg = "La fecha es obligatoria"
     else:
         try:
-            from datetime import datetime
             fecha_obj = datetime.strptime(fecha, "%Y-%m-%d")
             if fecha_obj.date() > datetime.now().date():
                 error_msg = "La fecha de consumo no puede ser en el futuro"
         except:
             error_msg = "Formato de fecha inválido (use YYYY-MM-DD)"
     
+    # Validar tipo_combustible
+    if not error_msg:
+        if not tipo_combustible or len(tipo_combustible) > 30:
+            error_msg = "Tipo de combustible inválido"
+    
+    # Validar costo
+    if not error_msg:
+        try:
+            if costo < 0 or costo > 1000000:
+                error_msg = "Costo inválido"
+        except:
+            error_msg = "Costo inválido"
+    
     # Validar que el vehículo exista
     if not error_msg:
         db = get_db()
         cursor = db.cursor()
-        cursor.execute("SELECT id_vehiculo FROM vehiculo WHERE id_vehiculo=%s", (id_vehiculo,))
+        cursor.execute("SELECT matricula FROM vehiculo WHERE matricula=%s", (matricula,))
         if not cursor.fetchone():
             db.close()
             db2 = get_db()
             cursor2 = db2.cursor(dictionary=True)
             cursor2.execute("SELECT * FROM consumo")
             cons = cursor2.fetchall()
+            cursor2.execute("SELECT id_vehiculo, matricula FROM vehiculo ORDER BY matricula")
+            vehiculos_list = cursor2.fetchall()
             db2.close()
             return templates.TemplateResponse("consumo.html", {
                 "request": request, 
                 "consumo": cons, 
                 "usuario": usuario,
+                "vehiculos_list": vehiculos_list,
                 "error": "El vehículo seleccionado no existe"
             })
         db.close()
@@ -1076,19 +1098,22 @@ def consumo_create(request: Request, id_vehiculo: int = Form(...), litros: float
         cursor = db.cursor(dictionary=True)
         cursor.execute("SELECT * FROM consumo")
         cons = cursor.fetchall()
+        cursor.execute("SELECT id_vehiculo, matricula FROM vehiculo ORDER BY matricula")
+        vehiculos_list = cursor.fetchall()
         db.close()
         return templates.TemplateResponse("consumo.html", {
             "request": request, 
             "consumo": cons, 
             "usuario": usuario,
+            "vehiculos_list": vehiculos_list,
             "error": error_msg
         })
     
     db = get_db()
     cursor = db.cursor()
     try:
-        cursor.execute("INSERT INTO consumo (id_vehiculo, litros, fecha) VALUES (%s,%s,%s)",
-                       (id_vehiculo, litros, fecha))
+        cursor.execute("INSERT INTO consumo (matricula, litros, fecha, tipo_combustible, costo) VALUES (%s,%s,%s,%s,%s)",
+                       (matricula, litros, fecha, tipo_combustible, costo))
         db.commit()
         db.close()
         return RedirectResponse("/consumo_web", status_code=303)
@@ -1098,11 +1123,14 @@ def consumo_create(request: Request, id_vehiculo: int = Form(...), litros: float
         cursor2 = db2.cursor(dictionary=True)
         cursor2.execute("SELECT * FROM consumo")
         cons = cursor2.fetchall()
+        cursor2.execute("SELECT id_vehiculo, matricula FROM vehiculo ORDER BY matricula")
+        vehiculos_list = cursor2.fetchall()
         db2.close()
         return templates.TemplateResponse("consumo.html", {
             "request": request, 
             "consumo": cons, 
             "usuario": usuario,
+            "vehiculos_list": vehiculos_list,
             "error": f"Error al crear consumo: {str(e)}"
         })
 
@@ -2275,7 +2303,7 @@ def descargar_consumo_csv(request: Request):
     db.close()
     
     output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=['id_consumo', 'id_vehiculo', 'litros', 'fecha'])
+    writer = csv.DictWriter(output, fieldnames=['id_consumo', 'matricula', 'litros', 'fecha', 'tipo_combustible', 'costo'])
     writer.writeheader()
     writer.writerows(consumo)
     
@@ -2284,13 +2312,3 @@ def descargar_consumo_csv(request: Request):
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=consumo.csv"}
     )
-
-
-
-
-
-
-
-
-
-
