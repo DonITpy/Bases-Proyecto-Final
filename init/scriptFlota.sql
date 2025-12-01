@@ -190,25 +190,23 @@ INSERT INTO viaje (origen, destino, fecha_salida, estado, id_vehiculo, id_conduc
 
 CREATE TABLE mantenimiento (
     id_mantenimiento INT PRIMARY KEY AUTO_INCREMENT,
-    id_vehiculo INT,
-    descripcion VARCHAR(255) COLLATE utf8mb4_unicode_ci,
-    fecha DATE,
-    FOREIGN KEY (id_vehiculo) REFERENCES vehiculo(id_vehiculo) ON DELETE CASCADE
+    id_vehiculo INT NOT NULL,
+    tipo ENUM('preventivo','correctivo','reparacion') 
+        COLLATE utf8mb4_unicode_ci NOT NULL,
+    descripcion VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+    costo DECIMAL(10,2) NOT NULL,
+    fecha DATE NOT NULL,
+    FOREIGN KEY (id_vehiculo) REFERENCES vehiculo(id_vehiculo)
+        ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO mantenimiento (id_vehiculo, descripcion, fecha) VALUES
-(1, 'Cambio de aceite y filtro', '2024-05-20'),
-(2, 'Reparación de frenos', '2024-05-30'),
-(3, 'Revisión de suspensión', '2024-06-01'),
-(4, 'Cambio de llantas', '2024-06-05'),
-(5, 'Reparación de transmisión', '2024-06-10'),
-(6, 'Mantenimiento preventivo general', '2024-06-12'),
-(7, 'Revisión de sistema eléctrico', '2024-06-15'),
-(8, 'Cambio de aceite', '2024-06-18'),
-(9, 'Reparación de radiador', '2024-06-20'),
-(10, 'Revisión de motor', '2024-06-22'),
-(1, 'Limpieza de inyectores', '2024-06-25'),
-(3, 'Cambio de batería', '2024-06-28');
+INSERT INTO mantenimiento (id_vehiculo, tipo, descripcion, costo, fecha) VALUES
+(1, 'preventivo', 'Cambio de aceite y filtro', 850.00, '2024-05-20'),
+(2, 'reparacion', 'Reparación de frenos', 2800.00, '2024-05-30'),
+(3, 'reparacion', 'Revisión de suspensión y cambio de bujes', 4200.00, '2024-06-01'),
+(4, 'reparacion', 'Cambio de llanta trasera', 1800.00, '2024-06-05'),
+(5, 'reparacion', 'Reparación de transmisión', 9500.00, '2024-06-10'),
+(6, 'preventivo', 'Servicio general', 1200.00, '2024-06-12');
 
 -- =====================================================
 -- CONSUMO
@@ -216,28 +214,28 @@ INSERT INTO mantenimiento (id_vehiculo, descripcion, fecha) VALUES
 
 CREATE TABLE consumo (
     id_consumo INT PRIMARY KEY AUTO_INCREMENT,
-    id_vehiculo INT,
+    matricula VARCHAR(20) COLLATE utf8mb4_unicode_ci,
     litros DECIMAL(10,2),
     fecha DATE,
-    FOREIGN KEY (id_vehiculo) REFERENCES vehiculo(id_vehiculo) ON DELETE CASCADE
+    FOREIGN KEY (matricula) REFERENCES vehiculo(matricula) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO consumo (id_vehiculo, litros, fecha) VALUES
-(1, 60.0, '2024-06-01'),
-(2, 55.5, '2024-06-02'),
-(3, 48.0, '2024-06-03'),
-(4, 120.5, '2024-06-04'),
-(5, 35.0, '2024-06-05'),
-(6, 110.0, '2024-06-06'),
-(7, 52.5, '2024-06-07'),
-(8, 115.0, '2024-06-08'),
-(9, 40.0, '2024-06-09'),
-(10, 58.0, '2024-06-10'),
-(1, 62.5, '2024-06-11'),
-(3, 50.0, '2024-06-12'),
-(5, 38.5, '2024-06-13'),
-(7, 55.0, '2024-06-14'),
-(9, 42.0, '2024-06-15');
+INSERT INTO consumo (matricula, litros, fecha) VALUES
+('ABC123', 60.0, '2024-06-01'),
+('XYZ789', 55.5, '2024-06-02'),
+('DEF456', 48.0, '2024-06-03'),
+('GHI789', 120.5, '2024-06-04'),
+('JKL012', 35.0, '2024-06-05'),
+('MNO345', 110.0, '2024-06-06'),
+('PQR678', 52.5, '2024-06-07'),
+('STU901', 115.0, '2024-06-08'),
+('VWX234', 40.0, '2024-06-09'),
+('YZA567', 58.0, '2024-06-10'),
+('ABC123', 62.5, '2024-06-11'),
+('DEF456', 50.0, '2024-06-12'),
+('JKL012', 38.5, '2024-06-13'),
+('PQR678', 55.0, '2024-06-14'),
+('VWX234', 42.0, '2024-06-15');
 
 -- =====================================================
 -- INCIDENTE
@@ -245,24 +243,62 @@ INSERT INTO consumo (id_vehiculo, litros, fecha) VALUES
 
 CREATE TABLE incidente (
     id_incidente INT PRIMARY KEY AUTO_INCREMENT,
-    id_vehiculo INT,
+    matricula VARCHAR(20) COLLATE utf8mb4_unicode_ci,
     tipo VARCHAR(50) COLLATE utf8mb4_unicode_ci,
     fecha DATE,
     descripcion VARCHAR(255) COLLATE utf8mb4_unicode_ci,
-    FOREIGN KEY (id_vehiculo) REFERENCES vehiculo(id_vehiculo) ON DELETE CASCADE
+    FOREIGN KEY (matricula) REFERENCES vehiculo(matricula) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO incidente (id_vehiculo, tipo, fecha, descripcion) VALUES
-(1, 'accidente', '2024-06-01', 'Pequeño choque en caseta'),
-(2, 'infracción', '2024-06-02', 'Exceso de velocidad detectado'),
-(3, 'daño', '2024-06-03', 'Espejo lateral roto'),
-(4, 'accidente', '2024-06-04', 'Choque trasero en tráfico'),
-(5, 'infracción', '2024-06-05', 'Estacionamiento indebido'),
-(6, 'daño', '2024-06-06', 'Defecto en llantas'),
-(7, 'retraso', '2024-06-07', 'Demora de 2 horas en entrega'),
-(8, 'accidente', '2024-06-08', 'Impacto con poste'),
-(9, 'infracción', '2024-06-09', 'Luz roja cruzada'),
-(10, 'daño', '2024-06-10', 'Sensor de proximidad dañado'),
-(1, 'retraso', '2024-06-11', 'Atasco vehicular'),
-(3, 'infracción', '2024-06-12', 'Documentación vencida');
+INSERT INTO incidente (matricula, tipo, fecha, descripcion) VALUES
+('ABC123', 'accidente', '2024-06-01', 'Pequeño choque en caseta'),
+('XYZ789', 'infracción', '2024-06-02', 'Exceso de velocidad detectado'),
+('DEF456', 'daño', '2024-06-03', 'Espejo lateral roto'),
+('GHI789', 'accidente', '2024-06-04', 'Choque trasero en tráfico'),
+('JKL012', 'infracción', '2024-06-05', 'Estacionamiento indebido'),
+('MNO345', 'daño', '2024-06-06', 'Defecto en llantas'),
+('PQR678', 'retraso', '2024-06-07', 'Demora de 2 horas en entrega'),
+('STU901', 'accidente', '2024-06-08', 'Impacto con poste'),
+('VWX234', 'infracción', '2024-06-09', 'Luz roja cruzada'),
+('YZA567', 'daño', '2024-06-10', 'Sensor de proximidad dañado'),
+('ABC123', 'retraso', '2024-06-11', 'Atasco vehicular'),
+('DEF456', 'infracción', '2024-06-12', 'Documentación vencida');
 
+-- =====================================================
+-- LICENCIA (cada conductor puede tener 1..N licencias)
+-- =====================================================
+
+CREATE TABLE licencia (
+    id_licencia INT PRIMARY KEY AUTO_INCREMENT,
+    id_conductor INT NOT NULL,
+    tipo VARCHAR(30) COLLATE utf8mb4_unicode_ci NOT NULL,
+    fecha_emision DATE NOT NULL,
+    fecha_vencimiento DATE NOT NULL,
+    FOREIGN KEY (id_conductor) REFERENCES conductor(id_conductor)
+        ON DELETE CASCADE
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+INSERT INTO licencia (id_conductor, tipo, fecha_emision, fecha_vencimiento) VALUES
+(1, 'A', '2020-01-01', '2025-01-01'),
+(1, 'B', '2022-06-01', '2027-06-01'),
+(2, 'A', '2019-03-15', '2024-03-15'),
+(3, 'C', '2021-09-10', '2026-09-10');
+
+-- =====================================================
+-- EVALUACION (evaluaciones a usuarios del sistema)
+-- =====================================================
+
+CREATE TABLE evaluacion (
+    id_evaluacion INT PRIMARY KEY AUTO_INCREMENT,
+    id_usuario INT NOT NULL,
+    fecha DATE NOT NULL,
+    puntuacion INT NOT NULL,           -- por ejemplo 1–10
+    comentarios VARCHAR(255) COLLATE utf8mb4_unicode_ci,
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
+        ON DELETE CASCADE
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+INSERT INTO evaluacion (id_usuario, fecha, puntuacion, comentarios) VALUES
+(3, '2024-05-10', 9, 'Conductor puntual y cuidadoso con el vehículo'),
+(2, '2024-05-12', 8, 'Mecánico con buen tiempo de respuesta'),
+(4, '2024-05-15', 9, 'Área de logística organiza bien las rutas');
