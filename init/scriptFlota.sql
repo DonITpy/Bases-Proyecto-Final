@@ -8,19 +8,25 @@ CREATE DATABASE flota_logistica CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
 USE flota_logistica;
 
 -- =====================================================
--- FLOTA
+-- FLOTA (mejorada con categoría, ubicación, políticas y estado)
 -- =====================================================
 CREATE TABLE flota (
     id_flota INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(40) COLLATE utf8mb4_unicode_ci,
-    descripcion VARCHAR(100) COLLATE utf8mb4_unicode_ci
+    nombre VARCHAR(40) COLLATE utf8mb4_unicode_ci NOT NULL,
+    descripcion VARCHAR(100) COLLATE utf8mb4_unicode_ci,
+    categoria ENUM('carga_ligera','carga_pesada','transporte_personal','reparto','especial') NOT NULL DEFAULT 'carga_ligera',
+    ubicacion VARCHAR(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+    estado ENUM('activa','inactiva','mantenimiento') NOT NULL DEFAULT 'activa',
+    politica_uso TEXT COLLATE utf8mb4_unicode_ci,
+    capacidad_maxima INT DEFAULT 0,
+    fecha_creacion DATE NOT NULL
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO flota (id_flota, nombre, descripcion) VALUES
-(1,'Flota Norte','Vehículos de la zona Norte'),
-(2,'Flota Sur','Vehículos de la zona Sur'),
-(3,'Flota Centro','Vehículos de la zona Centro'),
-(4,'Flota Especial','Vehículos para carga pesada');
+INSERT INTO flota (id_flota, nombre, descripcion, categoria, ubicacion, estado, politica_uso, capacidad_maxima, fecha_creacion) VALUES
+(1,'Flota Norte','Vehículos de la zona Norte','carga_ligera','Ciudad de México - Zona Norte','activa','Uso exclusivo para entregas locales en zona norte. Máximo 8 horas diarias. Requiere autorización para salidas nocturnas.',10,'2024-01-15'),
+(2,'Flota Sur','Vehículos de la zona Sur','reparto','Ciudad de México - Zona Sur','activa','Reparto urbano. Horario: 7:00-19:00. Prohibido circular en contingencias ambientales.',8,'2024-01-20'),
+(3,'Flota Centro','Vehículos de la zona Centro','transporte_personal','Ciudad de México - Centro','activa','Transporte ejecutivo y documentos. Requiere conductor con licencia tipo B. Mantenimiento preventivo cada 5000 km.',5,'2024-02-01'),
+(4,'Flota Especial','Vehículos para carga pesada','carga_pesada','Nacional - Rutas Largas','activa','Carga pesada nacional. Conductores con mínimo 5 años experiencia. Descanso obligatorio cada 4 horas. GPS requerido.',15,'2024-01-10');
 
 -- =====================================================
 -- USUARIOS (roles: admin, mecanico, logistica, conductor, observador)
@@ -80,29 +86,29 @@ CREATE TABLE vehiculo (
     marca VARCHAR(30) NOT NULL COLLATE utf8mb4_unicode_ci,
     estado ENUM('activo','mantenimiento','inactivo') NOT NULL DEFAULT 'activo',
     kilometraje INT NOT NULL,
+    categoria ENUM('carga_ligera','carga_pesada','transporte_personal','reparto','especial') NOT NULL DEFAULT 'carga_ligera',
     id_flota INT NULL,
     id_conductor INT NULL,
     CONSTRAINT fk_vehiculo_flota FOREIGN KEY (id_flota) REFERENCES flota(id_flota) ON DELETE SET NULL,
     CONSTRAINT fk_vehiculo_conductor FOREIGN KEY (id_conductor) REFERENCES conductor(id_conductor) ON DELETE SET NULL
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO vehiculo (id_vehiculo, matricula, modelo, tipo, capacidad, marca, estado, kilometraje, id_flota, id_conductor) VALUES
-(1,'ABC123','Sprinter 2020','Camioneta',1000,'Mercedes-Benz','activo',25000,3,1),
-(2,'XYZ789','Transit 2018','Furgoneta',800,'Ford','mantenimiento',74000,3,2),
-(3,'DEF456','Hilux 2022','Camioneta',1200,'Toyota','activo',15000,1,3),
-(4,'GHI789','Freightliner 2021','Camión',5000,'Freightliner','activo',50000,4,4),
-(5,'JKL012','Versa 2023','Sedán',500,'Nissan','activo',8000,2,5),
-(6,'MNO345','Kenworth 2020','Camión',4500,'Kenworth','inactivo',120000,4,6),
-(7,'PQR678','RAV4 2021','SUV',700,'Toyota','activo',35000,1,7),
-(8,'STU901','Volvo 2019','Camión',5500,'Volvo','activo',95000,4,8),
--- CORRECCIÓN: id_flota antes era 9 (no existe) -> cambiado a 2
-(9,'VWX234','Aveo 2022','Sedán',450,'Chevrolet','activo',12000,2,9),
-(10,'YZA567','CX-5 2020','SUV',650,'Mazda','mantenimiento',42000,1,10),
-(11,'BCD890','Doblado 2019','Furgoneta',750,'Hyundai','activo',88000,3,11),
-(12,'EFG123','Tacoma 2021','Camioneta',950,'Toyota','activo',22000,1,12),
-(13,'HIJ456','F-150 2020','Camioneta',1100,'Ford','activo',60000,1,NULL),
-(14,'KLM789','Fortuner 2022','SUV',800,'Toyota','activo',18000,1,NULL),
-(15,'NOP012','Ranger 2021','Camioneta',900,'Ford','inactivo',45000,1,NULL);
+INSERT INTO vehiculo (id_vehiculo, matricula, modelo, tipo, capacidad, marca, estado, kilometraje, categoria, id_flota, id_conductor) VALUES
+(1,'ABC123','Sprinter 2020','Camioneta',1000,'Mercedes-Benz','activo',25000,'transporte_personal',3,1),
+(2,'XYZ789','Transit 2018','Furgoneta',800,'Ford','mantenimiento',74000,'transporte_personal',3,2),
+(3,'DEF456','Hilux 2022','Camioneta',1200,'Toyota','activo',15000,'carga_ligera',1,3),
+(4,'GHI789','Freightliner 2021','Camión',5000,'Freightliner','activo',50000,'carga_pesada',4,4),
+(5,'JKL012','Versa 2023','Sedán',500,'Nissan','activo',8000,'reparto',2,5),
+(6,'MNO345','Kenworth 2020','Camión',4500,'Kenworth','inactivo',120000,'carga_pesada',4,6),
+(7,'PQR678','RAV4 2021','SUV',700,'Toyota','activo',35000,'carga_ligera',1,7),
+(8,'STU901','Volvo 2019','Camión',5500,'Volvo','activo',95000,'carga_pesada',4,8),
+(9,'VWX234','Aveo 2022','Sedán',450,'Chevrolet','activo',12000,'reparto',2,9),
+(10,'YZA567','CX-5 2020','SUV',650,'Mazda','mantenimiento',42000,'carga_ligera',1,10),
+(11,'BCD890','Doblado 2019','Furgoneta',750,'Hyundai','activo',88000,'transporte_personal',3,11),
+(12,'EFG123','Tacoma 2021','Camioneta',950,'Toyota','activo',22000,'carga_ligera',1,12),
+(13,'HIJ456','F-150 2020','Camioneta',1100,'Ford','activo',60000,'carga_ligera',1,NULL),
+(14,'KLM789','Fortuner 2022','SUV',800,'Toyota','activo',18000,'carga_ligera',1,NULL),
+(15,'NOP012','Ranger 2021','Camioneta',900,'Ford','inactivo',45000,'carga_ligera',1,NULL);
 
 -- =====================================================
 -- ORDEN DE SERVICIO (estado: pendiente, en progreso, completado, cancelado)
@@ -271,8 +277,393 @@ INSERT INTO evaluacion (id_evaluacion, id_conductor, fecha, puntuacion, comentar
 (3,3,'2024-05-15',9,'Cumple rutas asignadas de forma eficiente');
 
 -- =====================================================
+-- FLOTA_VEHICULO (tabla intermedia para asignaciones específicas)
+-- NOTA: Se crea al final porque depende de flota y vehiculo
+-- =====================================================
+CREATE TABLE flota_vehiculo (
+    id_asignacion INT PRIMARY KEY AUTO_INCREMENT,
+    id_flota INT NOT NULL,
+    id_vehiculo INT NOT NULL,
+    fecha_asignacion DATE NOT NULL,
+    fecha_desasignacion DATE NULL,
+    motivo_asignacion VARCHAR(255) COLLATE utf8mb4_unicode_ci,
+    estado_asignacion ENUM('activa','finalizada','temporal') NOT NULL DEFAULT 'activa',
+    prioridad ENUM('baja','media','alta','critica') NOT NULL DEFAULT 'media',
+    notas TEXT COLLATE utf8mb4_unicode_ci,
+    FOREIGN KEY (id_flota) REFERENCES flota(id_flota) ON DELETE CASCADE,
+    FOREIGN KEY (id_vehiculo) REFERENCES vehiculo(id_vehiculo) ON DELETE CASCADE,
+    UNIQUE KEY uk_flota_vehiculo_activa (id_vehiculo, id_flota, estado_asignacion)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+INSERT INTO flota_vehiculo (id_asignacion, id_flota, id_vehiculo, fecha_asignacion, fecha_desasignacion, motivo_asignacion, estado_asignacion, prioridad, notas) VALUES
+(1,3,1,'2024-03-01',NULL,'Asignación inicial para reparto zona centro','activa','alta','Vehículo nuevo, requiere seguimiento'),
+(2,3,2,'2024-03-05',NULL,'Soporte adicional zona centro','activa','media','En mantenimiento preventivo'),
+(3,1,3,'2024-02-15',NULL,'Entregas zona norte','activa','alta','Rendimiento óptimo'),
+(4,4,4,'2024-01-20',NULL,'Rutas largas nacionales','activa','critica','Conductor exclusivo asignado'),
+(5,2,5,'2024-03-10',NULL,'Reparto urbano sur','activa','baja','Vehículo económico'),
+(6,4,6,'2024-02-01','2024-06-15','Ruta temporal','finalizada','media','Desasignado por mantenimiento mayor'),
+(7,1,7,'2024-03-15',NULL,'Apoyo zona norte','activa','media','SUV para cargas especiales'),
+(8,4,8,'2024-02-20',NULL,'Carga pesada','activa','critica','Camión principal flota pesada'),
+(9,2,9,'2024-03-20',NULL,'Reparto rápido','activa','alta','Para entregas urgentes'),
+(10,1,10,'2024-03-01',NULL,'Zona norte - SUV','activa','media','En mantenimiento'),
+(11,3,11,'2024-02-25',NULL,'Centro - furgoneta','activa','media','Buen estado general'),
+(12,1,12,'2024-03-05',NULL,'Norte - camioneta','activa','alta','Recién incorporado');
+
+-- =====================================================
 -- FIN - índices útiles
 -- =====================================================
 ALTER TABLE viaje ADD INDEX (fecha_salida);
 ALTER TABLE mantenimiento ADD INDEX (fecha);
 ALTER TABLE consumo ADD INDEX (fecha);
+
+-- =====================================================
+-- INSERCIÓN MASIVA DE 1000 REGISTROS POR TABLA
+-- =====================================================
+
+-- Generar 1000 flotas adicionales
+DELIMITER //
+CREATE PROCEDURE generar_flotas()
+BEGIN
+    DECLARE i INT DEFAULT 5;
+    DECLARE categorias VARCHAR(255) DEFAULT 'carga_ligera,carga_pesada,transporte_personal,reparto,especial';
+    DECLARE estados VARCHAR(255) DEFAULT 'activa,inactiva,mantenimiento';
+    DECLARE cat VARCHAR(50);
+    DECLARE est VARCHAR(50);
+    DECLARE ciudad VARCHAR(50);
+    DECLARE nombres_flota VARCHAR(255) DEFAULT 'Norte,Sur,Centro,Pacífico,Bajío,Altiplano,Occidente,Oriente,Metropolitana,Regional';
+    DECLARE ubicaciones VARCHAR(255) DEFAULT 'Ciudad de México,Guadalajara,Monterrey,Puebla,Tijuana,Mérida,León,Querétaro,Chihuahua,Saltillo';
+    
+    WHILE i <= 1000 DO
+        SET cat = ELT(FLOOR(1 + RAND() * 5), 'carga_ligera','carga_pesada','transporte_personal','reparto','especial');
+        SET est = ELT(FLOOR(1 + RAND() * 3), 'activa','inactiva','mantenimiento');
+        SET ciudad = ELT(FLOOR(1 + RAND() * 10), 'Ciudad de México','Guadalajara','Monterrey','Puebla','Tijuana','Mérida','León','Querétaro','Chihuahua','Saltillo');
+        
+        INSERT INTO flota (nombre, descripcion, categoria, ubicacion, estado, politica_uso, capacidad_maxima, fecha_creacion)
+        VALUES (
+            CONCAT('Flota ', ELT(FLOOR(1 + RAND() * 10), 'Norte','Sur','Centro','Pacífico','Bajío','Altiplano','Occidente','Oriente','Metropolitana','Regional')),
+            CONCAT('Operaciones en ', ciudad, ' con enfoque en ', cat),
+            cat,
+            ciudad,
+            est,
+            CONCAT('Uso según normativa local, descanso obligatorio, mantenimiento preventivo cada ', ELT(FLOOR(1 + RAND() * 4), '5000','8000','10000','12000'), ' km.'),
+            FLOOR(5 + RAND() * 50),
+            DATE_ADD('2024-01-01', INTERVAL FLOOR(RAND() * 365) DAY)
+        );
+        SET i = i + 1;
+    END WHILE;
+END//
+DELIMITER ;
+
+-- Generar 1000 usuarios adicionales
+DELIMITER //
+CREATE PROCEDURE generar_usuarios()
+BEGIN
+    DECLARE i INT DEFAULT 6;
+    DECLARE roles VARCHAR(255) DEFAULT 'admin,mecanico,logistica,conductor,observador';
+    DECLARE rol VARCHAR(20);
+    DECLARE nombres VARCHAR(255) DEFAULT 'Juan,Carlos,Ana,María,Luis,Laura,José,Lucía,Pedro,Valeria,Raúl,Elena,Andrés,Isabel,Diego';
+    DECLARE apellidos VARCHAR(255) DEFAULT 'López,García,Ramírez,Hernández,Martínez,Rodríguez,González,Pérez,Sánchez,Fernández,Romero,Silva,Castro,Vargas,Núñez';
+    
+    WHILE i <= 1000 DO
+        SET rol = ELT(FLOOR(1 + RAND() * 5), 'admin','mecanico','logistica','conductor','observador');
+        
+        INSERT INTO usuario (nombre, correo, password, rol)
+        VALUES (
+            CONCAT(ELT(FLOOR(1 + RAND() * 15), 'Juan','Carlos','Ana','María','Luis','Laura','José','Lucía','Pedro','Valeria','Raúl','Elena','Andrés','Isabel','Diego'), ' ', ELT(FLOOR(1 + RAND() * 15), 'López','García','Ramírez','Hernández','Martínez','Rodríguez','González','Pérez','Sánchez','Fernández','Romero','Silva','Castro','Vargas','Núñez')),
+            CONCAT(
+                LOWER(REPLACE(ELT(FLOOR(1 + RAND() * 15), 'Juan','Carlos','Ana','María','Luis','Laura','José','Lucía','Pedro','Valeria','Raúl','Elena','Andrés','Isabel','Diego'), 'á','a')),
+                '.',
+                LOWER(REPLACE(ELT(FLOOR(1 + RAND() * 15), 'López','García','Ramírez','Hernández','Martínez','Rodríguez','González','Pérez','Sánchez','Fernández','Romero','Silva','Castro','Vargas','Núñez'), 'á','a')),
+                '.', i,
+                '@empresa.com'
+            ),
+            CONCAT('pw', LPAD(FLOOR(RAND()*100000),5,'0')),
+            rol
+        );
+        SET i = i + 1;
+    END WHILE;
+END//
+DELIMITER ;
+
+-- Generar 1000 conductores adicionales
+DELIMITER //
+CREATE PROCEDURE generar_conductores()
+BEGIN
+    DECLARE i INT DEFAULT 13;
+    DECLARE user_id INT;
+    DECLARE nombres VARCHAR(255) DEFAULT 'Juan,Carlos,Ana,María,Luis,Laura,José,Lucía,Pedro,Valeria,Raúl,Elena,Andrés,Isabel,Diego';
+    DECLARE apellidos VARCHAR(255) DEFAULT 'López,García,Ramírez,Hernández,Martínez,Rodríguez,González,Pérez,Sánchez,Fernández,Romero,Silva,Castro,Vargas,Núñez';
+    DECLARE calles VARCHAR(255) DEFAULT 'Primera,Segunda,Tercera,Cuarta,Quinta,Sexta,Séptima,Octava,Novena,Décima';
+    DECLARE ciudades VARCHAR(255) DEFAULT 'CDMX,Guadalajara,Monterrey,Puebla,Tijuana,Mérida,León,Querétaro,Chihuahua,Saltillo';
+    
+    WHILE i <= 1000 DO
+        SET user_id = IF(RAND() > 0.5 AND i <= 1000, FLOOR(6 + RAND() * 995), NULL);
+        
+        INSERT INTO conductor (nombre, apellido, telefono, direccion, fecha_nacimiento, id_usuario)
+        VALUES (
+            ELT(FLOOR(1 + RAND() * 15), 'Juan','Carlos','Ana','María','Luis','Laura','José','Lucía','Pedro','Valeria','Raúl','Elena','Andrés','Isabel','Diego'),
+            ELT(FLOOR(1 + RAND() * 15), 'López','García','Ramírez','Hernández','Martínez','Rodríguez','González','Pérez','Sánchez','Fernández','Romero','Silva','Castro','Vargas','Núñez'),
+            CONCAT('55', LPAD(FLOOR(RAND()*9000000)+1000000, 7, '0')),
+            CONCAT('Calle ', ELT(FLOOR(1 + RAND() * 10), 'Primera','Segunda','Tercera','Cuarta','Quinta','Sexta','Séptima','Octava','Novena','Décima'), ' #', FLOOR(1 + RAND() * 999), ', ', ELT(FLOOR(1 + RAND() * 10), 'CDMX','Guadalajara','Monterrey','Puebla','Tijuana','Mérida','León','Querétaro','Chihuahua','Saltillo')),
+            DATE_ADD('1970-01-01', INTERVAL FLOOR(RAND() * 18250) DAY),
+            user_id
+        );
+        SET i = i + 1;
+    END WHILE;
+END//
+DELIMITER ;
+
+-- Generar 1000 vehículos adicionales
+DELIMITER //
+CREATE PROCEDURE generar_vehiculos()
+BEGIN
+    DECLARE i INT DEFAULT 16;
+    DECLARE estados VARCHAR(255) DEFAULT 'activo,mantenimiento,inactivo';
+    DECLARE categorias VARCHAR(255) DEFAULT 'carga_ligera,carga_pesada,transporte_personal,reparto,especial';
+    DECLARE est VARCHAR(20);
+    DECLARE cat VARCHAR(50);
+    DECLARE flota_id INT;
+    DECLARE cond_id INT;
+    DECLARE tipos VARCHAR(255) DEFAULT 'Camioneta,Furgoneta,Camión,Sedán,SUV';
+    DECLARE marcas VARCHAR(255) DEFAULT 'Toyota,Ford,Chevrolet,Nissan,Volkswagen,Mercedes-Benz,Volvo,Freightliner,Kenworth,Hyundai,Mazda,Honda,Renault,Peugeot,Scania';
+    DECLARE modelos VARCHAR(255) DEFAULT 'Hilux,F-150,Sprinter,Transit,Ranger,Tacoma,Versa,Aveo,CX-5,RAV4,Fortuner,Onix,Sandero,Logan,Actros';
+    
+    WHILE i <= 1000 DO
+        SET est = ELT(FLOOR(1 + RAND() * 3), 'activo','mantenimiento','inactivo');
+        SET cat = ELT(FLOOR(1 + RAND() * 5), 'carga_ligera','carga_pesada','transporte_personal','reparto','especial');
+        SET flota_id = IF(RAND() > 0.1, FLOOR(1 + RAND() * 1000), NULL);
+        SET cond_id = IF(RAND() > 0.3, FLOOR(1 + RAND() * 1000), NULL);
+        
+        INSERT INTO vehiculo (matricula, modelo, tipo, capacidad, marca, estado, kilometraje, categoria, id_flota, id_conductor)
+        VALUES (
+            CONCAT('VEH', LPAD(i, 6, '0')),
+            ELT(FLOOR(1 + RAND() * 15), 'Hilux','F-150','Sprinter','Transit','Ranger','Tacoma','Versa','Aveo','CX-5','RAV4','Fortuner','Onix','Sandero','Logan','Actros'),
+            ELT(FLOOR(1 + RAND() * 5), 'Camioneta','Furgoneta','Camión','Sedán','SUV'),
+            FLOOR(400 + RAND() * 5000),
+            ELT(FLOOR(1 + RAND() * 15), 'Toyota','Ford','Chevrolet','Nissan','Volkswagen','Mercedes-Benz','Volvo','Freightliner','Kenworth','Hyundai','Mazda','Honda','Renault','Peugeot','Scania'),
+            est,
+            FLOOR(1000 + RAND() * 150000),
+            cat,
+            flota_id,
+            cond_id
+        );
+        SET i = i + 1;
+    END WHILE;
+END//
+DELIMITER ;
+
+-- Generar 1000 órdenes de servicio adicionales
+DELIMITER //
+CREATE PROCEDURE generar_ordenes()
+BEGIN
+    DECLARE i INT DEFAULT 16;
+    DECLARE est VARCHAR(20);
+    DECLARE descrip VARCHAR(255);
+    
+    WHILE i <= 1000 DO
+        SET est = ELT(FLOOR(1 + RAND() * 4), 'pendiente','en progreso','completado','cancelado');
+        SET descrip = ELT(FLOOR(1 + RAND() * 12),
+            'Entrega refrigerada', 'Transporte de materiales', 'Documentos urgentes', 'Carga de mercancía',
+            'Mudanza residencial', 'Transporte de valores', 'Envío de repuestos', 'Construcción',
+            'Reparto local', 'Traslado internacional', 'Servicio especial', 'Ruta express'
+        );
+        
+        INSERT INTO orden_servicio (descripcion, fecha, estado)
+        VALUES (
+            descrip,
+            DATE_ADD('2024-01-01', INTERVAL FLOOR(RAND() * 365) DAY),
+            est
+        );
+        SET i = i + 1;
+    END WHILE;
+END//
+DELIMITER ;
+
+-- Generar 1000 viajes adicionales
+DELIMITER //
+CREATE PROCEDURE generar_viajes()
+BEGIN
+    DECLARE i INT DEFAULT 16;
+    DECLARE est VARCHAR(20);
+    DECLARE fecha_s DATE;
+    DECLARE fecha_e DATE;
+    DECLARE origen_c VARCHAR(50);
+    DECLARE destino_c VARCHAR(50);
+    
+    WHILE i <= 1000 DO
+        SET est = ELT(FLOOR(1 + RAND() * 4), 'pendiente','en progreso','completado','cancelado');
+        SET fecha_s = DATE_ADD('2024-01-01', INTERVAL FLOOR(RAND() * 365) DAY);
+        SET fecha_e = IF(RAND() > 0.2, DATE_ADD(fecha_s, INTERVAL FLOOR(1 + RAND() * 10) DAY), NULL);
+        SET origen_c = ELT(FLOOR(1 + RAND() * 10), 'CDMX','Guadalajara','Monterrey','Puebla','Tijuana','Mérida','León','Querétaro','Chihuahua','Saltillo');
+        SET destino_c = ELT(FLOOR(1 + RAND() * 10), 'CDMX','Guadalajara','Monterrey','Puebla','Tijuana','Mérida','León','Querétaro','Chihuahua','Saltillo');
+        
+        INSERT INTO viaje (origen, destino, fecha_salida, fecha_estimada, estado, id_vehiculo, id_conductor, id_orden)
+        VALUES (
+            origen_c,
+            destino_c,
+            fecha_s,
+            fecha_e,
+            est,
+            FLOOR(1 + RAND() * 1000),
+            FLOOR(1 + RAND() * 1000),
+            IF(RAND() > 0.1, FLOOR(1 + RAND() * 1000), NULL)
+        );
+        SET i = i + 1;
+    END WHILE;
+END//
+DELIMITER ;
+
+-- Generar 1000 mantenimientos adicionales
+DELIMITER //
+CREATE PROCEDURE generar_mantenimientos()
+BEGIN
+    DECLARE i INT DEFAULT 8;
+    DECLARE tipo_mant VARCHAR(20);
+    DECLARE descrip VARCHAR(255);
+    
+    WHILE i <= 1000 DO
+        SET tipo_mant = ELT(FLOOR(1 + RAND() * 3), 'preventivo','correctivo','reparacion');
+        SET descrip = ELT(FLOOR(1 + RAND() * 12),
+            'Cambio de aceite y filtro','Ajuste de frenos','Alineación y balanceo','Revisión de suspensión',
+            'Cambio de llantas','Limpieza de inyectores','Diagnóstico eléctrico','Cambio de batería',
+            'Reparación de transmisión','Servicio general','Revisión de dirección','Cambio de correas'
+        );
+        
+        INSERT INTO mantenimiento (id_vehiculo, tipo, descripcion, costo, fecha)
+        VALUES (
+            FLOOR(1 + RAND() * 1000),
+            tipo_mant,
+            descrip,
+            ROUND(500 + RAND() * 10000, 2),
+            DATE_ADD('2024-01-01', INTERVAL FLOOR(RAND() * 365) DAY)
+        );
+        SET i = i + 1;
+    END WHILE;
+END//
+DELIMITER ;
+
+-- Generar 1000 consumos adicionales
+DELIMITER //
+CREATE PROCEDURE generar_consumos()
+BEGIN
+    DECLARE i INT DEFAULT 16;
+    DECLARE mat VARCHAR(20);
+    DECLARE tipo_comb VARCHAR(30);
+    DECLARE litros_val DECIMAL(10,2);
+    
+    WHILE i <= 1000 DO
+        SET mat = (SELECT matricula FROM vehiculo ORDER BY RAND() LIMIT 1);
+        SET tipo_comb = ELT(FLOOR(1 + RAND() * 4), 'Gasolina','Diésel','Eléctrico','Gas');
+        SET litros_val = ROUND(20 + RAND() * 120, 2);
+        
+        INSERT INTO consumo (matricula, litros, fecha, tipo_combustible, costo)
+        VALUES (
+            mat,
+            litros_val,
+            DATE_ADD('2024-01-01', INTERVAL FLOOR(RAND() * 365) DAY),
+            tipo_comb,
+            ROUND(litros_val * (18 + RAND() * 6), 2)
+        );
+        SET i = i + 1;
+    END WHILE;
+END//
+DELIMITER ;
+
+-- Generar 1000 incidentes adicionales
+DELIMITER //
+CREATE PROCEDURE generar_incidentes()
+BEGIN
+    DECLARE i INT DEFAULT 4;
+    DECLARE mat VARCHAR(20);
+    DECLARE tipos_inc VARCHAR(255) DEFAULT 'accidente,infracción,daño,falla mecánica,robo';
+    DECLARE descrip VARCHAR(255);
+    
+    WHILE i <= 1000 DO
+        SET mat = (SELECT matricula FROM vehiculo ORDER BY RAND() LIMIT 1);
+        SET descrip = ELT(FLOOR(1 + RAND() * 10),
+            'Choque leve en intersección','Exceso de velocidad','Raspones en carrocería','Falla en sistema de frenos',
+            'Robo de espejo','Pinchazo de llanta','Luces dañadas','Golpe en defensa',
+            'Motor sobrecalentado','Infracción de estacionamiento'
+        );
+        
+        INSERT INTO incidente (matricula, tipo, fecha, descripcion)
+        VALUES (
+            mat,
+            ELT(FLOOR(1 + RAND() * 5), 'accidente','infracción','daño','falla mecánica','robo'),
+            DATE_ADD('2024-01-01', INTERVAL FLOOR(RAND() * 365) DAY),
+            descrip
+        );
+        SET i = i + 1;
+    END WHILE;
+END//
+DELIMITER ;
+
+-- Generar 1000 licencias adicionales
+DELIMITER //
+CREATE PROCEDURE generar_licencias()
+BEGIN
+    DECLARE i INT DEFAULT 5;
+    DECLARE tipo_lic VARCHAR(5);
+    DECLARE fecha_em DATE;
+    
+    WHILE i <= 1000 DO
+        SET tipo_lic = ELT(FLOOR(1 + RAND() * 12), 'A','A1','A2','B','B1','C','D','E','F','G','H','AM');
+        SET fecha_em = DATE_ADD('2018-01-01', INTERVAL FLOOR(RAND() * 2190) DAY);
+        
+        INSERT INTO licencia (id_conductor, tipo, fecha_emision, fecha_vencimiento)
+        VALUES (
+            FLOOR(1 + RAND() * 1000),
+            tipo_lic,
+            fecha_em,
+            DATE_ADD(fecha_em, INTERVAL (3 + FLOOR(RAND() * 5)) YEAR)
+        );
+        SET i = i + 1;
+    END WHILE;
+END//
+DELIMITER ;
+
+-- Generar 1000 evaluaciones adicionales
+DELIMITER //
+CREATE PROCEDURE generar_evaluaciones()
+BEGIN
+    DECLARE i INT DEFAULT 4;
+    DECLARE comentarios_pool VARCHAR(255) DEFAULT 'Puntual y responsable,Buen trato con clientes,Mejora en eficiencia,Atento a señales,Manejo defensivo,Necesita capacitación,Excelente rendimiento,Consumo moderado,Cuida el vehículo,Organiza rutas';
+    
+    WHILE i <= 1000 DO
+        INSERT INTO evaluacion (id_conductor, fecha, puntuacion, comentarios)
+        VALUES (
+            FLOOR(1 + RAND() * 1000),
+            DATE_ADD('2024-01-01', INTERVAL FLOOR(RAND() * 365) DAY),
+            FLOOR(5 + RAND() * 6),
+            ELT(FLOOR(1 + RAND() * 10), 'Puntual y responsable','Buen trato con clientes','Mejora en eficiencia','Atento a señales','Manejo defensivo','Necesita capacitación','Excelente rendimiento','Consumo moderado','Cuida el vehículo','Organiza rutas')
+        );
+        SET i = i + 1;
+    END WHILE;
+END//
+DELIMITER ;
+
+-- Ejecutar todos los procedimientos
+CALL generar_flotas();
+CALL generar_usuarios();
+CALL generar_conductores();
+CALL generar_vehiculos();
+CALL generar_ordenes();
+CALL generar_viajes();
+CALL generar_mantenimientos();
+CALL generar_consumos();
+CALL generar_incidentes();
+CALL generar_licencias();
+CALL generar_evaluaciones();
+
+-- Limpiar procedimientos
+DROP PROCEDURE IF EXISTS generar_flotas;
+DROP PROCEDURE IF EXISTS generar_usuarios;
+DROP PROCEDURE IF EXISTS generar_conductores;
+DROP PROCEDURE IF EXISTS generar_vehiculos;
+DROP PROCEDURE IF EXISTS generar_ordenes;
+DROP PROCEDURE IF EXISTS generar_viajes;
+DROP PROCEDURE IF EXISTS generar_mantenimientos;
+DROP PROCEDURE IF EXISTS generar_consumos;
+DROP PROCEDURE IF EXISTS generar_incidentes;
+DROP PROCEDURE IF EXISTS generar_licencias;
+DROP PROCEDURE IF EXISTS generar_evaluaciones;

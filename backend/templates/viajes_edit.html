@@ -7,17 +7,24 @@
         </div>
     {% endif %}
     
-    <form method="post" action="/viajes_update/{{viaje.id_viaje}}" style="width:400px; margin:auto;">
+    <form method="post" action="/viajes_update/{{viaje.id_viaje}}" style="width:400px; margin:auto;" id="form-viaje-edit">
         <input type="text" name="origen" value="{{viaje.origen}}" placeholder="Origen" required minlength="2" maxlength="50">
         <input type="text" name="destino" value="{{viaje.destino}}" placeholder="Destino" required minlength="2" maxlength="50">
         <input type="date" name="fecha_salida" value="{{viaje.fecha_salida}}" required>
         <label style="display:block; margin:8px 0;">Fecha estimada (opcional)</label>
         <input type="date" name="fecha_estimada" value="{{viaje.fecha_estimada if viaje.fecha_estimada is defined else (viaje.fecha_estimada or '')}}">
         <label style="display:block; margin:8px 0;">Conductor (opcional)</label>
-        <select name="id_conductor">
+        <select name="id_conductor" id="conductor_select_edit">
             <option value="">Sin conductor</option>
             {% for c in conductores_list %}
                 <option value="{{ c.id_conductor }}" {% if viaje.id_conductor == c.id_conductor %}selected{% endif %}>{{ c.nombre }} {{ c.apellido }}</option>
+            {% endfor %}
+        </select>
+        <label style="display:block; margin:8px 0;">Vehículo (opcional)</label>
+        <select name="id_vehiculo" id="vehiculo_select_edit">
+            <option value="">Sin vehículo</option>
+            {% for v in vehiculos_list %}
+                <option value="{{ v.id_vehiculo }}" data-conductor="{{ v.id_conductor or '' }}" {% if viaje.id_vehiculo == v.id_vehiculo %}selected{% endif %}>{{ v.matricula }} - {{ v.modelo }}</option>
             {% endfor %}
         </select>
         <select name="estado" required>
@@ -32,4 +39,63 @@
     <div style="text-align:center; margin-top:20px;">
         <a href="/viajes_web" style="color:#336699; text-decoration:none;">Volver</a>
     </div>
+    
+    <script>
+        // Script para filtrar vehículos según el conductor seleccionado en edición
+        const conductorSelectEdit = document.getElementById('conductor_select_edit');
+        const vehiculoSelectEdit = document.getElementById('vehiculo_select_edit');
+        const todasOpcionesEdit = Array.from(vehiculoSelectEdit.options);
+        const vehiculoActual = "{{ viaje.id_vehiculo or '' }}";
+        
+        function filtrarVehiculos() {
+            const conductorId = conductorSelectEdit.value;
+            
+            // Guardar la opción seleccionada actualmente
+            const vehiculoSeleccionado = vehiculoSelectEdit.value;
+            
+            // Limpiar el select de vehículos
+            vehiculoSelectEdit.innerHTML = '<option value="">Sin vehículo</option>';
+            
+            if (conductorId) {
+                // Filtrar y mostrar solo vehículos del conductor seleccionado
+                const vehiculosFiltrados = todasOpcionesEdit.filter(option => {
+                    return option.value === '' || option.getAttribute('data-conductor') === conductorId;
+                });
+                
+                vehiculosFiltrados.forEach(option => {
+                    vehiculoSelectEdit.appendChild(option.cloneNode(true));
+                });
+                
+                // Restaurar selección si es posible
+                if (vehiculoSeleccionado) {
+                    vehiculoSelectEdit.value = vehiculoSeleccionado;
+                }
+                
+                if (vehiculoSelectEdit.options.length === 1) {
+                    const optionMsg = document.createElement('option');
+                    optionMsg.value = '';
+                    optionMsg.textContent = 'Este conductor no tiene vehículos asignados';
+                    optionMsg.disabled = true;
+                    vehiculoSelectEdit.appendChild(optionMsg);
+                }
+            } else {
+                // Si no hay conductor seleccionado, mostrar todos los vehículos
+                todasOpcionesEdit.forEach(option => {
+                    vehiculoSelectEdit.appendChild(option.cloneNode(true));
+                });
+                
+                // Restaurar selección
+                if (vehiculoSeleccionado) {
+                    vehiculoSelectEdit.value = vehiculoSeleccionado;
+                }
+            }
+        }
+        
+        conductorSelectEdit.addEventListener('change', filtrarVehiculos);
+        
+        // Filtrar al cargar la página si hay conductor seleccionado
+        if (conductorSelectEdit.value) {
+            filtrarVehiculos();
+        }
+    </script>
 {% endblock %}

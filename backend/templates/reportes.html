@@ -2,30 +2,208 @@
 {% block content %}
     <h1>Reportes y Descargas</h1>
     <div style="width:80%; margin:auto; background:#fff; padding:30px; border-radius:10px; box-shadow:0 2px 8px #bbb;">
-        <h2>Descargar Reportes en CSV</h2>
+        
+        <!-- Filtro de Fechas -->
+        <div style="margin-bottom:30px; padding:20px; background:#f0f4f8; border-radius:8px; border:2px solid #336699;">
+            <h3 style="margin-top:0;">Filtrar por Rango de Fechas</h3>
+            <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:15px; align-items:end;">
+                <div>
+                    <label for="fecha-inicio" style="display:block; font-weight:bold; margin-bottom:5px;">Fecha Inicio:</label>
+                    <input type="date" id="fecha-inicio" value="{{ fecha_inicio }}" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:5px;">
+                </div>
+                <div>
+                    <label for="fecha-fin" style="display:block; font-weight:bold; margin-bottom:5px;">Fecha Fin:</label>
+                    <input type="date" id="fecha-fin" value="{{ fecha_fin }}" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:5px;">
+                </div>
+                <div>
+                    <button onclick="aplicarFiltroFechas()" style="background:#336699; color:white; padding:10px 25px; border:none; border-radius:5px; cursor:pointer; font-size:14px;">Aplicar Filtro</button>
+                </div>
+            </div>
+        </div>
+
+        {% if usuario.rol == "admin" and kpis %}
+        <div style="margin: 25px 0; padding:20px; background:#f7fafc; border: 2px solid #cfe3ff; border-radius:10px;">
+            <h2 style="margin-top:0; color:#2c3e50;">Resumen KPI (Vista Previa)</h2>
+            <div style="display:grid; grid-template-columns: repeat(5, minmax(220px, 1fr)); gap:12px;">
+                <div style="background:#ffffff; border-radius:8px; padding:14px; border-left:6px solid #3f51b5;">
+                    <div style="color:#607d8b; font-size:12px;">Total de Viajes</div>
+                    <div style="font-size:22px; font-weight:bold;">{{ kpis.total_viajes }}</div>
+                </div>
+                <div style="background:#ffffff; border-radius:8px; padding:14px; border-left:6px solid #4caf50;">
+                    <div style="color:#607d8b; font-size:12px;">Cumplimiento (%)</div>
+                    <div style="font-size:22px; font-weight:bold;">{{ '%.2f'|format(kpis.tasa_cumplimiento) }}%</div>
+                </div>
+                <div style="background:#ffffff; border-radius:8px; padding:14px; border-left:6px solid #ff9800;">
+                    <div style="color:#607d8b; font-size:12px;">Viajes En Progreso</div>
+                    <div style="font-size:20px; font-weight:bold;">{{ kpis.viajes_en_progreso }}</div>
+                    <div style="color:#607d8b; font-size:12px; margin-top:6px;">Viajes Cancelados</div>
+                    <div style="font-size:20px; font-weight:bold;">{{ kpis.viajes_cancelados }}</div>
+                </div>
+                <div style="background:#ffffff; border-radius:8px; padding:14px; border-left:6px solid #009688;">
+                    <div style="color:#607d8b; font-size:12px;">Litros Combustible</div>
+                    <div style="font-size:22px; font-weight:bold;">{{ kpis.litros_totales }}</div>
+                </div>
+                <div style="background:#ffffff; border-radius:8px; padding:14px; border-left:6px solid #00bcd4;">
+                    <div style="color:#607d8b; font-size:12px;">Costo Combustible</div>
+                    <div style="font-size:22px; font-weight:bold;">$ {{ '%.2f'|format(kpis.costo_total_combustible) }}</div>
+                </div>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(5, minmax(220px, 1fr)); gap:12px; margin-top:12px;">
+                <div style="background:#ffffff; border-radius:8px; padding:14px; border-left:6px solid #8bc34a;">
+                    <div style="color:#607d8b; font-size:12px;">Costo Promedio/Viaje</div>
+                    <div style="font-size:22px; font-weight:bold;">$ {{ '%.2f'|format(kpis.costo_promedio_viaje_combustible) }}</div>
+                </div>
+                <div style="background:#ffffff; border-radius:8px; padding:14px; border-left:6px solid #e91e63;">
+                    <div style="color:#607d8b; font-size:12px;">Total Mantenimientos</div>
+                    <div style="font-size:20px; font-weight:bold;">{{ kpis.total_mantenimientos }}</div>
+                    <div style="color:#607d8b; font-size:12px; margin-top:6px;">Costo Mantenimientos</div>
+                    <div style="font-size:20px; font-weight:bold;">$ {{ '%.2f'|format(kpis.costo_total_mantenimiento) }}</div>
+                </div>
+                <div style="background:#ffffff; border-radius:8px; padding:14px; border-left:6px solid #9c27b0;">
+                    <div style="color:#607d8b; font-size:12px;">Vehículos Mantenidos</div>
+                    <div style="font-size:22px; font-weight:bold;">{{ kpis.vehiculos_mantenidos }}</div>
+                </div>
+                <div style="background:#ffffff; border-radius:8px; padding:14px; border-left:6px solid #ff5722;">
+                    <div style="color:#607d8b; font-size:12px;">Total Incidentes</div>
+                    <div style="font-size:20px; font-weight:bold;">{{ kpis.total_incidentes }}</div>
+                    <div style="color:#607d8b; font-size:12px; margin-top:6px;">Tasa Incidentes x100</div>
+                    <div style="font-size:20px; font-weight:bold;">{{ '%.2f'|format(kpis.tasa_incidentes_por_100_viajes) }}</div>
+                </div>
+                <div style="background:#ffffff; border-radius:8px; padding:14px; border-left:6px solid #607d8b;">
+                    <div style="color:#607d8b; font-size:12px;">Promedio Evaluación</div>
+                    <div style="font-size:22px; font-weight:bold;">{{ '%.2f'|format(kpis.promedio_evaluacion) }}</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <h2>Descargar Reportes Generales en CSV</h2>
         <p style="color:#666;">Descarga los datos de tus registros en formato CSV para análisis en Excel u otras herramientas.</p>
         
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:15px; margin-top:20px;">
             <div style="background:#e3f2fd; padding:15px; border-radius:8px; text-align:center;">
                 <h3>Vehículos</h3>
-                <a href="/descargar_vehiculos_csv" style="display:inline-block; background:#336699; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; margin-top:10px;">Descargar CSV</a>
+                <button onclick="descargarGeneral('vehiculos')" style="background:#336699; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; margin-top:10px;">Descargar CSV</button>
             </div>
             
             <div style="background:#e8f5e9; padding:15px; border-radius:8px; text-align:center;">
                 <h3>Conductores</h3>
-                <a href="/descargar_conductores_csv" style="display:inline-block; background:#336699; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; margin-top:10px;">Descargar CSV</a>
+                <a href="/descargar_conductores_csv" style="display:inline-block; background:#336699; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; margin-top:10px; font-size:14px; cursor:pointer;">Descargar CSV</a>
             </div>
             
             <div style="background:#fff3e0; padding:15px; border-radius:8px; text-align:center;">
                 <h3>Viajes</h3>
-                <a href="/descargar_viajes_csv" style="display:inline-block; background:#336699; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; margin-top:10px;">Descargar CSV</a>
+                <button onclick="descargarGeneral('viajes')" style="background:#336699; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; margin-top:10px;">Descargar CSV</button>
             </div>
             
             <div style="background:#fce4ec; padding:15px; border-radius:8px; text-align:center;">
                 <h3>Consumo</h3>
-                <a href="/descargar_consumo_csv" style="display:inline-block; background:#336699; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; margin-top:10px;">Descargar CSV</a>
+                <button onclick="descargarGeneral('consumo')" style="background:#336699; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; margin-top:10px;">Descargar CSV</button>
             </div>
         </div>
+        
+        {% if usuario.rol == "admin" %}
+        <div style="margin-top:20px; padding:15px; background:#e8eaf6; border-radius:8px; text-align:center;">
+            <h3>Reporte General Completo</h3>
+            <p style="color:#555; margin:10px 0;">Descarga un archivo CSV con todas las tablas del sistema</p>
+            <button onclick="descargarReporteGeneral()" style="background:#d32f2f; color:white; padding:12px 30px; border:none; border-radius:5px; cursor:pointer; font-size:15px; font-weight:bold;">Descargar Reporte Completo</button>
+        </div>
+        {% endif %}
+
+        {% if usuario.rol == "admin" %}
+        <hr style="margin:40px 0; border:0; border-top:2px solid #ddd;">
+        
+        <h2>Reportes Avanzados (Análisis Cruzado)</h2>
+        <p style="color:#666;">Reportes analíticos que cruzan múltiples tablas para obtener información estratégica.</p>
+        
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:20px; margin-top:20px;">
+            <div style="background:#e3f2fd; padding:20px; border-radius:10px; text-align:center;">
+                <h3 style="margin-top:0; font-size:18px; color:#333;">Consumo y Costo de Combustible</h3>
+                <p style="font-size:13px; color:#666;">Análisis de combustible por vehículo y flota con costos totales y promedios</p>
+                <button onclick="descargarReporteAvanzado('consumo_combustible')" style="background:#336699; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-weight:bold; margin-top:10px;">Descargar CSV</button>
+            </div>
+            
+            <div style="background:#fce4ec; padding:20px; border-radius:10px; text-align:center;">
+                <h3 style="margin-top:0; font-size:18px; color:#333;">Costos Operativos Totales</h3>
+                <p style="font-size:13px; color:#666;">Suma de mantenimiento + combustible por vehículo y flota</p>
+                <button onclick="descargarReporteAvanzado('costos_operativos')" style="background:#336699; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-weight:bold; margin-top:10px;">Descargar CSV</button>
+            </div>
+            
+            <div style="background:#e8f5e9; padding:20px; border-radius:10px; text-align:center;">
+                <h3 style="margin-top:0; font-size:18px; color:#333;">Desempeño de Conductores</h3>
+                <p style="font-size:13px; color:#666;">Viajes, evaluaciones e incidentes por conductor</p>
+                <button onclick="descargarReporteAvanzado('desempeno_conductores')" style="background:#336699; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-weight:bold; margin-top:10px;">Descargar CSV</button>
+            </div>
+            
+            <div style="background:#fff3e0; padding:20px; border-radius:10px; text-align:center;">
+                <h3 style="margin-top:0; font-size:18px; color:#333;">Licencias y Cumplimiento</h3>
+                <p style="font-size:13px; color:#666;">Viajes con licencias vencidas, por vencer o vigentes</p>
+                <button onclick="descargarReporteAvanzado('licencias_cumplimiento')" style="background:#336699; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-weight:bold; margin-top:10px;">Descargar CSV</button>
+            </div>
+
+            <div style="background:#e8eaf6; padding:20px; border-radius:10px; text-align:center;">
+                <h3 style="margin-top:0; font-size:18px; color:#333;">KPIs Operativos Clave</h3>
+                <p style="font-size:13px; color:#666;">Viajes, cumplimiento, combustible, mantenimiento, incidentes y evaluaciones</p>
+                <button onclick="descargarReporteAvanzado('kpis')" style="background:#336699; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-weight:bold; margin-top:10px;">Descargar CSV</button>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if usuario.rol == "admin" %}
+        <hr style="margin:40px 0; border:0; border-top:2px solid #ddd;">
+        
+        <h2>Reportes por Conductor</h2>
+        <p style="color:#666;">Genera reportes específicos de todas las actividades para un conductor seleccionado.</p>
+        
+        <div style="margin-top:20px; padding:25px; background:#f9f9f9; border-radius:8px; border:2px solid #336699;">
+            <label for="conductor-select" style="display:block; font-weight:bold; margin-bottom:10px; font-size:16px;">Selecciona un Conductor:</label>
+            <select id="conductor-select" style="width:100%; padding:12px; border:1px solid #ccc; border-radius:5px; font-size:15px; margin-bottom:20px;">
+                <option value="">-- Seleccione un conductor --</option>
+                {% for conductor in conductores %}
+                <option value="{{ conductor.id_conductor }}">{{ conductor.nombre }} {{ conductor.apellido }}</option>
+                {% endfor %}
+            </select>
+            
+            <div id="reportes-conductor" style="display:none;">
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:15px; margin-top:15px;">
+                    <div style="background:#e1f5fe; padding:15px; border-radius:8px; text-align:center;">
+                        <h4 style="margin:0 0 10px 0;">Consumo</h4>
+                        <button onclick="descargarConductor('consumo')" style="background:#336699; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-size:14px;">Descargar</button>
+                    </div>
+                    
+                    <div style="background:#f3e5f5; padding:15px; border-radius:8px; text-align:center;">
+                        <h4 style="margin:0 0 10px 0;">Viajes</h4>
+                        <button onclick="descargarConductor('viajes')" style="background:#336699; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-size:14px;">Descargar</button>
+                    </div>
+                    
+                    <div style="background:#fff9c4; padding:15px; border-radius:8px; text-align:center;">
+                        <h4 style="margin:0 0 10px 0;">Vehículos</h4>
+                        <button onclick="descargarConductor('vehiculos')" style="background:#336699; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-size:14px;">Descargar</button>
+                    </div>
+                    
+                    <div style="background:#ffebee; padding:15px; border-radius:8px; text-align:center;">
+                        <h4 style="margin:0 0 10px 0;">Mantenimiento</h4>
+                        <button onclick="descargarConductor('mantenimiento')" style="background:#336699; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-size:14px;">Descargar</button>
+                    </div>
+                    
+                    <div style="background:#e0f2f1; padding:15px; border-radius:8px; text-align:center;">
+                        <h4 style="margin:0 0 10px 0;">Incidentes</h4>
+                        <button onclick="descargarConductor('incidentes')" style="background:#336699; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-size:14px;">Descargar</button>
+                    </div>
+                    
+                    <div style="background:#fce4ec; padding:15px; border-radius:8px; text-align:center;">
+                        <h4 style="margin:0 0 10px 0;">Evaluaciones</h4>
+                        <button onclick="descargarConductor('evaluaciones')" style="background:#336699; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-size:14px;">Descargar</button>
+                    </div>
+                    
+                    <div style="background:#f1f8e9; padding:15px; border-radius:8px; text-align:center;">
+                        <h4 style="margin:0 0 10px 0;">Licencias</h4>
+                        <button onclick="descargarConductor('licencias')" style="background:#336699; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-size:14px;">Descargar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
         
         <div style="margin-top:30px; padding:20px; background:#f5f5f5; border-radius:8px;">
             <h3>Información</h3>
@@ -34,7 +212,71 @@
                 <li>Los datos incluyen todos los registros filtrados en el sistema</li>
                 <li>Los acentos y caracteres especiales están codificados correctamente</li>
                 <li>Descarga los reportes regularmente para respaldar tus datos</li>
+                {% if usuario.rol == "admin" %}
+                <li><strong>Reportes Avanzados:</strong> Cruzan múltiples tablas para análisis detallado de costos, desempeño y cumplimiento normativo</li>
+                <li><strong>Reportes por Conductor:</strong> Selecciona un conductor para generar reportes específicos de su actividad</li>
+                <li><strong>Filtro de Fechas:</strong> Aplica el filtro de fechas para limitar los reportes generales y por conductor a un rango específico</li>
+                <li><strong>Reporte General:</strong> El reporte completo incluye todas las tablas del sistema en un solo archivo CSV</li>
+                {% endif %}
             </ul>
         </div>
     </div>
+
+    <script>
+        const conductorSelect = document.getElementById('conductor-select');
+        const reportesConductor = document.getElementById('reportes-conductor');
+        const fechaInicio = document.getElementById('fecha-inicio');
+        const fechaFin = document.getElementById('fecha-fin');
+        
+        conductorSelect.addEventListener('change', function() {
+            if (this.value) {
+                reportesConductor.style.display = 'block';
+            } else {
+                reportesConductor.style.display = 'none';
+            }
+        });
+        
+        function aplicarFiltroFechas() {
+            const inicio = fechaInicio.value;
+            const fin = fechaFin.value;
+            const params = new URLSearchParams();
+            if (inicio) params.append('fecha_inicio', inicio);
+            if (fin) params.append('fecha_fin', fin);
+            window.location.href = `/reportes_web?${params.toString()}`;
+        }
+        
+        function obtenerParamsFecha() {
+            const inicio = fechaInicio.value;
+            const fin = fechaFin.value;
+            const params = new URLSearchParams();
+            if (inicio) params.append('fecha_inicio', inicio);
+            if (fin) params.append('fecha_fin', fin);
+            return params.toString();
+        }
+        
+        function descargarGeneral(tipo) {
+            const params = obtenerParamsFecha();
+            window.location.href = `/descargar_${tipo}_csv${params ? '?' + params : ''}`;
+        }
+        
+        function descargarConductor(tipo) {
+            const idConductor = conductorSelect.value;
+            if (!idConductor) {
+                alert('Por favor, seleccione un conductor');
+                return;
+            }
+            const params = obtenerParamsFecha();
+            window.location.href = `/descargar_conductor_${tipo}_csv/${idConductor}${params ? '?' + params : ''}`;
+        }
+        
+        function descargarReporteGeneral() {
+            const params = obtenerParamsFecha();
+            window.location.href = `/descargar_reporte_general_csv${params ? '?' + params : ''}`;
+        }
+        
+        function descargarReporteAvanzado(tipo) {
+            const params = obtenerParamsFecha();
+            window.location.href = `/descargar_reporte_${tipo}_csv${params ? '?' + params : ''}`;
+        }
+    </script>
 {% endblock %}

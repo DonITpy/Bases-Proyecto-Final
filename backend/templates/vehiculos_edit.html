@@ -14,6 +14,14 @@
         <input type="text" name="tipo" value="{{vehiculo.tipo}}" placeholder="Tipo" required maxlength="30" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{1,30}" title="Solo letras y espacios">
         <input type="number" name="capacidad" value="{{vehiculo.capacidad}}" placeholder="Capacidad" required min="1" max="100000" title="Debe ser un número entre 1 y 100000">
         <input type="text" name="marca" value="{{vehiculo.marca}}" placeholder="Marca" required maxlength="30" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{1,30}" title="Solo letras, espacios y guiones">
+        <select name="categoria" required>
+            <option value="">Seleccionar categoría</option>
+            <option value="carga_ligera" {% if vehiculo.categoria == 'carga_ligera' %}selected{% endif %}>Carga Ligera</option>
+            <option value="carga_pesada" {% if vehiculo.categoria == 'carga_pesada' %}selected{% endif %}>Carga Pesada</option>
+            <option value="transporte_personal" {% if vehiculo.categoria == 'transporte_personal' %}selected{% endif %}>Transporte Personal</option>
+            <option value="reparto" {% if vehiculo.categoria == 'reparto' %}selected{% endif %}>Reparto</option>
+            <option value="especial" {% if vehiculo.categoria == 'especial' %}selected{% endif %}>Especial</option>
+        </select>
         <select name="estado" required>
             <option value="">Seleccionar estado</option>
             <option value="activo" {% if vehiculo.estado == 'activo' %}selected{% endif %}>Activo</option>

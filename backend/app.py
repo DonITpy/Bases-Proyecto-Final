@@ -125,7 +125,7 @@ def vehiculos_web(request: Request, buscar: str = "", filtro_estado: str = ""):
     })
 
 @app.post("/vehiculos_create")
-def vehiculos_create(request: Request, matricula: str = Form(...), modelo: str = Form(...), tipo: str = Form(...), capacidad: int = Form(...), marca: str = Form(...), estado: str = Form(...), kilometraje: int = Form(...)):
+def vehiculos_create(request: Request, matricula: str = Form(...), modelo: str = Form(...), tipo: str = Form(...), capacidad: int = Form(...), marca: str = Form(...), estado: str = Form(...), kilometraje: int = Form(...), categoria: str = Form(...)):
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] not in ["admin"]:
         return RedirectResponse("/vehiculos_web", status_code=303)
@@ -169,6 +169,10 @@ def vehiculos_create(request: Request, matricula: str = Form(...), modelo: str =
     elif kilometraje < 0 or kilometraje > 9999999:
         error_msg = "El kilometraje debe estar entre 0 y 9,999,999"
     
+    # Validar categoría
+    elif categoria not in ['carga_ligera','carga_pesada','transporte_personal','reparto','especial']:
+        error_msg = "La categoría no es válida"
+    
     if error_msg:
         db = get_db()
         cursor = db.cursor(dictionary=True)
@@ -203,8 +207,8 @@ def vehiculos_create(request: Request, matricula: str = Form(...), modelo: str =
     
     try:
         cursor.execute(
-            "INSERT INTO vehiculo (matricula, modelo, tipo, capacidad, marca, estado, kilometraje) VALUES (%s,%s,%s,%s,%s,%s,%s)",
-            (matricula, modelo, tipo, capacidad, marca, estado, kilometraje)
+            "INSERT INTO vehiculo (matricula, modelo, tipo, capacidad, marca, estado, kilometraje, categoria) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
+            (matricula, modelo, tipo, capacidad, marca, estado, kilometraje, categoria)
         )
         db.commit()
         db.close()
@@ -269,7 +273,7 @@ def vehiculos_edit(request: Request, id: int):
     return templates.TemplateResponse("vehiculos_edit.html", {"request": request, "vehiculo": vehiculo, "usuario": usuario})
 
 @app.post("/vehiculos_update/{id}")
-def vehiculos_update(request: Request, id: int, matricula: str = Form(...), modelo: str = Form(...), tipo: str = Form(...), capacidad: int = Form(...), marca: str = Form(...), estado: str = Form(...), kilometraje: int = Form(...)):
+def vehiculos_update(request: Request, id: int, matricula: str = Form(...), modelo: str = Form(...), tipo: str = Form(...), capacidad: int = Form(...), marca: str = Form(...), estado: str = Form(...), kilometraje: int = Form(...), categoria: str = Form(...)):
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] not in ["admin", "mecanico", "logistica"]:
         return RedirectResponse("/vehiculos_web", status_code=303)
@@ -313,6 +317,10 @@ def vehiculos_update(request: Request, id: int, matricula: str = Form(...), mode
     elif kilometraje < 0 or kilometraje > 9999999:
         error_msg = "El kilometraje debe estar entre 0 y 9,999,999"
     
+    # Validar categoría
+    elif categoria not in ['carga_ligera','carga_pesada','transporte_personal','reparto','especial']:
+        error_msg = "La categoría no es válida"
+    
     if error_msg:
         db = get_db()
         cursor = db.cursor(dictionary=True)
@@ -347,8 +355,8 @@ def vehiculos_update(request: Request, id: int, matricula: str = Form(...), mode
     
     try:
         cursor.execute(
-            "UPDATE vehiculo SET matricula=%s, modelo=%s, tipo=%s, capacidad=%s, marca=%s, estado=%s, kilometraje=%s WHERE id_vehiculo=%s",
-            (matricula, modelo, tipo, capacidad, marca, estado, kilometraje, id)
+            "UPDATE vehiculo SET matricula=%s, modelo=%s, tipo=%s, capacidad=%s, marca=%s, estado=%s, kilometraje=%s, categoria=%s WHERE id_vehiculo=%s",
+            (matricula, modelo, tipo, capacidad, marca, estado, kilometraje, categoria, id)
         )
         db.commit()
         db.close()
@@ -650,6 +658,10 @@ def viajes_web(request: Request, buscar: str = "", filtro_estado: str = ""):
     # lista de conductores para el select (creación/edición)
     cursor.execute("SELECT id_conductor, nombre, apellido FROM conductor ORDER BY nombre, apellido")
     conductores_list = cursor.fetchall()
+    
+    # lista de vehículos para el select
+    cursor.execute("SELECT id_vehiculo, matricula, modelo, id_conductor FROM vehiculo ORDER BY matricula")
+    vehiculos_list = cursor.fetchall()
 
     db.close()
 
@@ -659,13 +671,14 @@ def viajes_web(request: Request, buscar: str = "", filtro_estado: str = ""):
         "usuario": usuario,
         "buscar": buscar,
         "filtro_estado": filtro_estado,
-        "conductores_list": conductores_list
+        "conductores_list": conductores_list,
+        "vehiculos_list": vehiculos_list
     })
 
 @app.post("/viajes_create")
 def viajes_create(request: Request, origen: str = Form(...), destino: str = Form(...),
                   fecha_salida: str = Form(...), fecha_estimada: str = Form(None),
-                  estado: str = Form(...), id_conductor: int = Form(None)):
+                  estado: str = Form(...), id_conductor: int = Form(None), id_vehiculo: int = Form(None)):
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] not in ["admin", "logistica"]:
         return RedirectResponse("/viajes_web", status_code=303)
@@ -705,6 +718,17 @@ def viajes_create(request: Request, origen: str = Form(...), destino: str = Form
             error_msg = "Conductor seleccionado no existe"
         else:
             db.close()
+    
+    # validar vehículo si se envía
+    if not error_msg and id_vehiculo:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT id_vehiculo FROM vehiculo WHERE id_vehiculo=%s", (id_vehiculo,))
+        if not cursor.fetchone():
+            db.close()
+            error_msg = "Vehículo seleccionado no existe"
+        else:
+            db.close()
 
     if error_msg:
         db = get_db()
@@ -717,6 +741,8 @@ def viajes_create(request: Request, origen: str = Form(...), destino: str = Form
         viajes = cursor.fetchall()
         cursor.execute("SELECT id_conductor, nombre, apellido FROM conductor ORDER BY nombre, apellido")
         conductores_list = cursor.fetchall()
+        cursor.execute("SELECT id_vehiculo, matricula, modelo, id_conductor FROM vehiculo ORDER BY matricula")
+        vehiculos_list = cursor.fetchall()
         db.close()
         return templates.TemplateResponse("viajes.html", {
             "request": request,
@@ -724,6 +750,7 @@ def viajes_create(request: Request, origen: str = Form(...), destino: str = Form
             "usuario": usuario,
             "error": error_msg,
             "conductores_list": conductores_list,
+            "vehiculos_list": vehiculos_list,
             "buscar": "",
             "filtro_estado": ""
         })
@@ -732,8 +759,8 @@ def viajes_create(request: Request, origen: str = Form(...), destino: str = Form
     cursor = db.cursor()
     try:
         cursor.execute(
-            "INSERT INTO viaje (origen, destino, fecha_salida, fecha_estimada, estado, id_conductor) VALUES (%s,%s,%s,%s,%s,%s)",
-            (origen, destino, fecha_salida, fecha_estimada if fecha_estimada else None, estado, id_conductor if id_conductor else None)
+            "INSERT INTO viaje (origen, destino, fecha_salida, fecha_estimada, estado, id_conductor, id_vehiculo) VALUES (%s,%s,%s,%s,%s,%s,%s)",
+            (origen, destino, fecha_salida, fecha_estimada if fecha_estimada else None, estado, id_conductor if id_conductor else None, id_vehiculo if id_vehiculo else None)
         )
         db.commit()
         db.close()
@@ -773,6 +800,26 @@ def viajes_delete(request: Request, id: int):
     db.close()
     return RedirectResponse("/viajes_web", status_code=303)
 
+@app.get("/api/vehiculos_por_conductor/{id_conductor}")
+def get_vehiculos_por_conductor(request: Request, id_conductor: int):
+    """API endpoint para obtener vehículos de un conductor específico"""
+    from fastapi.responses import JSONResponse
+    
+    usuario = request.session.get("usuario")
+    if not usuario:
+        return JSONResponse({"error": "No autorizado"}, status_code=401)
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    cursor.execute(
+        "SELECT id_vehiculo, matricula, modelo, marca FROM vehiculo WHERE id_conductor = %s ORDER BY matricula",
+        (id_conductor,)
+    )
+    vehiculos = cursor.fetchall()
+    db.close()
+    
+    return JSONResponse(vehiculos)
+
 @app.get("/viajes_edit/{id}")
 def viajes_edit(request: Request, id: int):
     usuario = request.session.get("usuario")
@@ -785,12 +832,20 @@ def viajes_edit(request: Request, id: int):
     viaje = cursor.fetchone()
     cursor.execute("SELECT id_conductor, nombre, apellido FROM conductor ORDER BY nombre, apellido")
     conductores_list = cursor.fetchall()
+    cursor.execute("SELECT id_vehiculo, matricula, modelo, id_conductor FROM vehiculo ORDER BY matricula")
+    vehiculos_list = cursor.fetchall()
     db.close()
 
     if not viaje:
         return RedirectResponse("/viajes_web", status_code=303)
 
-    return templates.TemplateResponse("viajes_edit.html", {"request": request, "viaje": viaje, "usuario": usuario, "conductores_list": conductores_list})
+    return templates.TemplateResponse("viajes_edit.html", {
+        "request": request, 
+        "viaje": viaje, 
+        "usuario": usuario, 
+        "conductores_list": conductores_list,
+        "vehiculos_list": vehiculos_list
+    })
 
 @app.post("/viajes_update/{id}")
 def viajes_update(request: Request, id: int, origen: str = Form(...), destino: str = Form(...),
@@ -1455,7 +1510,10 @@ def flota_web(request: Request, buscar: str = ""):
     })
 
 @app.post("/flota_create")
-def flota_create(request: Request, nombre: str = Form(...), descripcion: str = Form(...)):
+def flota_create(request: Request, nombre: str = Form(...), descripcion: str = Form(...), 
+                 categoria: str = Form(...), ubicacion: str = Form(...), 
+                 estado: str = Form(...), politica_uso: str = Form(None),
+                 capacidad_maxima: int = Form(0), fecha_creacion: str = Form(...)):
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] != "admin":
         return RedirectResponse("/flota_web", status_code=303)
@@ -1472,8 +1530,26 @@ def flota_create(request: Request, nombre: str = Form(...), descripcion: str = F
     # Validar descripción
     elif not descripcion or len(descripcion) < 5 or len(descripcion) > 100:
         error_msg = "La descripción debe tener entre 5 y 100 caracteres"
-    elif not all(c.isalnum() or c.isspace() or c in ['-', '.', ','] for c in descripcion):
-        error_msg = "La descripción contiene caracteres inválidos"
+    
+    # Validar categoría
+    elif categoria not in ['carga_ligera','carga_pesada','transporte_personal','reparto','especial']:
+        error_msg = "Categoría inválida"
+    
+    # Validar ubicación
+    elif not ubicacion or len(ubicacion) < 3 or len(ubicacion) > 100:
+        error_msg = "La ubicación debe tener entre 3 y 100 caracteres"
+    
+    # Validar estado
+    elif estado not in ['activa','inactiva','mantenimiento']:
+        error_msg = "Estado inválido"
+    
+    # Validar capacidad
+    elif capacidad_maxima < 0 or capacidad_maxima > 1000:
+        error_msg = "La capacidad debe estar entre 0 y 1000"
+    
+    # Validar fecha
+    elif not fecha_creacion:
+        error_msg = "La fecha de creación es obligatoria"
     
     if error_msg:
         db = get_db()
@@ -1508,8 +1584,10 @@ def flota_create(request: Request, nombre: str = Form(...), descripcion: str = F
         })
     
     try:
-        cursor.execute("INSERT INTO flota (nombre, descripcion) VALUES (%s,%s)",
-                       (nombre, descripcion))
+        cursor.execute("""
+            INSERT INTO flota (nombre, descripcion, categoria, ubicacion, estado, politica_uso, capacidad_maxima, fecha_creacion) 
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+        """, (nombre, descripcion, categoria, ubicacion, estado, politica_uso, capacidad_maxima, fecha_creacion))
         db.commit()
         db.close()
         return RedirectResponse("/flota_web", status_code=303)
@@ -1557,12 +1635,15 @@ def flota_edit(request: Request, id: int):
     return templates.TemplateResponse("flota_edit.html", {"request": request, "flota": flota, "usuario": usuario})
 
 @app.post("/flota_update/{id}")
-def flota_update(request: Request, id: int, nombre: str = Form(...), descripcion: str = Form(...)):
+def flota_update(request: Request, id: int, nombre: str = Form(...), descripcion: str = Form(...),
+                 categoria: str = Form(...), ubicacion: str = Form(...), 
+                 estado: str = Form(...), politica_uso: str = Form(None),
+                 capacidad_maxima: int = Form(0), fecha_creacion: str = Form(...)):
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] != "admin":
         return RedirectResponse("/flota_web", status_code=303)
     
-    # VALIDACIONES (mismo patrón que create)
+    # VALIDACIONES
     error_msg = None
     
     # Validar nombre
@@ -1574,8 +1655,22 @@ def flota_update(request: Request, id: int, nombre: str = Form(...), descripcion
     # Validar descripción
     elif not descripcion or len(descripcion) < 5 or len(descripcion) > 100:
         error_msg = "La descripción debe tener entre 5 y 100 caracteres"
-    elif not all(c.isalnum() or c.isspace() or c in ['-', '.', ','] for c in descripcion):
-        error_msg = "La descripción contiene caracteres inválidos"
+    
+    # Validar categoría
+    elif categoria not in ['carga_ligera','carga_pesada','transporte_personal','reparto','especial']:
+        error_msg = "Categoría inválida"
+    
+    # Validar ubicación
+    elif not ubicacion or len(ubicacion) < 3 or len(ubicacion) > 100:
+        error_msg = "La ubicación debe tener entre 3 y 100 caracteres"
+    
+    # Validar estado
+    elif estado not in ['activa','inactiva','mantenimiento']:
+        error_msg = "Estado inválido"
+    
+    # Validar capacidad
+    elif capacidad_maxima < 0 or capacidad_maxima > 1000:
+        error_msg = "La capacidad debe estar entre 0 y 1000"
     
     if error_msg:
         db = get_db()
@@ -1610,10 +1705,12 @@ def flota_update(request: Request, id: int, nombre: str = Form(...), descripcion
         })
     
     try:
-        cursor.execute(
-            "UPDATE flota SET nombre=%s, descripcion=%s WHERE id_flota=%s",
-            (nombre, descripcion, id)
-        )
+        cursor.execute("""
+            UPDATE flota 
+            SET nombre=%s, descripcion=%s, categoria=%s, ubicacion=%s, 
+                estado=%s, politica_uso=%s, capacidad_maxima=%s, fecha_creacion=%s 
+            WHERE id_flota=%s
+        """, (nombre, descripcion, categoria, ubicacion, estado, politica_uso, capacidad_maxima, fecha_creacion, id))
         db.commit()
         db.close()
         return RedirectResponse("/flota_web", status_code=303)
@@ -2803,14 +2900,88 @@ def usuarios_delete(request: Request, id: int):
 
 # ==================== REPORTES ====================
 @app.get("/reportes_web")
-def reportes_web(request: Request):
+def reportes_web(request: Request, fecha_inicio: str = "", fecha_fin: str = ""):
     usuario = request.session.get("usuario")
     if not usuario:
         return RedirectResponse("/login", status_code=303)
-    return templates.TemplateResponse("reportes.html", {"request": request, "usuario": usuario})
+    
+    # Obtener lista de conductores para el selector y calcular KPIs del rango
+    db = get_db()
+    cur_dict = db.cursor(dictionary=True)
+    cur_dict.execute("SELECT id_conductor, nombre, apellido FROM conductor ORDER BY nombre, apellido")
+    conductores = cur_dict.fetchall()
+
+    cur = db.cursor()
+    # Helper para escalar
+    def escalar(q, params):
+        cur.execute(q, params)
+        r = cur.fetchone()
+        return r[0] if r and r[0] is not None else 0
+
+    rango = []
+    where_viajes = ""
+    where_fecha = ""
+    if fecha_inicio:
+        where_viajes += " AND fecha_salida >= %s"
+        where_fecha += " AND fecha >= %s"
+        rango.append(fecha_inicio)
+    if fecha_fin:
+        where_viajes += " AND fecha_salida <= %s"
+        where_fecha += " AND fecha <= %s"
+        rango.append(fecha_fin)
+
+    # a) Viajes y cumplimiento
+    total_viajes = escalar(f"SELECT COUNT(*) FROM viaje WHERE 1=1{where_viajes}", rango)
+    viajes_completados = escalar(f"SELECT COUNT(*) FROM viaje WHERE estado='completado' {where_viajes}", rango)
+    viajes_cancelados = escalar(f"SELECT COUNT(*) FROM viaje WHERE estado='cancelado' {where_viajes}", rango)
+    viajes_en_progreso = escalar(f"SELECT COUNT(*) FROM viaje WHERE estado='en progreso' {where_viajes}", rango)
+    tasa_cumplimiento = round((viajes_completados / total_viajes) * 100, 2) if total_viajes > 0 else 0.0
+
+    # b) Combustible y costos
+    litros_totales = escalar(f"SELECT IFNULL(SUM(litros),0) FROM consumo WHERE 1=1{where_fecha}", rango)
+    costo_total_combustible = escalar(f"SELECT IFNULL(SUM(costo),0) FROM consumo WHERE 1=1{where_fecha}", rango)
+    costo_promedio_viaje_combustible = round((costo_total_combustible / total_viajes), 2) if total_viajes > 0 else 0.0
+
+    # c) Mantenimiento y salud de flota
+    total_mantenimientos = escalar(f"SELECT COUNT(*) FROM mantenimiento WHERE 1=1{where_fecha}", rango)
+    costo_total_mantenimiento = escalar(f"SELECT IFNULL(SUM(costo),0) FROM mantenimiento WHERE 1=1{where_fecha}", rango)
+    vehiculos_mantenidos = escalar(f"SELECT COUNT(DISTINCT id_vehiculo) FROM mantenimiento WHERE 1=1{where_fecha}", rango)
+
+    # d) Seguridad y desempeño
+    total_incidentes = escalar(f"SELECT COUNT(*) FROM incidente WHERE 1=1{where_fecha}", rango)
+    tasa_incidentes_por_100_viajes = round(((total_incidentes / total_viajes) * 100), 2) if total_viajes > 0 else 0.0
+    promedio_evaluacion = escalar(f"SELECT IFNULL(AVG(puntuacion),0) FROM evaluacion WHERE 1=1{where_fecha}", rango)
+
+    db.close()
+
+    kpis = {
+        "total_viajes": total_viajes,
+        "viajes_completados": viajes_completados,
+        "viajes_cancelados": viajes_cancelados,
+        "viajes_en_progreso": viajes_en_progreso,
+        "tasa_cumplimiento": tasa_cumplimiento,
+        "litros_totales": litros_totales,
+        "costo_total_combustible": round(costo_total_combustible, 2),
+        "costo_promedio_viaje_combustible": costo_promedio_viaje_combustible,
+        "total_mantenimientos": total_mantenimientos,
+        "costo_total_mantenimiento": round(costo_total_mantenimiento, 2),
+        "vehiculos_mantenidos": vehiculos_mantenidos,
+        "total_incidentes": total_incidentes,
+        "tasa_incidentes_por_100_viajes": tasa_incidentes_por_100_viajes,
+        "promedio_evaluacion": round(float(promedio_evaluacion), 2) if promedio_evaluacion is not None else 0.0
+    }
+    
+    return templates.TemplateResponse("reportes.html", {
+        "request": request, 
+        "usuario": usuario,
+        "conductores": conductores,
+        "fecha_inicio": fecha_inicio,
+        "fecha_fin": fecha_fin,
+        "kpis": kpis
+    })
 
 @app.get("/descargar_vehiculos_csv")
-def descargar_vehiculos_csv(request: Request):
+def descargar_vehiculos_csv(request: Request, fecha_inicio: str = "", fecha_fin: str = ""):
     usuario = request.session.get("usuario")
     if not usuario:
         return RedirectResponse("/login", status_code=303)
@@ -2853,22 +3024,33 @@ def descargar_conductores_csv(request: Request):
         iter([output.getvalue()]),
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=conductores.csv"}
-    )
+ )
 
 @app.get("/descargar_viajes_csv")
-def descargar_viajes_csv(request: Request):
+def descargar_viajes_csv(request: Request, fecha_inicio: str = "", fecha_fin: str = ""):
     usuario = request.session.get("usuario")
     if not usuario:
         return RedirectResponse("/login", status_code=303)
     
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM viaje")
+    
+    query = "SELECT * FROM viaje WHERE 1=1"
+    params = []
+    
+    if fecha_inicio:
+        query += " AND fecha_salida >= %s"
+        params.append(fecha_inicio)
+    if fecha_fin:
+        query += " AND fecha_salida <= %s"
+        params.append(fecha_fin)
+    
+    cursor.execute(query, params)
     viajes = cursor.fetchall()
     db.close()
     
     output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=['id_viaje', 'origen', 'destino', 'fecha_salida', 'fecha_estimada', 'estado'])
+    writer = csv.DictWriter(output, fieldnames=['id_viaje', 'origen', 'destino', 'fecha_salida', 'fecha_estimada', 'estado', 'id_conductor'])
     writer.writeheader()
     writer.writerows(viajes)
     
@@ -2879,14 +3061,25 @@ def descargar_viajes_csv(request: Request):
     )
 
 @app.get("/descargar_consumo_csv")
-def descargar_consumo_csv(request: Request):
+def descargar_consumo_csv(request: Request, fecha_inicio: str = "", fecha_fin: str = ""):
     usuario = request.session.get("usuario")
     if not usuario:
         return RedirectResponse("/login", status_code=303)
     
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM consumo")
+    
+    query = "SELECT * FROM consumo WHERE 1=1"
+    params = []
+    
+    if fecha_inicio:
+        query += " AND fecha >= %s"
+        params.append(fecha_inicio)
+    if fecha_fin:
+        query += " AND fecha <= %s"
+        params.append(fecha_fin)
+    
+    cursor.execute(query, params)
     consumo = cursor.fetchall()
     db.close()
     
@@ -2899,4 +3092,797 @@ def descargar_consumo_csv(request: Request):
         iter([output.getvalue()]),
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=consumo.csv"}
+    )
+
+# ==================== REPORTES POR CONDUCTOR ====================
+@app.get("/descargar_conductor_consumo_csv/{id_conductor}")
+def descargar_conductor_consumo_csv(request: Request, id_conductor: int):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario["rol"] != "admin":
+        return RedirectResponse("/login", status_code=303)
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    # Obtener información del conductor
+    cursor.execute("SELECT nombre, apellido FROM conductor WHERE id_conductor=%s", (id_conductor,))
+    conductor = cursor.fetchone()
+    
+    if not conductor:
+        db.close()
+        return RedirectResponse("/reportes_web", status_code=303)
+    
+    # Obtener consumo de vehículos asociados al conductor mediante viajes
+    cursor.execute("""
+        SELECT DISTINCT c.id_consumo, c.matricula, c.litros, c.fecha, c.tipo_combustible, c.costo
+        FROM consumo c
+        JOIN vehiculo v ON c.matricula = v.matricula
+        JOIN viaje vi ON vi.id_conductor = %s
+        WHERE v.id_vehiculo IN (
+            SELECT DISTINCT fv.id_vehiculo
+            FROM flota_vehiculo fv
+            JOIN flota f ON fv.id_flota = f.id_flota
+            JOIN viaje v2 ON v2.id_conductor = %s
+        )
+        OR c.matricula IN (
+            SELECT DISTINCT v3.matricula
+            FROM vehiculo v3
+            JOIN viaje v4 ON v4.id_conductor = %s
+        )
+        ORDER BY c.fecha DESC
+    """, (id_conductor, id_conductor, id_conductor))
+    consumo = cursor.fetchall()
+    db.close()
+    
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=['id_consumo', 'matricula', 'litros', 'fecha', 'tipo_combustible', 'costo'])
+    writer.writeheader()
+    writer.writerows(consumo)
+    
+    nombre_archivo = f"consumo_conductor_{conductor['nombre']}_{conductor['apellido']}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={nombre_archivo}"}
+    )
+
+@app.get("/descargar_conductor_viajes_csv/{id_conductor}")
+def descargar_conductor_viajes_csv(request: Request, id_conductor: int):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario["rol"] != "admin":
+        return RedirectResponse("/login", status_code=303)
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    # Obtener información del conductor
+    cursor.execute("SELECT nombre, apellido FROM conductor WHERE id_conductor=%s", (id_conductor,))
+    conductor = cursor.fetchone()
+    
+    if not conductor:
+        db.close()
+        return RedirectResponse("/reportes_web", status_code=303)
+    
+    # Obtener viajes del conductor
+    cursor.execute("""
+        SELECT v.id_viaje, v.origen, v.destino, v.fecha_salida, v.fecha_estimada, v.estado, v.id_conductor
+        FROM viaje v
+        WHERE v.id_conductor = %s
+        ORDER BY v.fecha_salida DESC
+    """, (id_conductor,))
+    viajes = cursor.fetchall()
+    db.close()
+    
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=['id_viaje', 'origen', 'destino', 'fecha_salida', 'fecha_estimada', 'estado', 'id_conductor'])
+    writer.writeheader()
+    writer.writerows(viajes)
+    
+    nombre_archivo = f"viajes_conductor_{conductor['nombre']}_{conductor['apellido']}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={nombre_archivo}"}
+    )
+
+@app.get("/descargar_conductor_vehiculos_csv/{id_conductor}")
+def descargar_conductor_vehiculos_csv(request: Request, id_conductor: int):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario["rol"] != "admin":
+        return RedirectResponse("/login", status_code=303)
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    # Obtener información del conductor
+    cursor.execute("SELECT nombre, apellido FROM conductor WHERE id_conductor=%s", (id_conductor,))
+    conductor = cursor.fetchone()
+    
+    if not conductor:
+        db.close()
+        return RedirectResponse("/reportes_web", status_code=303)
+    
+    # Obtener vehículos utilizados por el conductor en viajes
+    cursor.execute("""
+        SELECT DISTINCT v.id_vehiculo, v.matricula, v.modelo, v.tipo, v.capacidad, v.marca, v.estado, v.kilometraje
+        FROM vehiculo v
+        JOIN flota_vehiculo fv ON v.id_vehiculo = fv.id_vehiculo
+        JOIN flota f ON fv.id_flota = f.id_flota
+        WHERE EXISTS (
+            SELECT 1 FROM viaje vi WHERE vi.id_conductor = %s
+        )
+        ORDER BY v.matricula
+    """, (id_conductor,))
+    vehiculos = cursor.fetchall()
+    db.close()
+    
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=['id_vehiculo', 'matricula', 'modelo', 'tipo', 'capacidad', 'marca', 'estado', 'kilometraje'])
+    writer.writeheader()
+    writer.writerows(vehiculos)
+    
+    nombre_archivo = f"vehiculos_conductor_{conductor['nombre']}_{conductor['apellido']}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={nombre_archivo}"}
+    )
+
+@app.get("/descargar_conductor_mantenimiento_csv/{id_conductor}")
+def descargar_conductor_mantenimiento_csv(request: Request, id_conductor: int, fecha_inicio: str = "", fecha_fin: str = ""):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario["rol"] != "admin":
+        return RedirectResponse("/login", status_code=303)
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    cursor.execute("SELECT nombre, apellido FROM conductor WHERE id_conductor=%s", (id_conductor,))
+    conductor = cursor.fetchone()
+    
+    if not conductor:
+        db.close()
+        return RedirectResponse("/reportes_web", status_code=303)
+    
+    query = """
+        SELECT DISTINCT m.id_mantenimiento, m.id_vehiculo, m.tipo, m.descripcion, m.costo, m.fecha,
+               v.matricula
+        FROM mantenimiento m
+        JOIN vehiculo v ON m.id_vehiculo = v.id_vehiculo
+        JOIN flota_vehiculo fv ON v.id_vehiculo = fv.id_vehiculo
+        WHERE EXISTS (
+            SELECT 1 FROM viaje vi WHERE vi.id_conductor = %s
+        )
+    """
+    params = [id_conductor]
+    
+    if fecha_inicio:
+        query += " AND m.fecha >= %s"
+        params.append(fecha_inicio)
+    if fecha_fin:
+        query += " AND m.fecha <= %s"
+        params.append(fecha_fin)
+    
+    query += " ORDER BY m.fecha DESC"
+    cursor.execute(query, params)
+    mantenimiento = cursor.fetchall()
+    db.close()
+    
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=['id_mantenimiento', 'id_vehiculo', 'matricula', 'tipo', 'descripcion', 'costo', 'fecha'])
+    writer.writeheader()
+    writer.writerows(mantenimiento)
+    
+    nombre_archivo = f"mantenimiento_conductor_{conductor['nombre']}_{conductor['apellido']}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={nombre_archivo}"}
+    )
+
+@app.get("/descargar_conductor_incidentes_csv/{id_conductor}")
+def descargar_conductor_incidentes_csv(request: Request, id_conductor: int, fecha_inicio: str = "", fecha_fin: str = ""):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario["rol"] != "admin":
+        return RedirectResponse("/login", status_code=303)
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    cursor.execute("SELECT nombre, apellido FROM conductor WHERE id_conductor=%s", (id_conductor,))
+    conductor = cursor.fetchone()
+    
+    if not conductor:
+        db.close()
+        return RedirectResponse("/reportes_web", status_code=303)
+    
+    query = """
+        SELECT DISTINCT i.id_incidente, i.matricula, i.tipo, i.fecha, i.descripcion
+        FROM incidente i
+        JOIN vehiculo v ON i.matricula = v.matricula
+        WHERE EXISTS (
+            SELECT 1 FROM viaje vi WHERE vi.id_conductor = %s
+        )
+    """
+    params = [id_conductor]
+    
+    if fecha_inicio:
+        query += " AND i.fecha >= %s"
+        params.append(fecha_inicio)
+    if fecha_fin:
+        query += " AND i.fecha <= %s"
+        params.append(fecha_fin)
+    
+    query += " ORDER BY i.fecha DESC"
+    cursor.execute(query, params)
+    incidentes = cursor.fetchall()
+    db.close()
+    
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=['id_incidente', 'matricula', 'tipo', 'fecha', 'descripcion'])
+    writer.writeheader()
+    writer.writerows(incidentes)
+    
+    nombre_archivo = f"incidentes_conductor_{conductor['nombre']}_{conductor['apellido']}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={nombre_archivo}"}
+    )
+
+@app.get("/descargar_conductor_evaluaciones_csv/{id_conductor}")
+def descargar_conductor_evaluaciones_csv(request: Request, id_conductor: int, fecha_inicio: str = "", fecha_fin: str = ""):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario["rol"] != "admin":
+        return RedirectResponse("/login", status_code=303)
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    cursor.execute("SELECT nombre, apellido FROM conductor WHERE id_conductor=%s", (id_conductor,))
+    conductor = cursor.fetchone()
+    
+    if not conductor:
+        db.close()
+        return RedirectResponse("/reportes_web", status_code=303)
+    
+    query = """
+        SELECT e.id_evaluacion, e.id_conductor, e.fecha, e.puntuacion, e.comentarios
+        FROM evaluacion e
+        WHERE e.id_conductor = %s
+    """
+    params = [id_conductor]
+    
+    if fecha_inicio:
+        query += " AND e.fecha >= %s"
+        params.append(fecha_inicio)
+    if fecha_fin:
+        query += " AND e.fecha <= %s"
+        params.append(fecha_fin)
+    
+    query += " ORDER BY e.fecha DESC"
+    cursor.execute(query, params)
+    evaluaciones = cursor.fetchall()
+    db.close()
+    
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=['id_evaluacion', 'id_conductor', 'fecha', 'puntuacion', 'comentarios'])
+    writer.writeheader()
+    writer.writerows(evaluaciones)
+    
+    nombre_archivo = f"evaluaciones_conductor_{conductor['nombre']}_{conductor['apellido']}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={nombre_archivo}"}
+    )
+
+@app.get("/descargar_conductor_licencias_csv/{id_conductor}")
+def descargar_conductor_licencias_csv(request: Request, id_conductor: int):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario["rol"] != "admin":
+        return RedirectResponse("/login", status_code=303)
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    cursor.execute("SELECT nombre, apellido FROM conductor WHERE id_conductor=%s", (id_conductor,))
+    conductor = cursor.fetchone()
+    
+    if not conductor:
+        db.close()
+        return RedirectResponse("/reportes_web", status_code=303)
+    
+    cursor.execute("""
+        SELECT l.id_licencia, l.id_conductor, l.tipo, l.fecha_emision, l.fecha_vencimiento
+        FROM licencia l
+        WHERE l.id_conductor = %s
+        ORDER BY l.fecha_emision DESC
+    """, (id_conductor,))
+    licencias = cursor.fetchall()
+    db.close()
+    
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=['id_licencia', 'id_conductor', 'tipo', 'fecha_emision', 'fecha_vencimiento'])
+    writer.writeheader()
+    writer.writerows(licencias)
+    
+    nombre_archivo = f"licencias_conductor_{conductor['nombre']}_{conductor['apellido']}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={nombre_archivo}"}
+    )
+
+@app.get("/descargar_reporte_general_csv")
+def descargar_reporte_general_csv(request: Request, fecha_inicio: str = "", fecha_fin: str = ""):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario["rol"] != "admin":
+        return RedirectResponse("/login", status_code=303)
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    output = io.StringIO()
+    
+    # VEHÍCULOS
+    output.write("=== VEHÍCULOS ===\n")
+    cursor.execute("SELECT * FROM vehiculo")
+    vehiculos = cursor.fetchall()
+    if vehiculos:
+        writer = csv.DictWriter(output, fieldnames=['id_vehiculo', 'matricula', 'modelo', 'tipo', 'capacidad', 'marca', 'estado', 'kilometraje'])
+        writer.writeheader()
+        writer.writerows(vehiculos)
+    output.write("\n")
+    
+    # CONDUCTORES
+    output.write("=== CONDUCTORES ===\n")
+    cursor.execute("SELECT * FROM conductor")
+    conductores = cursor.fetchall()
+    if conductores:
+        writer = csv.DictWriter(output, fieldnames=['id_conductor', 'nombre', 'apellido', 'telefono', 'direccion', 'fecha_nacimiento', 'id_usuario'])
+        writer.writeheader()
+        writer.writerows(conductores)
+    output.write("\n")
+    
+    # VIAJES
+    output.write("=== VIAJES ===\n")
+    query = "SELECT * FROM viaje WHERE 1=1"
+    params = []
+    if fecha_inicio:
+        query += " AND fecha_salida >= %s"
+        params.append(fecha_inicio)
+    if fecha_fin:
+        query += " AND fecha_salida <= %s"
+        params.append(fecha_fin)
+    cursor.execute(query, params)
+    viajes = cursor.fetchall()
+    if viajes:
+        writer = csv.DictWriter(output, fieldnames=['id_viaje', 'origen', 'destino', 'fecha_salida', 'fecha_estimada', 'estado', 'id_conductor'])
+        writer.writeheader()
+        writer.writerows(viajes)
+    output.write("\n")
+    
+    # CONSUMO
+    output.write("=== CONSUMO ===\n")
+    query = "SELECT * FROM consumo WHERE 1=1"
+    params = []
+    if fecha_inicio:
+        query += " AND fecha >= %s"
+        params.append(fecha_inicio)
+    if fecha_fin:
+        query += " AND fecha <= %s"
+        params.append(fecha_fin)
+    cursor.execute(query, params)
+    consumo = cursor.fetchall()
+    if consumo:
+        writer = csv.DictWriter(output, fieldnames=['id_consumo', 'matricula', 'litros', 'fecha', 'tipo_combustible', 'costo'])
+        writer.writeheader()
+        writer.writerows(consumo)
+    output.write("\n")
+    
+    # MANTENIMIENTO
+    output.write("=== MANTENIMIENTO ===\n")
+    query = "SELECT * FROM mantenimiento WHERE 1=1"
+    params = []
+    if fecha_inicio:
+        query += " AND fecha >= %s"
+        params.append(fecha_inicio)
+    if fecha_fin:
+        query += " AND fecha <= %s"
+        params.append(fecha_fin)
+    cursor.execute(query, params)
+    mantenimiento = cursor.fetchall()
+    if mantenimiento:
+        writer = csv.DictWriter(output, fieldnames=['id_mantenimiento', 'id_vehiculo', 'tipo', 'descripcion', 'costo', 'fecha'])
+        writer.writeheader()
+        writer.writerows(mantenimiento)
+    output.write("\n")
+    
+    # INCIDENTES
+    output.write("=== INCIDENTES ===\n")
+    query = "SELECT * FROM incidente WHERE 1=1"
+    params = []
+    if fecha_inicio:
+        query += " AND fecha >= %s"
+        params.append(fecha_inicio)
+    if fecha_fin:
+        query += " AND fecha <= %s"
+        params.append(fecha_fin)
+    cursor.execute(query, params)
+    incidentes = cursor.fetchall()
+    if incidentes:
+        writer = csv.DictWriter(output, fieldnames=['id_incidente', 'matricula', 'tipo', 'fecha', 'descripcion'])
+        writer.writeheader()
+        writer.writerows(incidentes)
+    output.write("\n")
+    
+    # EVALUACIONES
+    output.write("=== EVALUACIONES ===\n")
+    query = "SELECT * FROM evaluacion WHERE 1=1"
+    params = []
+    if fecha_inicio:
+        query += " AND fecha >= %s"
+        params.append(fecha_inicio)
+    if fecha_fin:
+        query += " AND fecha <= %s"
+        params.append(fecha_fin)
+    cursor.execute(query, params)
+    evaluaciones = cursor.fetchall()
+    if evaluaciones:
+        writer = csv.DictWriter(output, fieldnames=['id_evaluacion', 'id_conductor', 'fecha', 'puntuacion', 'comentarios'])
+        writer.writeheader()
+        writer.writerows(evaluaciones)
+    output.write("\n")
+    
+    # LICENCIAS
+    output.write("=== LICENCIAS ===\n")
+    cursor.execute("SELECT * FROM licencia")
+    licencias = cursor.fetchall()
+    if licencias:
+        writer = csv.DictWriter(output, fieldnames=['id_licencia', 'id_conductor', 'tipo', 'fecha_emision', 'fecha_vencimiento'])
+        writer.writeheader()
+        writer.writerows(licencias)
+    output.write("\n")
+    
+    # ORDENES
+    output.write("=== ORDENES DE SERVICIO ===\n")
+    query = "SELECT * FROM orden_servicio WHERE 1=1"
+    params = []
+    if fecha_inicio:
+        query += " AND fecha >= %s"
+        params.append(fecha_inicio)
+    if fecha_fin:
+        query += " AND fecha <= %s"
+        params.append(fecha_fin)
+    cursor.execute(query, params)
+    ordenes = cursor.fetchall()
+    if ordenes:
+        writer = csv.DictWriter(output, fieldnames=['id_orden', 'descripcion', 'fecha', 'estado'])
+        writer.writeheader()
+        writer.writerows(ordenes)
+    
+    db.close()
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=reporte_general_completo.csv"}
+    )
+
+# ==================== REPORTES AVANZADOS (ANÁLISIS CRUZADO) ====================
+
+@app.get("/descargar_reporte_consumo_combustible_csv")
+def descargar_reporte_consumo_combustible_csv(request: Request, fecha_inicio: str = "", fecha_fin: str = ""):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario["rol"] != "admin":
+        return RedirectResponse("/reportes_web", status_code=303)
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    query = """
+        SELECT 
+            f.nombre AS flota,
+            v.matricula,
+            v.modelo,
+            v.marca,
+            SUM(c.litros) AS litros_totales,
+            SUM(c.costo) AS costo_total,
+            ROUND(SUM(c.costo) / NULLIF(SUM(c.litros),0), 2) AS costo_promedio_litro
+        FROM consumo c
+        JOIN vehiculo v ON c.matricula = v.matricula
+        LEFT JOIN flota f ON v.id_flota = f.id_flota
+        WHERE 1=1
+    """
+    
+    params = []
+    if fecha_inicio:
+        query += " AND c.fecha >= %s"
+        params.append(fecha_inicio)
+    if fecha_fin:
+        query += " AND c.fecha <= %s"
+        params.append(fecha_fin)
+    
+    query += " GROUP BY f.nombre, v.matricula, v.modelo, v.marca ORDER BY f.nombre, v.matricula"
+    
+    cursor.execute(query, params)
+    resultados = cursor.fetchall()
+    db.close()
+    
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=['flota', 'matricula', 'modelo', 'marca', 'litros_totales', 'costo_total', 'costo_promedio_litro'])
+    writer.writeheader()
+    writer.writerows(resultados)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=reporte_consumo_combustible.csv"}
+    )
+
+@app.get("/descargar_reporte_costos_operativos_csv")
+def descargar_reporte_costos_operativos_csv(request: Request, fecha_inicio: str = "", fecha_fin: str = ""):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario["rol"] != "admin":
+        return RedirectResponse("/reportes_web", status_code=303)
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    # Subconsulta para combustible
+    query_combustible = """
+        SELECT 
+            matricula,
+            SUM(costo) AS costo_combustible
+        FROM consumo
+        WHERE 1=1
+    """
+    params_comb = []
+    if fecha_inicio:
+        query_combustible += " AND fecha >= %s"
+        params_comb.append(fecha_inicio)
+    if fecha_fin:
+        query_combustible += " AND fecha <= %s"
+        params_comb.append(fecha_fin)
+    query_combustible += " GROUP BY matricula"
+    
+    # Subconsulta para mantenimiento
+    query_mant = """
+        SELECT 
+            id_vehiculo,
+            SUM(costo) AS costo_mantenimiento
+        FROM mantenimiento
+        WHERE 1=1
+    """
+    params_mant = []
+    if fecha_inicio:
+        query_mant += " AND fecha >= %s"
+        params_mant.append(fecha_inicio)
+    if fecha_fin:
+        query_mant += " AND fecha <= %s"
+        params_mant.append(fecha_fin)
+    query_mant += " GROUP BY id_vehiculo"
+    
+    # Query principal
+    query = f"""
+        SELECT
+            f.nombre AS flota,
+            v.matricula,
+            v.modelo,
+            v.marca,
+            IFNULL(cons.costo_combustible, 0) AS costo_combustible,
+            IFNULL(mant.costo_mantenimiento, 0) AS costo_mantenimiento,
+            IFNULL(cons.costo_combustible, 0) + IFNULL(mant.costo_mantenimiento, 0) AS costo_total
+        FROM vehiculo v
+        LEFT JOIN flota f ON v.id_flota = f.id_flota
+        LEFT JOIN ({query_combustible}) cons ON cons.matricula = v.matricula
+        LEFT JOIN ({query_mant}) mant ON mant.id_vehiculo = v.id_vehiculo
+        ORDER BY f.nombre, v.matricula
+    """
+    
+    cursor.execute(query, params_comb + params_mant)
+    resultados = cursor.fetchall()
+    db.close()
+    
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=['flota', 'matricula', 'modelo', 'marca', 'costo_combustible', 'costo_mantenimiento', 'costo_total'])
+    writer.writeheader()
+    writer.writerows(resultados)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=reporte_costos_operativos.csv"}
+    )
+
+@app.get("/descargar_reporte_desempeno_conductores_csv")
+def descargar_reporte_desempeno_conductores_csv(request: Request, fecha_inicio: str = "", fecha_fin: str = ""):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario["rol"] != "admin":
+        return RedirectResponse("/reportes_web", status_code=303)
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    query = """
+        SELECT
+            c.id_conductor,
+            CONCAT(c.nombre, ' ', c.apellido) AS conductor,
+            COUNT(DISTINCT vj.id_viaje) AS total_viajes,
+            ROUND(AVG(ev.puntuacion), 2) AS promedio_evaluacion,
+            COUNT(DISTINCT inc.id_incidente) AS incidentes_asociados
+        FROM conductor c
+        LEFT JOIN viaje vj ON vj.id_conductor = c.id_conductor
+        LEFT JOIN evaluacion ev ON ev.id_conductor = c.id_conductor
+        LEFT JOIN vehiculo ve ON vj.id_vehiculo = ve.id_vehiculo
+        LEFT JOIN incidente inc ON inc.matricula = ve.matricula
+        WHERE 1=1
+    """
+    
+    params = []
+    if fecha_inicio:
+        query += " AND vj.fecha_salida >= %s"
+        params.append(fecha_inicio)
+    if fecha_fin:
+        query += " AND vj.fecha_salida <= %s"
+        params.append(fecha_fin)
+    
+    query += " GROUP BY c.id_conductor, conductor ORDER BY total_viajes DESC"
+    
+    cursor.execute(query, params)
+    resultados = cursor.fetchall()
+    db.close()
+    
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=['id_conductor', 'conductor', 'total_viajes', 'promedio_evaluacion', 'incidentes_asociados'])
+    writer.writeheader()
+    writer.writerows(resultados)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=reporte_desempeno_conductores.csv"}
+    )
+
+@app.get("/descargar_reporte_licencias_cumplimiento_csv")
+def descargar_reporte_licencias_cumplimiento_csv(request: Request, fecha_inicio: str = "", fecha_fin: str = ""):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario["rol"] != "admin":
+        return RedirectResponse("/reportes_web", status_code=303)
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    query = """
+        SELECT
+            c.id_conductor,
+            CONCAT(c.nombre, ' ', c.apellido) AS conductor,
+            l.tipo,
+            l.fecha_emision,
+            l.fecha_vencimiento,
+            CASE
+                WHEN l.fecha_vencimiento < CURDATE() THEN 'VENCIDA'
+                WHEN l.fecha_vencimiento BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+                    THEN 'POR VENCER'
+                ELSE 'VIGENTE'
+            END AS estado_licencia,
+            COUNT(DISTINCT vj.id_viaje) AS viajes_en_rango
+        FROM licencia l
+        JOIN conductor c ON c.id_conductor = l.id_conductor
+        LEFT JOIN viaje vj ON vj.id_conductor = c.id_conductor
+    """
+    
+    params = []
+    where_conditions = []
+    
+    if fecha_inicio:
+        where_conditions.append("vj.fecha_salida >= %s")
+        params.append(fecha_inicio)
+    if fecha_fin:
+        where_conditions.append("vj.fecha_salida <= %s")
+        params.append(fecha_fin)
+    
+    if where_conditions:
+        query += " AND " + " AND ".join(where_conditions)
+    
+    query += " GROUP BY c.id_conductor, conductor, l.tipo, l.fecha_emision, l.fecha_vencimiento ORDER BY estado_licencia DESC, viajes_en_rango DESC"
+    
+    cursor.execute(query, params)
+    resultados = cursor.fetchall()
+    db.close()
+    
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=['id_conductor', 'conductor', 'tipo', 'fecha_emision', 'fecha_vencimiento', 'estado_licencia', 'viajes_en_rango'])
+    writer.writeheader()
+    writer.writerows(resultados)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=reporte_licencias_cumplimiento.csv"}
+    )
+
+@app.get("/descargar_reporte_kpis_csv")
+def descargar_reporte_kpis_csv(request: Request, fecha_inicio: str = "", fecha_fin: str = ""):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario["rol"] != "admin":
+        return RedirectResponse("/reportes_web", status_code=303)
+
+    db = get_db()
+    cursor = db.cursor()
+
+    # Utilidad para ejecutar escalar con rango
+    def escalar(query_base, params):
+        cursor.execute(query_base, params)
+        row = cursor.fetchone()
+        return row[0] if row and row[0] is not None else 0
+
+    rango = []
+    where_viajes = ""
+    where_fecha = ""
+    if fecha_inicio:
+        where_viajes += " AND fecha_salida >= %s"
+        where_fecha += " AND fecha >= %s"
+        rango.append(fecha_inicio)
+    if fecha_fin:
+        where_viajes += " AND fecha_salida <= %s"
+        where_fecha += " AND fecha <= %s"
+        rango.append(fecha_fin)
+
+    # a) Viajes y cumplimiento
+    total_viajes = escalar(f"SELECT COUNT(*) FROM viaje WHERE 1=1{where_viajes}", rango)
+    viajes_completados = escalar(f"SELECT COUNT(*) FROM viaje WHERE estado='completado' {where_viajes}", rango)
+    viajes_cancelados = escalar(f"SELECT COUNT(*) FROM viaje WHERE estado='cancelado' {where_viajes}", rango)
+    viajes_en_progreso = escalar(f"SELECT COUNT(*) FROM viaje WHERE estado='en progreso' {where_viajes}", rango)
+    tasa_cumplimiento = round((viajes_completados / total_viajes) * 100, 2) if total_viajes > 0 else 0.0
+
+    # b) Combustible y costos
+    litros_totales = escalar(f"SELECT IFNULL(SUM(litros),0) FROM consumo WHERE 1=1{where_fecha}", rango)
+    costo_total_combustible = escalar(f"SELECT IFNULL(SUM(costo),0) FROM consumo WHERE 1=1{where_fecha}", rango)
+    costo_promedio_viaje_combustible = round((costo_total_combustible / total_viajes), 2) if total_viajes > 0 else 0.0
+
+    # c) Mantenimiento y salud de flota
+    total_mantenimientos = escalar(f"SELECT COUNT(*) FROM mantenimiento WHERE 1=1{where_fecha}", rango)
+    costo_total_mantenimiento = escalar(f"SELECT IFNULL(SUM(costo),0) FROM mantenimiento WHERE 1=1{where_fecha}", rango)
+    vehiculos_mantenidos = escalar(f"SELECT COUNT(DISTINCT id_vehiculo) FROM mantenimiento WHERE 1=1{where_fecha}", rango)
+
+    # d) Seguridad y desempeño
+    total_incidentes = escalar(f"SELECT COUNT(*) FROM incidente WHERE 1=1{where_fecha}", rango)
+    tasa_incidentes_por_100_viajes = round(((total_incidentes / total_viajes) * 100), 2) if total_viajes > 0 else 0.0
+    promedio_evaluacion = escalar(f"SELECT IFNULL(AVG(puntuacion),0) FROM evaluacion WHERE 1=1{where_fecha}", rango)
+
+    db.close()
+
+    # CSV de una sola fila con columnas de KPIs
+    output = io.StringIO()
+    fieldnames = [
+        'total_viajes', 'viajes_completados', 'viajes_cancelados', 'viajes_en_progreso', 'tasa_cumplimiento',
+        'litros_totales', 'costo_total_combustible', 'costo_promedio_viaje_combustible',
+        'total_mantenimientos', 'costo_total_mantenimiento', 'vehiculos_mantenidos',
+        'total_incidentes', 'tasa_incidentes_por_100_viajes', 'promedio_evaluacion'
+    ]
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerow({
+        'total_viajes': total_viajes,
+        'viajes_completados': viajes_completados,
+        'viajes_cancelados': viajes_cancelados,
+        'viajes_en_progreso': viajes_en_progreso,
+        'tasa_cumplimiento': tasa_cumplimiento,
+        'litros_totales': litros_totales,
+        'costo_total_combustible': round(costo_total_combustible, 2),
+        'costo_promedio_viaje_combustible': costo_promedio_viaje_combustible,
+        'total_mantenimientos': total_mantenimientos,
+        'costo_total_mantenimiento': round(costo_total_mantenimiento, 2),
+        'vehiculos_mantenidos': vehiculos_mantenidos,
+        'total_incidentes': total_incidentes,
+        'tasa_incidentes_por_100_viajes': tasa_incidentes_por_100_viajes,
+        'promedio_evaluacion': round(float(promedio_evaluacion), 2) if promedio_evaluacion is not None else 0.0
+    })
+
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=reporte_kpis.csv"}
     )

@@ -30,6 +30,7 @@
             <th>Modelo</th>
             <th>Tipo</th>
             <th>Marca</th>
+            <th>Categoría</th>
             <th>Estado</th>
             <th>Capacidad</th>
             <th>Kilometraje</th>
@@ -44,6 +45,19 @@
             <td>{{ v.modelo }}</td>
             <td>{{ v.tipo }}</td>
             <td>{{ v.marca }}</td>
+            <td>
+                {% if v.categoria == 'carga_ligera' %}
+                    <span style="background:#4CAF50; color:white; padding:4px 8px; border-radius:4px; font-size:0.85em;">Carga Ligera</span>
+                {% elif v.categoria == 'carga_pesada' %}
+                    <span style="background:#F44336; color:white; padding:4px 8px; border-radius:4px; font-size:0.85em;">Carga Pesada</span>
+                {% elif v.categoria == 'transporte_personal' %}
+                    <span style="background:#2196F3; color:white; padding:4px 8px; border-radius:4px; font-size:0.85em;">Transporte Personal</span>
+                {% elif v.categoria == 'reparto' %}
+                    <span style="background:#FF9800; color:white; padding:4px 8px; border-radius:4px; font-size:0.85em;">Reparto</span>
+                {% else %}
+                    <span style="background:#9C27B0; color:white; padding:4px 8px; border-radius:4px; font-size:0.85em;">Especial</span>
+                {% endif %}
+            </td>
             <td>
                 {% if v.estado == 'activo' %}
                     <span style="background:#4CAF50; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;"> {{ v.estado }}</span>
@@ -79,6 +93,14 @@
         <input type="text" name="tipo" placeholder="Tipo (ej: Camioneta, Camión, SUV)" maxlength="30" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{1,30}" title="Solo letras y espacios" required>
         <input type="number" name="capacidad" placeholder="Capacidad (litros o kg)" min="1" max="100000" title="Debe ser un número entre 1 y 100000" required>
         <input type="text" name="marca" placeholder="Marca (ej: Mercedes-Benz)" maxlength="30" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{1,30}" title="Solo letras, espacios y guiones" required>
+        <select name="categoria" required>
+            <option value="">Seleccionar categoría</option>
+            <option value="carga_ligera">Carga Ligera</option>
+            <option value="carga_pesada">Carga Pesada</option>
+            <option value="transporte_personal">Transporte Personal</option>
+            <option value="reparto">Reparto</option>
+            <option value="especial">Especial</option>
+        </select>
         <select name="estado" required>
             <option value="">Seleccionar estado</option>
             <option value="activo">Activo</option>

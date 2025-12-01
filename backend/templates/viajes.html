@@ -67,15 +67,21 @@
     
     {% if usuario and usuario["rol"] in ["admin","logistica"] %}
     <h2 style="text-align:center;">Agregar Viaje</h2>
-    <form method="post" action="/viajes_create">
+    <form method="post" action="/viajes_create" id="form-viaje">
         <input type="text" name="origen" placeholder="Origen (ej: CDMX)" required minlength="2" maxlength="50">
         <input type="text" name="destino" placeholder="Destino (ej: Puebla)" required minlength="2" maxlength="50">
         <input type="date" name="fecha_salida" required>
         <input type="date" name="fecha_estimada" placeholder="Fecha estimada (opcional)">
-        <select name="id_conductor">
+        <select name="id_conductor" id="conductor_select">
             <option value="">Asignar conductor (opcional)</option>
             {% for c in conductores_list %}
                 <option value="{{ c.id_conductor }}">{{ c.nombre }} {{ c.apellido }}</option>
+            {% endfor %}
+        </select>
+        <select name="id_vehiculo" id="vehiculo_select">
+            <option value="">Asignar vehículo (opcional)</option>
+            {% for v in vehiculos_list %}
+                <option value="{{ v.id_vehiculo }}" data-conductor="{{ v.id_conductor or '' }}">{{ v.matricula }} - {{ v.modelo }}</option>
             {% endfor %}
         </select>
         <select name="estado" required>
@@ -87,5 +93,44 @@
         </select>
         <button type="submit">Agregar Viaje</button>
     </form>
+    
+    <script>
+        // Script para filtrar vehículos según el conductor seleccionado
+        const conductorSelect = document.getElementById('conductor_select');
+        const vehiculoSelect = document.getElementById('vehiculo_select');
+        const todasOpciones = Array.from(vehiculoSelect.options);
+        
+        conductorSelect.addEventListener('change', function() {
+            const conductorId = this.value;
+            
+            // Limpiar el select de vehículos
+            vehiculoSelect.innerHTML = '<option value="">Asignar vehículo (opcional)</option>';
+            
+            if (conductorId) {
+                // Filtrar y mostrar solo vehículos del conductor seleccionado
+                const vehiculosFiltrados = todasOpciones.filter(option => {
+                    return option.value === '' || option.getAttribute('data-conductor') === conductorId;
+                });
+                
+                vehiculosFiltrados.forEach(option => {
+                    vehiculoSelect.appendChild(option.cloneNode(true));
+                });
+                
+                if (vehiculoSelect.options.length === 1) {
+                    // Si no hay vehículos para este conductor, mostrar mensaje
+                    const optionMsg = document.createElement('option');
+                    optionMsg.value = '';
+                    optionMsg.textContent = 'Este conductor no tiene vehículos asignados';
+                    optionMsg.disabled = true;
+                    vehiculoSelect.appendChild(optionMsg);
+                }
+            } else {
+                // Si no hay conductor seleccionado, mostrar todos los vehículos
+                todasOpciones.forEach(option => {
+                    vehiculoSelect.appendChild(option.cloneNode(true));
+                });
+            }
+        });
+    </script>
     {% endif %}
 {% endblock %}

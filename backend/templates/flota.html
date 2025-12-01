@@ -15,10 +15,16 @@
     
     <p class="result-count">Se encontraron {{flota|length}} flotas</p>
     
+    <div style="overflow-x:auto;">
     <table>
         <tr>
             <th>ID</th>
             <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Ubicación</th>
+            <th>Estado</th>
+            <th>Capacidad Máx.</th>
+            <th>Fecha Creación</th>
             <th>Descripción</th>
             {% if usuario and usuario["rol"] == "admin" %}
                 <th>Acciones</th>
@@ -27,8 +33,33 @@
         {% for f in flota %}
         <tr>
             <td>{{ f.id_flota }}</td>
-            <td>{{ f.nombre }}</td>
-            <td>{{ f.descripcion }}</td>
+            <td><strong>{{ f.nombre }}</strong></td>
+            <td>
+                {% if f.categoria == 'carga_ligera' %}
+                    <span style="background:#4CAF50; color:white; padding:4px 8px; border-radius:4px; font-size:0.85em;">Carga Ligera</span>
+                {% elif f.categoria == 'carga_pesada' %}
+                    <span style="background:#F44336; color:white; padding:4px 8px; border-radius:4px; font-size:0.85em;">Carga Pesada</span>
+                {% elif f.categoria == 'transporte_personal' %}
+                    <span style="background:#2196F3; color:white; padding:4px 8px; border-radius:4px; font-size:0.85em;">Transporte Personal</span>
+                {% elif f.categoria == 'reparto' %}
+                    <span style="background:#FF9800; color:white; padding:4px 8px; border-radius:4px; font-size:0.85em;">Reparto</span>
+                {% else %}
+                    <span style="background:#9C27B0; color:white; padding:4px 8px; border-radius:4px; font-size:0.85em;">Especial</span>
+                {% endif %}
+            </td>
+            <td>{{ f.ubicacion }}</td>
+            <td>
+                {% if f.estado == 'activa' %}
+                    <span style="background:#4CAF50; color:white; padding:4px 8px; border-radius:4px; font-size:0.85em;">✓ Activa</span>
+                {% elif f.estado == 'mantenimiento' %}
+                    <span style="background:#FF9800; color:white; padding:4px 8px; border-radius:4px; font-size:0.85em;">⚙ Mantenimiento</span>
+                {% else %}
+                    <span style="background:#757575; color:white; padding:4px 8px; border-radius:4px; font-size:0.85em;">✗ Inactiva</span>
+                {% endif %}
+            </td>
+            <td style="text-align:center;">{{ f.capacidad_maxima }}</td>
+            <td>{{ f.fecha_creacion }}</td>
+            <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis;">{{ f.descripcion }}</td>
             {% if usuario and usuario["rol"] == "admin" %}
                 <td>
                     <a href="/flota_edit/{{f.id_flota}}" style="color:#336699; margin-right:10px;">Editar</a>
@@ -38,6 +69,7 @@
         </tr>
         {% endfor %}
     </table>
+    </div>
     
     {% if not flota %}
         <p style="text-align:center; color:#999; margin:30px 0;">
@@ -50,11 +82,39 @@
     {% endif %}
     
     {% if usuario and usuario["rol"] == "admin" %}
-    <h2 style="text-align:center;">Agregar Flota</h2>
-    <form method="post" action="/flota_create">
-        <input type="text" name="nombre" placeholder="Nombre de la flota" required minlength="2" maxlength="40" pattern="[A-Za-z0-9\s\-]{2,40}" title="Letras, números, espacios y guiones, 2-40 caracteres">
-        <textarea name="descripcion" placeholder="Descripción" required minlength="5" maxlength="100" title="Descripción, 5-100 caracteres"></textarea>
-        <button type="submit">Agregar Flota</button>
+    <h2 style="text-align:center; margin-top:40px;">Agregar Nueva Flota</h2>
+    <form method="post" action="/flota_create" style="max-width:800px; margin:auto;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+            <input type="text" name="nombre" placeholder="Nombre de la flota *" required minlength="2" maxlength="40">
+            
+            <select name="categoria" required>
+                <option value="">Seleccionar categoría *</option>
+                <option value="carga_ligera">Carga Ligera</option>
+                <option value="carga_pesada">Carga Pesada</option>
+                <option value="transporte_personal">Transporte Personal</option>
+                <option value="reparto">Reparto</option>
+                <option value="especial">Especial</option>
+            </select>
+            
+            <input type="text" name="ubicacion" placeholder="Ubicación (ej: CDMX - Norte) *" required minlength="3" maxlength="100">
+            
+            <select name="estado" required>
+                <option value="">Seleccionar estado *</option>
+                <option value="activa" selected>Activa</option>
+                <option value="inactiva">Inactiva</option>
+                <option value="mantenimiento">Mantenimiento</option>
+            </select>
+            
+            <input type="number" name="capacidad_maxima" placeholder="Capacidad máxima de vehículos" min="0" max="1000" value="0">
+            
+            <input type="date" name="fecha_creacion" required title="Fecha de creación de la flota">
+        </div>
+        
+        <textarea name="descripcion" placeholder="Descripción de la flota *" required minlength="5" maxlength="100" rows="2" style="width:100%; margin-top:15px;"></textarea>
+        
+        <textarea name="politica_uso" placeholder="Políticas de uso (opcional - horarios, restricciones, requisitos especiales)" rows="4" style="width:100%; margin-top:15px;"></textarea>
+        
+        <button type="submit" style="width:100%; margin-top:15px;">Agregar Flota</button>
     </form>
     {% endif %}
 {% endblock %}
