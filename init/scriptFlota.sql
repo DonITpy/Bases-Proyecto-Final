@@ -143,6 +143,10 @@ INSERT INTO orden_servicio (descripcion, fecha) VALUES
 ('Transporte de medicamentos', '2024-06-14'),
 ('Entregas en zona metropolitana', '2024-06-15');
 
+ALTER TABLE orden_servicio
+    ADD COLUMN estado ENUM('pendiente','en progreso','completado','cancelado')
+    NOT NULL DEFAULT 'pendiente';
+
 -- =====================================================
 -- VIAJE (CON FK A VEHÍCULO, CONDUCTOR Y ORDEN)
 -- =====================================================

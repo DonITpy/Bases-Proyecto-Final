@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
     <h1>Editar Orden de Servicio</h1>
-    
+ 
     {% if error %}
         <div style="background:#ffcccc; color:#cc0000; padding:15px; margin:20px auto; width:80%; text-align:center; border-radius:5px;">
             {{ error }}
@@ -11,6 +11,13 @@
     <form method="post" action="/ordenes_update/{{orden.id_orden}}" style="width:400px; margin:auto;">
         <textarea name="descripcion" placeholder="Descripción" required minlength="5" maxlength="255" title="Descripción, 5-255 caracteres">{{orden.descripcion}}</textarea>
         <input type="date" name="fecha" value="{{orden.fecha}}" required>
+        <label style="display:block; margin:8px 0;">Estado</label>
+        <select name="estado" required>
+            <option value="pendiente" {% if orden.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+            <option value="en progreso" {% if orden.estado == 'en progreso' %}selected{% endif %}>En progreso</option>
+            <option value="completado" {% if orden.estado == 'completado' %}selected{% endif %}>Completado</option>
+            <option value="cancelado" {% if orden.estado == 'cancelado' %}selected{% endif %}>Cancelado</option>
+        </select>
         <button type="submit">Guardar Cambios</button>
     </form>
     <div style="text-align:center; margin-top:20px;">

@@ -1518,32 +1518,37 @@ def ordenes_web(request: Request, buscar: str = ""):
     })
 
 @app.post("/ordenes_create")
-def ordenes_create(request: Request, descripcion: str = Form(...), fecha: str = Form(...)):
+def ordenes_create(request: Request, descripcion: str = Form(...), fecha: str = Form(...), estado: str = Form("pendiente")):
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] not in ["admin", "logistica"]:
         return RedirectResponse("/ordenes_web", status_code=303)
-    
+
     # VALIDACIONES
     error_msg = None
-    
+
     # Validar descripción
     if not descripcion or len(descripcion) < 5 or len(descripcion) > 255:
         error_msg = "La descripción debe tener entre 5 y 255 caracteres"
     elif not all(c.isalnum() or c.isspace() or c in ['-', '.', ',', '(', ')', ':', ';'] for c in descripcion):
         error_msg = "La descripción contiene caracteres inválidos"
-    
+
     # Validar fecha
     elif not fecha:
         error_msg = "La fecha es obligatoria"
     else:
         try:
-            from datetime import datetime
             fecha_obj = datetime.strptime(fecha, "%Y-%m-%d")
             if fecha_obj.date() > datetime.now().date():
                 error_msg = "La fecha de la orden no puede ser en el futuro"
         except:
             error_msg = "Formato de fecha inválido (use YYYY-MM-DD)"
-    
+
+    # Validar estado
+    allowed_estados = ['pendiente', 'en progreso', 'completado', 'cancelado']
+    if not error_msg:
+        if estado not in allowed_estados:
+            error_msg = "Estado no válido"
+
     if error_msg:
         db = get_db()
         cursor = db.cursor(dictionary=True)
@@ -1551,17 +1556,17 @@ def ordenes_create(request: Request, descripcion: str = Form(...), fecha: str = 
         ordenes = cursor.fetchall()
         db.close()
         return templates.TemplateResponse("ordenes.html", {
-            "request": request, 
-            "ordenes": ordenes, 
+            "request": request,
+            "ordenes": ordenes,
             "usuario": usuario,
             "error": error_msg
         })
-    
+
     db = get_db()
     cursor = db.cursor()
     try:
-        cursor.execute("INSERT INTO orden_servicio (descripcion, fecha) VALUES (%s,%s)",
-                       (descripcion, fecha))
+        cursor.execute("INSERT INTO orden_servicio (descripcion, fecha, estado) VALUES (%s,%s,%s)",
+                       (descripcion, fecha, estado))
         db.commit()
         db.close()
         return RedirectResponse("/ordenes_web", status_code=303)
@@ -1573,12 +1578,12 @@ def ordenes_create(request: Request, descripcion: str = Form(...), fecha: str = 
         ordenes = cursor2.fetchall()
         db2.close()
         return templates.TemplateResponse("ordenes.html", {
-            "request": request, 
-            "ordenes": ordenes, 
+            "request": request,
+            "ordenes": ordenes,
             "usuario": usuario,
             "error": f"Error al crear orden: {str(e)}"
         })
-
+    
 @app.get("/ordenes_delete/{id}")
 def ordenes_delete(request: Request, id: int):
     usuario = request.session.get("usuario")
@@ -1609,32 +1614,37 @@ def ordenes_edit(request: Request, id: int):
     return templates.TemplateResponse("ordenes_edit.html", {"request": request, "orden": orden, "usuario": usuario})
 
 @app.post("/ordenes_update/{id}")
-def ordenes_update(request: Request, id: int, descripcion: str = Form(...), fecha: str = Form(...)):
+def ordenes_update(request: Request, id: int, descripcion: str = Form(...), fecha: str = Form(...), estado: str = Form(...)):
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] != "admin":
         return RedirectResponse("/ordenes_web", status_code=303)
-    
-    # VALIDACIONES (mismo patrón que create)
+
+    # VALIDACIONES
     error_msg = None
-    
+
     # Validar descripción
     if not descripcion or len(descripcion) < 5 or len(descripcion) > 255:
         error_msg = "La descripción debe tener entre 5 y 255 caracteres"
     elif not all(c.isalnum() or c.isspace() or c in ['-', '.', ',', '(', ')', ':', ';'] for c in descripcion):
         error_msg = "La descripción contiene caracteres inválidos"
-    
+
     # Validar fecha
     elif not fecha:
         error_msg = "La fecha es obligatoria"
     else:
         try:
-            from datetime import datetime
             fecha_obj = datetime.strptime(fecha, "%Y-%m-%d")
             if fecha_obj.date() > datetime.now().date():
                 error_msg = "La fecha de la orden no puede ser en el futuro"
         except:
             error_msg = "Formato de fecha inválido (use YYYY-MM-DD)"
-    
+
+    # Validar estado
+    allowed_estados = ['pendiente', 'en progreso', 'completado', 'cancelado']
+    if not error_msg:
+        if estado not in allowed_estados:
+            error_msg = "Estado no válido"
+
     if error_msg:
         db = get_db()
         cursor = db.cursor(dictionary=True)
@@ -1647,14 +1657,12 @@ def ordenes_update(request: Request, id: int, descripcion: str = Form(...), fech
             "usuario": usuario,
             "error": error_msg
         })
-    
+
     db = get_db()
     cursor = db.cursor()
     try:
-        cursor.execute(
-            "UPDATE orden_servicio SET descripcion=%s, fecha=%s WHERE id_orden=%s",
-            (descripcion, fecha, id)
-        )
+        cursor.execute("UPDATE orden_servicio SET descripcion=%s, fecha=%s, estado=%s WHERE id_orden=%s",
+                       (descripcion, fecha, estado, id))
         db.commit()
         db.close()
         return RedirectResponse("/ordenes_web", status_code=303)
@@ -1669,9 +1677,9 @@ def ordenes_update(request: Request, id: int, descripcion: str = Form(...), fech
             "request": request,
             "orden": orden,
             "usuario": usuario,
-            "error": "Error al actualizar orden"
+            "error": f"Error al actualizar orden: {str(e)}"
         })
-
+    
 # ==================== LICENCIAS ====================
 @app.get("/licencias_web")
 def licencias_web(request: Request, buscar: str = ""):

@@ -18,6 +18,7 @@
             <th>ID</th>
             <th>Descripción</th>
             <th>Fecha</th>
+            <th>Estado</th>
             {% if usuario and usuario["rol"] == "admin" %}
                 <th>Acciones</th>
             {% endif %}
@@ -27,6 +28,7 @@
             <td>{{ o.id_orden }}</td>
             <td>{{ o.descripcion }}</td>
             <td>{{ o.fecha }}</td>
+            <td>{{ o.estado if o.estado is defined else (o.estado or 'pendiente') }}</td>
             {% if usuario and usuario["rol"] == "admin" %}
                 <td>
                     <a href="/ordenes_edit/{{o.id_orden}}" style="color:#336699; margin-right:10px;">Editar</a>
@@ -36,11 +38,17 @@
         </tr>
         {% endfor %}
     </table>
-    {% if usuario and usuario["rol"] == "admin" %}
+    {% if usuario and usuario["rol"] in ["admin","logistica"] %}
     <h2 style="text-align:center;">Agregar Orden de Servicio</h2>
     <form method="post" action="/ordenes_create">
         <textarea name="descripcion" placeholder="Descripción de la orden" required minlength="5" maxlength="255" title="Descripción, 5-255 caracteres"></textarea>
         <input type="date" name="fecha" required>
+        <select name="estado" required>
+            <option value="pendiente">Pendiente</option>
+            <option value="en progreso">En progreso</option>
+            <option value="completado">Completado</option>
+            <option value="cancelado">Cancelado</option>
+        </select>
         <button type="submit">Agregar Orden</button>
     </form>
     {% endif %}
