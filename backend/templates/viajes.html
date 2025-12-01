@@ -29,6 +29,7 @@
             <th>Origen</th>
             <th>Destino</th>
             <th>Fecha Salida</th>
+            <th>Fecha Estimada</th> <!-- nueva columna -->
             <th>Estado</th>
             {% if usuario and usuario["rol"] == "admin" %}
                 <th>Acciones</th>
@@ -40,6 +41,7 @@
             <td>{{ v.origen }}</td>
             <td>{{ v.destino }}</td>
             <td>{{ v.fecha_salida }}</td>
+            <td>{{ v.fecha_estimada if v.fecha_estimada is defined else (v.fecha_estimada or '-') }}</td>
             <td>
                 {% if v.estado == 'completado' %}
                     <span style="background:#4CAF50; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;"> {{ v.estado }}</span>
@@ -58,7 +60,6 @@
         </tr>
         {% endfor %}
     </table>
-    
     {% if not viajes %}
         <p style="text-align:center; color:#999; margin:30px 0;">No se encontraron viajes que coincidan con tu búsqueda.</p>
     {% endif %}
@@ -69,6 +70,7 @@
         <input type="text" name="origen" placeholder="Origen (ej: CDMX)" required minlength="2" maxlength="50" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{2,50}" title="Solo letras, espacios y guiones, 2-50 caracteres">
         <input type="text" name="destino" placeholder="Destino (ej: Puebla)" required minlength="2" maxlength="50" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{2,50}" title="Solo letras, espacios y guiones, 2-50 caracteres">
         <input type="date" name="fecha_salida" required>
+        <input type="date" name="fecha_estimada" placeholder="Fecha estimada (opcional)">
         <select name="estado" required>
             <option value="">Seleccionar estado</option>
             <option value="pendiente">Pendiente</option>

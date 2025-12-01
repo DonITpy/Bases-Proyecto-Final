@@ -2,7 +2,6 @@
 {% block content %}
     <h1>Consumo de Combustible</h1>
     
-    <!-- FILTROS -->
     <div class="search-container">
         <form method="get" action="/consumo_web" class="search-form" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
             <select name="filtro_vehiculo" style="flex:1; min-width:200px; padding:8px; border:1px solid #ccc; border-radius:4px;">
@@ -17,6 +16,10 @@
         </form>
     </div>
     
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+    
     <p style="text-align:center; color:#666;">Se encontraron {{consumo|length}} registros</p>
     
     <table>
@@ -27,7 +30,7 @@
             <th>Tipo Combustible</th>
             <th>Costo</th>
             <th>Fecha</th>
-            {% if usuario and usuario["rol"] == "mecanico" %}
+            {% if usuario and usuario["rol"] == "admin" %}
                 <th>Acciones</th>
             {% endif %}
         </tr>
@@ -37,21 +40,19 @@
             <td>{{ c.matricula }}</td>
             <td>{{ c.litros }}</td>
             <td>{{ c.tipo_combustible }}</td>
-            <td>
-                {% if c.costo is not none %}
-                    {{ "%.2f"|format(c.costo) }}
-                {% else %}
-                    -
-                {% endif %}
-            </td>
+            <td>{{ "%.2f"|format(c.costo) }}</td>
             <td>{{ c.fecha }}</td>
-            {% if usuario and usuario["rol"] == "mecanico" %}
-                <td><a href="/consumo_delete/{{c.id_consumo}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">Eliminar</a></td>
+            {% if usuario and usuario["rol"] == "admin" %}
+                <td>
+                    <a href="/consumo_edit/{{c.id_consumo}}" style="color:#336699; margin-right:10px;">Editar</a>
+                    <a href="/consumo_delete/{{c.id_consumo}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">Eliminar</a>
+                </td>
             {% endif %}
         </tr>
         {% endfor %}
     </table>
-    {% if usuario and usuario["rol"] == "mecanico" %}
+    
+    {% if usuario and usuario["rol"] in ["admin","mecanico"] %}
     <h2 style="text-align:center;">Registrar Consumo</h2>
     <form method="post" action="/consumo_create" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
         <select name="matricula" required style="padding:8px; border:1px solid #ccc; border-radius:4px; min-width:200px;">
@@ -61,19 +62,17 @@
             {% endfor %}
         </select>
 
-        <input type="number" name="litros" step="0.01" min="0.01" max="9999.99" placeholder="Litros (ej: 50.25)" required
-               title="Ingrese la cantidad de litros entre 0.01 y 9,999.99" style="padding:8px; border:1px solid #ccc; border-radius:4px;">
+        <input type="number" name="litros" step="0.01" min="0.01" max="9999.99" placeholder="Litros" required style="padding:8px; border:1px solid #ccc; border-radius:4px;">
 
         <select name="tipo_combustible" required style="padding:8px; border:1px solid #ccc; border-radius:4px;">
-            <option value="">Tipo de combustible</option>
+            <option value="">Tipo combustible</option>
             <option value="Gasolina">Gasolina</option>
             <option value="Diésel">Diésel</option>
             <option value="Eléctrico">Eléctrico</option>
             <option value="Gas">Gas</option>
         </select>
 
-        <input type="number" name="costo" step="0.01" min="0" placeholder="Costo (MXN)" required
-               style="padding:8px; border:1px solid #ccc; border-radius:4px;">
+        <input type="number" name="costo" step="0.01" min="0" placeholder="Costo (MXN)" required style="padding:8px; border:1px solid #ccc; border-radius:4px;">
 
         <input type="date" name="fecha" required style="padding:8px; border:1px solid #ccc; border-radius:4px;">
 

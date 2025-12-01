@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
     <h1>Editar Viaje</h1>
-    
     {% if error %}
         <div style="background:#ffcccc; color:#cc0000; padding:15px; margin:20px auto; width:80%; text-align:center; border-radius:5px;">
             {{ error }}
@@ -12,11 +11,14 @@
         <input type="text" name="origen" value="{{viaje.origen}}" placeholder="Origen" required minlength="2" maxlength="50" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{2,50}" title="Solo letras, espacios y guiones">
         <input type="text" name="destino" value="{{viaje.destino}}" placeholder="Destino" required minlength="2" maxlength="50" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{2,50}" title="Solo letras, espacios y guiones">
         <input type="date" name="fecha_salida" value="{{viaje.fecha_salida}}" required>
+        <label style="display:block; margin:8px 0;">Fecha estimada (opcional)</label>
+        <input type="date" name="fecha_estimada" value="{{viaje.fecha_estimada if viaje.fecha_estimada is defined else (viaje.fecha_estimada or '')}}">
         <select name="estado" required>
             <option value="">Seleccionar estado</option>
             <option value="pendiente" {% if viaje.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
             <option value="en progreso" {% if viaje.estado == 'en progreso' %}selected{% endif %}>En progreso</option>
             <option value="completado" {% if viaje.estado == 'completado' %}selected{% endif %}>Completado</option>
+            <option value="cancelado" {% if viaje.estado == 'cancelado' %}selected{% endif %}>Cancelado</option>
         </select>
         <button type="submit">Guardar Cambios</button>
     </form>

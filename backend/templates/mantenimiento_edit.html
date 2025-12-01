@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Editar Mantenimiento</h1>
+    
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+    
+    <form method="post" action="/mantenimiento_update/{{ mantenimiento.id_mantenimiento }}" style="width:500px; margin:auto;">
+        <label>Vehículo</label>
+        <select name="id_vehiculo" required>
+            <option value="">Seleccionar vehículo</option>
+            {% for v in vehiculos_list %}
+                <option value="{{ v.id_vehiculo }}" {% if v.id_vehiculo == mantenimiento.id_vehiculo %}selected{% endif %}>{{ v.matricula }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Tipo</label>
+        <select name="tipo" required>
+            <option value="">Seleccionar tipo</option>
+            <option value="preventivo" {% if mantenimiento.tipo == 'preventivo' %}selected{% endif %}>Preventivo</option>
+            <option value="correctivo" {% if mantenimiento.tipo == 'correctivo' %}selected{% endif %}>Correctivo</option>
+            <option value="reparacion" {% if mantenimiento.tipo == 'reparacion' %}selected{% endif %}>Reparación</option>
+        </select>
+
+        <label>Descripción</label>
+        <textarea name="descripcion" minlength="5" maxlength="255" required>{{ mantenimiento.descripcion }}</textarea>
+
+        <label>Costo</label>
+        <input type="number" name="costo" step="0.01" min="0" value="{{ mantenimiento.costo }}" required>
+
+        <label>Fecha</label>
+        <input type="date" name="fecha" value="{{ mantenimiento.fecha }}" required>
+
+        <button type="submit">Guardar cambios</button>
+    </form>
+    <div style="text-align:center; margin-top:20px;">
+        <a href="/mantenimiento_web" style="color:#336699; text-decoration:none;">Volver</a>
+    </div>
+{% endblock %}

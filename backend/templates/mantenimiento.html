@@ -2,7 +2,6 @@
 {% block content %}
     <h1>Mantenimiento</h1>
     
-    <!-- BÚSQUEDA Y FILTROS -->
     <div class="search-container">
         <form method="get" action="/mantenimiento_web" class="search-form" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
             <input type="text" name="buscar" placeholder="Buscar por descripción..." value="{{buscar}}" style="flex:1; min-width:200px;">
@@ -13,9 +12,13 @@
                 {% endfor %}
             </select>
             <button type="submit">Buscar</button>
-            <a href="/mantenimiento_web" style="background:#666; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; text-align:center;">Limpiar</a>
+            <a href="/mantenimiento_web" style="background:#666; color:white; padding:10px 20px; border-radius:6px; text-decoration:none;">Limpiar</a>
         </form>
     </div>
+    
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
     
     <p style="text-align:center; color:#666;">Se encontraron {{mantenimiento|length}} registros</p>
     
@@ -27,7 +30,7 @@
             <th>Descripción</th>
             <th>Costo</th>
             <th>Fecha</th>
-            {% if usuario and usuario["rol"] == "mecanico" %}
+            {% if usuario and usuario["rol"] == "admin" %}
                 <th>Acciones</th>
             {% endif %}
         </tr>
@@ -35,27 +38,21 @@
         <tr>
             <td>{{ m.id_mantenimiento }}</td>
             <td>{{ m.matricula }}</td>
-            <td>{{ m.tipo if m.tipo is defined else '' }}</td>
+            <td>{{ m.tipo }}</td>
             <td>{{ m.descripcion }}</td>
-            <td>
-                {% if m.costo is defined %}
-                    {{ "%.2f"|format(m.costo) }}
-                {% else %}
-                    {% if m.costo is not defined and m.costo is not none %}
-                        {{ m.costo }}
-                    {% else %}
-                        -
-                    {% endif %}
-                {% endif %}
-            </td>
+            <td>{{ "%.2f"|format(m.costo) }}</td>
             <td>{{ m.fecha }}</td>
-            {% if usuario and usuario["rol"] == "mecanico" %}
-                <td><a href="/mantenimiento_delete/{{m.id_mantenimiento}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">Eliminar</a></td>
+            {% if usuario and usuario["rol"] == "admin" %}
+                <td>
+                    <a href="/mantenimiento_edit/{{m.id_mantenimiento}}" style="color:#336699; margin-right:10px;">Editar</a>
+                    <a href="/mantenimiento_delete/{{m.id_mantenimiento}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">Eliminar</a>
+                </td>
             {% endif %}
         </tr>
         {% endfor %}
     </table>
-    {% if usuario and usuario["rol"] == "mecanico" %}
+    
+    {% if usuario and usuario["rol"] in ["admin","mecanico"] %}
     <h2 style="text-align:center;">Registrar Mantenimiento</h2>
     <form method="post" action="/mantenimiento_create" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
         <select name="id_vehiculo" required style="padding:8px; border:1px solid #ccc; border-radius:4px; min-width:200px;">
@@ -65,9 +62,18 @@
             {% endfor %}
         </select>
 
-        <textarea name="descripcion" placeholder="Descripción del mantenimiento" required minlength="5" maxlength="255" title="Descripción, 5-255 caracteres; se permiten -,.,()">{{''}}</textarea>
+        <select name="tipo" required style="padding:8px; border:1px solid #ccc; border-radius:4px;">
+            <option value="">Tipo</option>
+            <option value="preventivo">Preventivo</option>
+            <option value="correctivo">Correctivo</option>
+            <option value="reparacion">Reparación</option>
+        </select>
 
-        <input type="date" name="fecha" required>
+        <textarea name="descripcion" placeholder="Descripción" required minlength="5" maxlength="255" style="min-width:200px;"></textarea>
+
+        <input type="number" name="costo" step="0.01" min="0" placeholder="Costo" required style="padding:8px; border:1px solid #ccc; border-radius:4px;">
+
+        <input type="date" name="fecha" required style="padding:8px; border:1px solid #ccc; border-radius:4px;">
 
         <button type="submit">Registrar Mantenimiento</button>
     </form>

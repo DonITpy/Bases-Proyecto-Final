@@ -1,89 +1,76 @@
+-- Script organizado y con datos de ejemplo que cubren todos los valores enum/posibles
 SET NAMES utf8mb4;
 SET CHARACTER SET utf8mb4;
 SET COLLATION_CONNECTION=utf8mb4_unicode_ci;
 
-CREATE DATABASE IF NOT EXISTS flota_logistica CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+DROP DATABASE IF EXISTS flota_logistica;
+CREATE DATABASE flota_logistica CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE flota_logistica;
 
 -- =====================================================
--- TABLA FLOTA
+-- FLOTA
 -- =====================================================
-
 CREATE TABLE flota (
     id_flota INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(40) COLLATE utf8mb4_unicode_ci,
     descripcion VARCHAR(100) COLLATE utf8mb4_unicode_ci
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO flota (nombre, descripcion) VALUES
-('Flota Norte', 'Vehículos de la zona Norte'),
-('Flota Sur', 'Vehículos de la zona Sur'),
-('Flota Centro', 'Vehículos de la zona Centro'),
-('Flota Especial', 'Vehículos para carga pesada');
-
+INSERT INTO flota (id_flota, nombre, descripcion) VALUES
+(1,'Flota Norte','Vehículos de la zona Norte'),
+(2,'Flota Sur','Vehículos de la zona Sur'),
+(3,'Flota Centro','Vehículos de la zona Centro'),
+(4,'Flota Especial','Vehículos para carga pesada');
 
 -- =====================================================
--- USUARIOS
+-- USUARIOS (roles: admin, mecanico, logistica, conductor, observador)
 -- =====================================================
 CREATE TABLE usuario (
     id_usuario INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(50) COLLATE utf8mb4_unicode_ci NOT NULL,
     correo VARCHAR(50) UNIQUE COLLATE utf8mb4_unicode_ci NOT NULL,
     password VARCHAR(128) NOT NULL,
-    rol ENUM('admin', 'mecanico', 'logistica', 'conductor', 'observador')
-        NOT NULL COLLATE utf8mb4_unicode_ci
+    rol ENUM('admin','mecanico','logistica','conductor','observador') NOT NULL
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO usuario (nombre, correo, password, rol) VALUES
-('Admin Principal', 'admin@correo.com', 'admin123', 'admin'),
-('Mecánico Juan', 'mecanico@correo.com', 'mecanico123', 'mecanico'),
-('Pedro Ramírez', 'conductor@correo.com', 'conductor123', 'conductor'),
-('Carlos López', 'logistica@correo.com', 'logistica123', 'logistica'),
-('Laura Martínez', 'observador@correo.com', 'observador123', 'observador');
+INSERT INTO usuario (id_usuario, nombre, correo, password, rol) VALUES
+(1,'Admin Principal','admin@correo.com','admin123','admin'),
+(2,'Mecánico Juan','mecanico@correo.com','mecanico123','mecanico'),
+(3,'Pedro Ramírez','conductor@correo.com','conductor123','conductor'),
+(4,'Carlos López','logistica@correo.com','logistica123','logistica'),
+(5,'Laura Martínez','observador@correo.com','observador123','observador');
 
 -- =====================================================
 -- CONDUCTOR
 -- =====================================================
-
 CREATE TABLE conductor (
     id_conductor INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(60) NOT NULL COLLATE utf8mb4_unicode_ci,
     apellido VARCHAR(60) NOT NULL COLLATE utf8mb4_unicode_ci,
     telefono VARCHAR(20) COLLATE utf8mb4_unicode_ci,
     direccion VARCHAR(100) COLLATE utf8mb4_unicode_ci,
-    fecha_nacimiento DATE
+    fecha_nacimiento DATE,
+    id_usuario INT NULL,
+    CONSTRAINT fk_conductor_usuario FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE SET NULL
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO conductor (nombre, apellido, telefono, direccion, fecha_nacimiento) VALUES
-('Pedro', 'Ramírez', '5555121234', 'Calle Uno 123, CDMX', '1980-06-10'),
-('María', 'Sosa', '5556232345', 'Calle Dos 456, Puebla', '1985-12-15'),
-('Carlos', 'Gómez', '5557343456', 'Calle Tres 789, Querétaro', '1982-03-22'),
-('Ana', 'Torres', '5558454567', 'Calle Cuatro 101, Guadalajara', '1988-07-30'),
-('Luis', 'Fernández', '5559565678', 'Calle Cinco 202, Monterrey', '1979-11-05'),
-('Laura', 'Díaz', '5550676789', 'Calle Seis 303, Veracruz', '1990-01-14'),
-('José', 'Martínez', '5551787890', 'Calle Siete 404, León', '1984-09-20'),
-('Marta', 'Sánchez', '5552898901', 'Calle Ocho 505, Cancún', '1987-04-11'),
-('Andrés', 'Hernández', '5553909012', 'Calle Nueve 606, Acapulco', '1983-10-25'),
-('Lucía', 'Mendoza', '5554010123', 'Calle Diez 707, Tijuana', '1991-02-08'),
-('Francisco', 'López', '5555121234', 'Calle Once 808, San Luis Potosí', '1981-05-17'),
-('Isabella', 'García', '5556232345', 'Calle Doce 909', '1989-08-03');
-
-ALTER TABLE conductor
-    ADD COLUMN id_usuario INT NULL;
-ALTER TABLE conductor
-    ADD CONSTRAINT fk_conductor_usuario
-    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
-    ON DELETE SET NULL;
-
-UPDATE conductor c
-JOIN usuario u ON u.nombre = CONCAT(c.nombre,' ',c.apellido) AND u.rol = 'conductor'
-SET c.id_usuario = u.id_usuario;
-
+INSERT INTO conductor (id_conductor, nombre, apellido, telefono, direccion, fecha_nacimiento, id_usuario) VALUES
+(1,'Pedro','Ramírez','5555121234','Calle Uno 123, CDMX','1980-06-10',3),  -- vinculado al usuario conductor
+(2,'María','Sosa','5556232345','Calle Dos 456, Puebla','1985-12-15',NULL),
+(3,'Carlos','Gómez','5557343456','Calle Tres 789, Querétaro','1982-03-22',NULL),
+(4,'Ana','Torres','5558454567','Calle Cuatro 101, Guadalajara','1988-07-30',NULL),
+(5,'Luis','Fernández','5559565678','Calle Cinco 202, Monterrey','1979-11-05',NULL),
+(6,'Laura','Díaz','5550676789','Calle Seis 303, Veracruz','1990-01-14',NULL),
+(7,'José','Martínez','5551787890','Calle Siete 404, León','1984-09-20',NULL),
+(8,'Marta','Sánchez','5552898901','Calle Ocho 505, Cancún','1987-04-11',NULL),
+(9,'Andrés','Hernández','5553909012','Calle Nueve 606, Acapulco','1983-10-25',NULL),
+(10,'Lucía','Mendoza','5554010123','Calle Diez 707, Tijuana','1991-02-08',NULL),
+(11,'Francisco','López','5555129999','Calle Once 808, SLP','1981-05-17',NULL),
+(12,'Isabella','García','5556230000','Calle Doce 909, Toluca','1989-08-03',NULL);
 
 -- =====================================================
--- VEHÍCULO (CON FK A FLOTA)
+-- VEHÍCULO (estado cubre: 'activo','mantenimiento','inactivo')
 -- =====================================================
-
 CREATE TABLE vehiculo (
     id_vehiculo INT PRIMARY KEY AUTO_INCREMENT,
     matricula VARCHAR(20) UNIQUE NOT NULL COLLATE utf8mb4_unicode_ci,
@@ -91,131 +78,116 @@ CREATE TABLE vehiculo (
     tipo VARCHAR(30) NOT NULL COLLATE utf8mb4_unicode_ci,
     capacidad INT NOT NULL,
     marca VARCHAR(30) NOT NULL COLLATE utf8mb4_unicode_ci,
-    estado VARCHAR(15) NOT NULL COLLATE utf8mb4_unicode_ci,
+    estado ENUM('activo','mantenimiento','inactivo') NOT NULL DEFAULT 'activo',
     kilometraje INT NOT NULL,
-    id_flota INT,
-    CONSTRAINT fk_vehiculo_flota
-        FOREIGN KEY (id_flota) REFERENCES flota(id_flota)
-        ON DELETE SET NULL
+    id_flota INT NULL,
+    CONSTRAINT fk_vehiculo_flota FOREIGN KEY (id_flota) REFERENCES flota(id_flota) ON DELETE SET NULL
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO vehiculo (matricula, modelo, tipo, capacidad, marca, estado, kilometraje, id_flota) VALUES
-('ABC123', 'Sprinter 2020',   'Camioneta', 1000, 'Mercedes-Benz', 'activo',       25000, 3),
-('XYZ789', 'Transit 2018',    'Furgoneta',  800, 'Ford',          'mantenimiento',74000, 3),
-('DEF456', 'Hilux 2022',      'Camioneta', 1200, 'Toyota',        'activo',       15000, 1),
-('GHI789', 'Freightliner 2021','Camión',   5000, 'Freightliner',  'activo',       50000, 4),
-('JKL012', 'Versa 2023',      'Sedán',      500, 'Nissan',        'activo',        8000, 2),
-('MNO345', 'Kenworth 2020',   'Camión',    4500, 'Kenworth',      'inactivo',    120000, 4),
-('PQR678', 'RAV4 2021',       'SUV',        700, 'Toyota',        'activo',       35000, 1),
-('STU901', 'Volvo 2019',      'Camión',    5500, 'Volvo',         'activo',       95000, 4),
-('VWX234', 'Aveo 2022',       'Sedán',      450, 'Chevrolet',     'activo',       12000, 2),
-('YZA567', 'CX-5 2020',       'SUV',        650, 'Mazda',         'mantenimiento',42000, 1),
-('BCD890', 'Doblado 2019',    'Furgoneta',  750, 'Hyundai',       'activo',       88000, 3),
-('EFG123', 'Tacoma 2021',     'Camioneta',  950, 'Toyota',        'activo',       22000, 1),
-('HIJ456', 'F-150 2020',      'Camioneta', 1100, 'Ford',          'activo',       60000, 1),
-('KLM789', 'Fortuner 2022',   'SUV',        800, 'Toyota',        'activo',       18000, 1),
-('NOP012', 'Ranger 2021',     'Camioneta',  900, 'Ford',          'inactivo',     45000, 1);
+INSERT INTO vehiculo (id_vehiculo, matricula, modelo, tipo, capacidad, marca, estado, kilometraje, id_flota) VALUES
+(1,'ABC123','Sprinter 2020','Camioneta',1000,'Mercedes-Benz','activo',25000,3),
+(2,'XYZ789','Transit 2018','Furgoneta',800,'Ford','mantenimiento',74000,3),
+(3,'DEF456','Hilux 2022','Camioneta',1200,'Toyota','activo',15000,1),
+(4,'GHI789','Freightliner 2021','Camión',5000,'Freightliner','activo',50000,4),
+(5,'JKL012','Versa 2023','Sedán',500,'Nissan','activo',8000,2),
+(6,'MNO345','Kenworth 2020','Camión',4500,'Kenworth','inactivo',120000,4),
+(7,'PQR678','RAV4 2021','SUV',700,'Toyota','activo',35000,1),
+(8,'STU901','Volvo 2019','Camión',5500,'Volvo','activo',95000,4),
+(9,'VWX234','Aveo 2022','Sedán',450,'Chevrolet','activo',12000,2),
+(10,'YZA567','CX-5 2020','SUV',650,'Mazda','mantenimiento',42000,1),
+(11,'BCD890','Doblado 2019','Furgoneta',750,'Hyundai','activo',88000,3),
+(12,'EFG123','Tacoma 2021','Camioneta',950,'Toyota','activo',22000,1),
+(13,'HIJ456','F-150 2020','Camioneta',1100,'Ford','activo',60000,1),
+(14,'KLM789','Fortuner 2022','SUV',800,'Toyota','activo',18000,1),
+(15,'NOP012','Ranger 2021','Camioneta',900,'Ford','inactivo',45000,1);
 
 -- =====================================================
--- ORDEN DE SERVICIO
+-- ORDEN DE SERVICIO (estado: pendiente, en progreso, completado, cancelado)
 -- =====================================================
-
 CREATE TABLE orden_servicio (
     id_orden INT PRIMARY KEY AUTO_INCREMENT,
     descripcion VARCHAR(255) COLLATE utf8mb4_unicode_ci,
-    fecha DATE
+    fecha DATE,
+    estado ENUM('pendiente','en progreso','completado','cancelado') NOT NULL DEFAULT 'pendiente'
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO orden_servicio (descripcion, fecha) VALUES
-('Paquete refrigerado', '2024-06-01'),
-('Material industrial', '2024-06-02'),
-('Entrega de documentos', '2024-06-03'),
-('Carga de mercancía', '2024-06-04'),
-('Mudanza residencial', '2024-06-05'),
-('Transporte de valores', '2024-06-06'),
-('Envío de repuestos', '2024-06-07'),
-('Carga de construcción', '2024-06-08'),
-('Entrega de alimentos', '2024-06-09'),
-('Transporte de equipos', '2024-06-10'),
-('Logística de eventos', '2024-06-11'),
-('Entrega urgente', '2024-06-12'),
-('Carga consolidada', '2024-06-13'),
-('Transporte de medicamentos', '2024-06-14'),
-('Entregas en zona metropolitana', '2024-06-15');
-
-ALTER TABLE orden_servicio
-    ADD COLUMN estado ENUM('pendiente','en progreso','completado','cancelado')
-    NOT NULL DEFAULT 'pendiente';
+INSERT INTO orden_servicio (id_orden, descripcion, fecha, estado) VALUES
+(1,'Paquete refrigerado','2024-06-01','completado'),
+(2,'Material industrial','2024-06-02','en progreso'),
+(3,'Entrega de documentos','2024-06-03','completado'),
+(4,'Carga de mercancía','2024-06-04','pendiente'),
+(5,'Mudanza residencial','2024-06-05','cancelado'),
+(6,'Transporte de valores','2024-06-06','completado'),
+(7,'Envío de repuestos','2024-06-07','en progreso'),
+(8,'Carga de construcción','2024-06-08','pendiente'),
+(9,'Entrega urgente','2024-06-09','pendiente'),
+(10,'Reparto local','2024-06-10','completado'),
+(11,'Traslado internacional','2024-06-11','en progreso'),
+(12,'Servicio especial','2024-06-12','pendiente'),
+(13,'Ruta express','2024-06-13','completado'),
+(14,'Carga pesada','2024-06-14','en progreso'),
+(15,'Entrega programada','2024-06-15','pendiente');
 
 -- =====================================================
--- VIAJE (CON FK A VEHÍCULO, CONDUCTOR Y ORDEN)
+-- VIAJE (incluye fecha_estimada y estados: pendiente, en progreso, completado, cancelado)
 -- =====================================================
-
 CREATE TABLE viaje (
     id_viaje INT PRIMARY KEY AUTO_INCREMENT,
     origen VARCHAR(50) COLLATE utf8mb4_unicode_ci,
     destino VARCHAR(50) COLLATE utf8mb4_unicode_ci,
     fecha_salida DATE,
-    estado VARCHAR(20) COLLATE utf8mb4_unicode_ci,
-    id_vehiculo INT,
-    id_conductor INT,
-    id_orden INT,
-    CONSTRAINT fk_viaje_vehiculo
-        FOREIGN KEY (id_vehiculo) REFERENCES vehiculo(id_vehiculo)
-        ON DELETE SET NULL,
-    CONSTRAINT fk_viaje_conductor
-        FOREIGN KEY (id_conductor) REFERENCES conductor(id_conductor)
-        ON DELETE SET NULL,
-    CONSTRAINT fk_viaje_orden
-        FOREIGN KEY (id_orden) REFERENCES orden_servicio(id_orden)
-        ON DELETE SET NULL
+    fecha_estimada DATE NULL,
+    estado ENUM('pendiente','en progreso','completado','cancelado') NOT NULL DEFAULT 'pendiente',
+    id_vehiculo INT NULL,
+    id_conductor INT NULL,
+    id_orden INT NULL,
+    CONSTRAINT fk_viaje_vehiculo FOREIGN KEY (id_vehiculo) REFERENCES vehiculo(id_vehiculo) ON DELETE SET NULL,
+    CONSTRAINT fk_viaje_conductor FOREIGN KEY (id_conductor) REFERENCES conductor(id_conductor) ON DELETE SET NULL,
+    CONSTRAINT fk_viaje_orden FOREIGN KEY (id_orden) REFERENCES orden_servicio(id_orden) ON DELETE SET NULL
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO viaje (origen, destino, fecha_salida, estado, id_vehiculo, id_conductor, id_orden) VALUES
-('CDMX',           'Puebla',        '2024-06-01', 'completado',  1,  1,  1),
-('Querétaro',      'León',          '2024-06-02', 'en progreso', 2,  2,  2),
-('CDMX',           'Guadalajara',   '2024-06-03', 'completado',  3,  3,  3),
-('Monterrey',      'CDMX',          '2024-06-04', 'completado',  4,  4,  4),
-('CDMX',           'Veracruz',      '2024-06-05', 'en progreso', 5,  5,  5),
-('Cancún',         'Playa del Carmen', '2024-06-06','completado',6,  6,  6),
-('CDMX',           'Toluca',        '2024-06-07', 'completado',  7,  7,  7),
-('Tijuana',        'CDMX',          '2024-06-08', 'pendiente',   8,  8,  8),
-('CDMX',           'Acapulco',      '2024-06-09', 'en progreso', 9,  9,  9),
-('San Luis Potosí','CDMX',          '2024-06-10', 'completado',  10, 10, 10),
-('CDMX',           'Mérida',        '2024-06-11', 'completado',  1, 11, 11),
-('Guadalajara',    'Monterrey',     '2024-06-12', 'en progreso', 2, 12, 12),
-('CDMX',           'Cuernavaca',    '2024-06-13', 'completado',  3,  1, 13),
-('León',           'Querétaro',     '2024-06-14', 'en progreso', 4,  2, 14),
-('CDMX',           'Taxco',         '2024-06-15', 'completado',  5,  3, 15);
+INSERT INTO viaje (id_viaje, origen, destino, fecha_salida, fecha_estimada, estado, id_vehiculo, id_conductor, id_orden) VALUES
+(1,'CDMX','Puebla','2024-06-01','2024-06-01','completado',1,1,1),
+(2,'Querétaro','León','2024-06-02','2024-06-03','en progreso',2,2,2),
+(3,'CDMX','Guadalajara','2024-06-03','2024-06-05','completado',3,3,3),
+(4,'Monterrey','CDMX','2024-06-04',NULL,'completado',4,4,4),
+(5,'CDMX','Veracruz','2024-06-05','2024-06-06','en progreso',5,5,5),
+(6,'Cancún','Playa del Carmen','2024-06-06','2024-06-07','completado',6,6,6),
+(7,'CDMX','Toluca','2024-06-07','2024-06-09','completado',7,7,7),
+(8,'Tijuana','CDMX','2024-06-08',NULL,'pendiente',8,8,8),
+(9,'CDMX','Acapulco','2024-06-09','2024-06-10','en progreso',9,9,9),
+(10,'San Luis Potosí','CDMX','2024-06-10',NULL,'completado',10,10,10),
+(11,'CDMX','Mérida','2024-06-11','2024-06-13','completado',1,11,11),
+(12,'Guadalajara','Monterrey','2024-06-12','2024-06-15','en progreso',2,12,12),
+(13,'CDMX','Cuernavaca','2024-06-13','2024-06-14','completado',3,1,13),
+(14,'León','Querétaro','2024-06-14','2024-06-16','en progreso',4,2,14),
+(15,'CDMX','Taxco','2024-06-15','2024-06-18','completado',5,3,15);
 
 -- =====================================================
--- MANTENIMIENTO
+-- MANTENIMIENTO (tipo: preventivo, correctivo, reparacion)
 -- =====================================================
-
 CREATE TABLE mantenimiento (
     id_mantenimiento INT PRIMARY KEY AUTO_INCREMENT,
     id_vehiculo INT NOT NULL,
-    tipo ENUM('preventivo','correctivo','reparacion') 
-        COLLATE utf8mb4_unicode_ci NOT NULL,
+    tipo ENUM('preventivo','correctivo','reparacion') COLLATE utf8mb4_unicode_ci NOT NULL,
     descripcion VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
     costo DECIMAL(10,2) NOT NULL,
     fecha DATE NOT NULL,
-    FOREIGN KEY (id_vehiculo) REFERENCES vehiculo(id_vehiculo)
-        ON DELETE CASCADE
+    FOREIGN KEY (id_vehiculo) REFERENCES vehiculo(id_vehiculo) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO mantenimiento (id_vehiculo, tipo, descripcion, costo, fecha) VALUES
-(1, 'preventivo', 'Cambio de aceite y filtro', 850.00, '2024-05-20'),
-(2, 'reparacion', 'Reparación de frenos', 2800.00, '2024-05-30'),
-(3, 'reparacion', 'Revisión de suspensión y cambio de bujes', 4200.00, '2024-06-01'),
-(4, 'reparacion', 'Cambio de llanta trasera', 1800.00, '2024-06-05'),
-(5, 'reparacion', 'Reparación de transmisión', 9500.00, '2024-06-10'),
-(6, 'preventivo', 'Servicio general', 1200.00, '2024-06-12');
+INSERT INTO mantenimiento (id_mantenimiento, id_vehiculo, tipo, descripcion, costo, fecha) VALUES
+(1,1,'preventivo','Cambio de aceite y filtro',850.00,'2024-05-20'),
+(2,2,'reparacion','Reparación de frenos',2800.00,'2024-05-30'),
+(3,3,'reparacion','Revisión de suspensión y cambio de bujes',4200.00,'2024-06-01'),
+(4,4,'correctivo','Cambio de llanta trasera',1800.00,'2024-06-05'),
+(5,5,'correctivo','Reparación de transmisión',9500.00,'2024-06-10'),
+(6,6,'preventivo','Servicio general',1200.00,'2024-06-12'),
+(7,10,'preventivo','Revisión preventiva (ejemplo)',600.00,'2024-06-18');
 
 -- =====================================================
--- CONSUMO
+-- CONSUMO (tipo_combustible ejemplos: Gasolina, Diésel, Eléctrico, Gas)
 -- =====================================================
-
 CREATE TABLE consumo (
     id_consumo INT PRIMARY KEY AUTO_INCREMENT,
     matricula VARCHAR(20) COLLATE utf8mb4_unicode_ci,
@@ -226,27 +198,26 @@ CREATE TABLE consumo (
     FOREIGN KEY (matricula) REFERENCES vehiculo(matricula) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO consumo (matricula, litros, fecha, tipo_combustible, costo) VALUES
-('ABC123', 60.0, '2024-06-01', 'Gasolina', 1200.00),
-('XYZ789', 55.5, '2024-06-02', 'Diésel', 1100.00),
-('DEF456', 48.0, '2024-06-03', 'Gasolina', 980.00),
-('GHI789', 120.5, '2024-06-04', 'Diésel', 2600.00),
-('JKL012', 35.0, '2024-06-05', 'Gasolina', 700.00),
-('MNO345', 110.0, '2024-06-06', 'Diésel', 2350.00),
-('PQR678', 52.5, '2024-06-07', 'Gasolina', 1050.00),
-('STU901', 115.0, '2024-06-08', 'Diésel', 2450.00),
-('VWX234', 40.0, '2024-06-09', 'Gasolina', 820.00),
-('YZA567', 58.0, '2024-06-10', 'Gasolina', 1180.00),
-('ABC123', 62.5, '2024-06-11', 'Gasolina', 1250.00),
-('DEF456', 50.0, '2024-06-12', 'Gasolina', 1000.00),
-('JKL012', 38.5, '2024-06-13', 'Gasolina', 770.00),
-('PQR678', 55.0, '2024-06-14', 'Gasolina', 1100.00),
-('VWX234', 42.0, '2024-06-15', 'Gasolina', 860.00);
+INSERT INTO consumo (id_consumo, matricula, litros, fecha, tipo_combustible, costo) VALUES
+(1,'ABC123',60.00,'2024-06-01','Gasolina',1200.00),
+(2,'XYZ789',55.50,'2024-06-02','Diésel',1100.00),
+(3,'DEF456',48.00,'2024-06-03','Gasolina',980.00),
+(4,'GHI789',120.50,'2024-06-04','Diésel',2600.00),
+(5,'JKL012',35.00,'2024-06-05','Gasolina',700.00),
+(6,'MNO345',110.00,'2024-06-06','Diésel',2350.00),
+(7,'PQR678',52.50,'2024-06-07','Gasolina',1050.00),
+(8,'STU901',115.00,'2024-06-08','Diésel',2450.00),
+(9,'VWX234',40.00,'2024-06-09','Gasolina',820.00),
+(10,'YZA567',58.00,'2024-06-10','Gasolina',1180.00),
+(11,'ABC123',62.50,'2024-06-11','Gasolina',1250.00),
+(12,'DEF456',50.00,'2024-06-12','Eléctrico',0.00),
+(13,'JKL012',38.50,'2024-06-13','Gas',770.00),
+(14,'PQR678',55.00,'2024-06-14','Gasolina',1100.00),
+(15,'VWX234',42.00,'2024-06-15','Gasolina',860.00);
 
 -- =====================================================
 -- INCIDENTE
 -- =====================================================
-
 CREATE TABLE incidente (
     id_incidente INT PRIMARY KEY AUTO_INCREMENT,
     matricula VARCHAR(20) COLLATE utf8mb4_unicode_ci,
@@ -256,55 +227,49 @@ CREATE TABLE incidente (
     FOREIGN KEY (matricula) REFERENCES vehiculo(matricula) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO incidente (matricula, tipo, fecha, descripcion) VALUES
-('ABC123', 'accidente', '2024-06-01', 'Pequeño choque en caseta'),
-('XYZ789', 'infracción', '2024-06-02', 'Exceso de velocidad detectado'),
-('DEF456', 'daño', '2024-06-03', 'Espejo lateral roto'),
-('GHI789', 'accidente', '2024-06-04', 'Choque trasero en tráfico'),
-('JKL012', 'infracción', '2024-06-05', 'Estacionamiento indebido'),
-('MNO345', 'daño', '2024-06-06', 'Defecto en llantas'),
-('PQR678', 'retraso', '2024-06-07', 'Demora de 2 horas en entrega'),
-('STU901', 'accidente', '2024-06-08', 'Impacto con poste'),
-('VWX234', 'infracción', '2024-06-09', 'Luz roja cruzada'),
-('YZA567', 'daño', '2024-06-10', 'Sensor de proximidad dañado'),
-('ABC123', 'retraso', '2024-06-11', 'Atasco vehicular'),
-('DEF456', 'infracción', '2024-06-12', 'Documentación vencida');
+INSERT INTO incidente (id_incidente, matricula, tipo, fecha, descripcion) VALUES
+(1,'ABC123','accidente','2024-06-01','Pequeño choque en caseta'),
+(2,'XYZ789','infracción','2024-06-02','Exceso de velocidad detectado'),
+(3,'DEF456','daño','2024-06-03','Espejo lateral roto');
 
 -- =====================================================
--- LICENCIA (cada conductor puede tener 1..N licencias)
+-- LICENCIA
 -- =====================================================
-
 CREATE TABLE licencia (
     id_licencia INT PRIMARY KEY AUTO_INCREMENT,
     id_conductor INT NOT NULL,
     tipo VARCHAR(30) COLLATE utf8mb4_unicode_ci NOT NULL,
     fecha_emision DATE NOT NULL,
     fecha_vencimiento DATE NOT NULL,
-    FOREIGN KEY (id_conductor) REFERENCES conductor(id_conductor)
-        ON DELETE CASCADE
+    FOREIGN KEY (id_conductor) REFERENCES conductor(id_conductor) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO licencia (id_conductor, tipo, fecha_emision, fecha_vencimiento) VALUES
-(1, 'A', '2020-01-01', '2025-01-01'),
-(1, 'B', '2022-06-01', '2027-06-01'),
-(2, 'A', '2019-03-15', '2024-03-15'),
-(3, 'C', '2021-09-10', '2026-09-10');
+INSERT INTO licencia (id_licencia, id_conductor, tipo, fecha_emision, fecha_vencimiento) VALUES
+(1,1,'A','2020-01-01','2025-01-01'),
+(2,1,'B','2022-06-01','2027-06-01'),
+(3,2,'A','2019-03-15','2024-03-15'),
+(4,3,'C','2021-09-10','2026-09-10');
 
 -- =====================================================
--- EVALUACION (evaluaciones a usuarios del sistema)
+-- EVALUACION (puntuacion ejemplo 1..10)
 -- =====================================================
-
 CREATE TABLE evaluacion (
     id_evaluacion INT PRIMARY KEY AUTO_INCREMENT,
     id_usuario INT NOT NULL,
     fecha DATE NOT NULL,
-    puntuacion INT NOT NULL,           -- por ejemplo 1–10
+    puntuacion INT NOT NULL,
     comentarios VARCHAR(255) COLLATE utf8mb4_unicode_ci,
-    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
-        ON DELETE CASCADE
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO evaluacion (id_usuario, fecha, puntuacion, comentarios) VALUES
-(3, '2024-05-10', 9, 'Conductor puntual y cuidadoso con el vehículo'),
-(2, '2024-05-12', 8, 'Mecánico con buen tiempo de respuesta'),
-(4, '2024-05-15', 9, 'Área de logística organiza bien las rutas');
+INSERT INTO evaluacion (id_evaluacion, id_usuario, fecha, puntuacion, comentarios) VALUES
+(1,3,'2024-05-10',9,'Conductor puntual y cuidadoso con el vehículo'),
+(2,2,'2024-05-12',8,'Mecánico con buen tiempo de respuesta'),
+(3,4,'2024-05-15',9,'Área de logística organiza bien las rutas');
+
+-- =====================================================
+-- FIN - índices útiles
+-- =====================================================
+ALTER TABLE viaje ADD INDEX (fecha_salida);
+ALTER TABLE mantenimiento ADD INDEX (fecha);
+ALTER TABLE consumo ADD INDEX (fecha);

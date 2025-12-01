@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Editar Consumo</h1>
+    
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+    
+    <form method="post" action="/consumo_update/{{ consumo.id_consumo }}" style="width:500px; margin:auto;">
+        <label>Vehículo</label>
+        <select name="matricula" required>
+            <option value="">Seleccionar vehículo</option>
+            {% for v in vehiculos_list %}
+                <option value="{{ v.matricula }}" {% if v.matricula == consumo.matricula %}selected{% endif %}>{{ v.matricula }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Litros</label>
+        <input type="number" name="litros" step="0.01" min="0.01" value="{{ consumo.litros }}" required>
+
+        <label>Tipo Combustible</label>
+        <select name="tipo_combustible" required>
+            <option value="">Seleccionar tipo</option>
+            <option value="Gasolina" {% if consumo.tipo_combustible == 'Gasolina' %}selected{% endif %}>Gasolina</option>
+            <option value="Diésel" {% if consumo.tipo_combustible == 'Diésel' %}selected{% endif %}>Diésel</option>
+            <option value="Eléctrico" {% if consumo.tipo_combustible == 'Eléctrico' %}selected{% endif %}>Eléctrico</option>
+            <option value="Gas" {% if consumo.tipo_combustible == 'Gas' %}selected{% endif %}>Gas</option>
+        </select>
+
+        <label>Costo</label>
+        <input type="number" name="costo" step="0.01" min="0" value="{{ consumo.costo }}" required>
+
+        <label>Fecha</label>
+        <input type="date" name="fecha" value="{{ consumo.fecha }}" required>
+
+        <button type="submit">Guardar cambios</button>
+    </form>
+    <div style="text-align:center; margin-top:20px;">
+        <a href="/consumo_web" style="color:#336699; text-decoration:none;">Volver</a>
+    </div>
+{% endblock %}

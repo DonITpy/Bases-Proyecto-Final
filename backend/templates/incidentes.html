@@ -2,7 +2,6 @@
 {% block content %}
     <h1>Incidentes</h1>
     
-    <!-- BÚSQUEDA Y FILTROS -->
     <div class="search-container">
         <form method="get" action="/incidentes_web" class="search-form" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
             <input type="text" name="buscar" placeholder="Buscar por descripción..." value="{{buscar}}" style="flex:1; min-width:200px;">
@@ -12,39 +11,48 @@
                 <option value="infracción" {% if filtro_tipo == 'infracción' %}selected{% endif %}>Infracción</option>
                 <option value="daño" {% if filtro_tipo == 'daño' %}selected{% endif %}>Daño</option>
                 <option value="retraso" {% if filtro_tipo == 'retraso' %}selected{% endif %}>Retraso</option>
+                <option value="otro" {% if filtro_tipo == 'otro' %}selected{% endif %}>Otro</option>
             </select>
             <button type="submit">Buscar</button>
-            <a href="/incidentes_web" style="background:#666; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; text-align:center;">Limpiar</a>
+            <a href="/incidentes_web" style="background:#666; color:white; padding:10px 20px; border-radius:6px; text-decoration:none;">Limpiar</a>
         </form>
     </div>
     
-    <p style="text-align:center; color:#666;">Se encontraron {{incidentes|length}} incidentes</p>
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+    
+    <p style="text-align:center; color:#666;">Se encontraron {{incidentes|length}} registros</p>
     
     <table>
         <tr>
             <th>ID</th>
             <th>Matrícula</th>
             <th>Tipo</th>
-            <th>Fecha</th>
             <th>Descripción</th>
-            {% if usuario and usuario["rol"] == "mecanico" %}
+            <th>Fecha</th>
+            {% if usuario and usuario["rol"] == "admin" %}
                 <th>Acciones</th>
             {% endif %}
         </tr>
-        {% for inc in incidentes %}
+        {% for i in incidentes %}
         <tr>
-            <td>{{ inc.id_incidente }}</td>
-            <td>{{ inc.matricula }}</td>
-            <td>{{ inc.tipo }}</td>
-            <td>{{ inc.fecha }}</td>
-            <td>{{ inc.descripcion }}</td>
-            {% if usuario and usuario["rol"] == "mecanico" %}
-                <td><a href="/incidentes_delete/{{inc.id_incidente}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">Eliminar</a></td>
+            <td>{{ i.id_incidente }}</td>
+            <td>{{ i.matricula }}</td>
+            <td>{{ i.tipo }}</td>
+            <td>{{ i.descripcion }}</td>
+            <td>{{ i.fecha }}</td>
+            {% if usuario and usuario["rol"] == "admin" %}
+                <td>
+                    <a href="/incidentes_edit/{{i.id_incidente}}" style="color:#336699; margin-right:10px;">Editar</a>
+                    <a href="/incidentes_delete/{{i.id_incidente}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">Eliminar</a>
+                </td>
             {% endif %}
         </tr>
         {% endfor %}
     </table>
-    {% if usuario and usuario["rol"] == "mecanico" %}
+    
+    {% if usuario and usuario["rol"] in ["admin","mecanico"] %}
     <h2 style="text-align:center;">Registrar Incidente</h2>
     <form method="post" action="/incidentes_create" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
         <select name="matricula" required style="padding:8px; border:1px solid #ccc; border-radius:4px; min-width:200px;">
@@ -55,7 +63,7 @@
         </select>
 
         <select name="tipo" required style="padding:8px; border:1px solid #ccc; border-radius:4px;">
-            <option value="">Seleccionar tipo</option>
+            <option value="">Tipo de incidente</option>
             <option value="accidente">Accidente</option>
             <option value="infracción">Infracción</option>
             <option value="daño">Daño</option>
@@ -63,11 +71,11 @@
             <option value="otro">Otro</option>
         </select>
 
+        <textarea name="descripcion" placeholder="Descripción" required minlength="5" maxlength="255" style="min-width:200px;"></textarea>
+
         <input type="date" name="fecha" required style="padding:8px; border:1px solid #ccc; border-radius:4px;">
 
-        <textarea name="descripcion" placeholder="Descripción del incidente" required minlength="5" maxlength="255" title="Descripción, 5-255 caracteres; se permiten -,.,(),:,; , comas">{{''}}</textarea>
-
-        <button type="submit" style="padding:8px 20px; background:#336699; color:white; border:none; border-radius:4px; cursor:pointer;">Registrar Incidente</button>
+        <button type="submit">Registrar Incidente</button>
     </form>
     {% endif %}
 {% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Editar Incidente</h1>
+    
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+    
+    <form method="post" action="/incidentes_update/{{ incidente.id_incidente }}" style="width:500px; margin:auto;">
+        <label>Vehículo</label>
+        <select name="matricula" required>
+            <option value="">Seleccionar vehículo</option>
+            {% for v in vehiculos_list %}
+                <option value="{{ v.matricula }}" {% if v.matricula == incidente.matricula %}selected{% endif %}>{{ v.matricula }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Tipo</label>
+        <select name="tipo" required>
+            <option value="">Seleccionar tipo</option>
+            <option value="accidente" {% if incidente.tipo == 'accidente' %}selected{% endif %}>Accidente</option>
+            <option value="infracción" {% if incidente.tipo == 'infracción' %}selected{% endif %}>Infracción</option>
+            <option value="daño" {% if incidente.tipo == 'daño' %}selected{% endif %}>Daño</option>
+            <option value="retraso" {% if incidente.tipo == 'retraso' %}selected{% endif %}>Retraso</option>
+            <option value="otro" {% if incidente.tipo == 'otro' %}selected{% endif %}>Otro</option>
+        </select>
+
+        <label>Descripción</label>
+        <textarea name="descripcion" minlength="5" maxlength="255" required>{{ incidente.descripcion }}</textarea>
+
+        <label>Fecha</label>
+        <input type="date" name="fecha" value="{{ incidente.fecha }}" required>
+
+        <button type="submit">Guardar cambios</button>
+    </form>
+    <div style="text-align:center; margin-top:20px;">
+        <a href="/incidentes_web" style="color:#336699; text-decoration:none;">Volver</a>
+    </div>
+{% endblock %}
