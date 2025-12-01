@@ -9,7 +9,7 @@
             <select name="filtro_vehiculo" style="padding:8px; border:1px solid #ccc; border-radius:4px;">
                 <option value="">Todos los vehículos</option>
                 {% for v in vehiculos_list %}
-                    <option value="{{v.id_vehiculo}}" {% if filtro_vehiculo == v.id_vehiculo|string %}selected{% endif %}>{{v.matricula}}</option>
+                    <option value="{{v.matricula}}" {% if filtro_vehiculo == v.matricula %}selected{% endif %}>{{v.matricula}}</option>
                 {% endfor %}
             </select>
             <button type="submit">Buscar</button>
@@ -22,7 +22,7 @@
     <table>
         <tr>
             <th>ID</th>
-            <th>ID Vehículo</th>
+            <th>Matrícula</th>
             <th>Descripción</th>
             <th>Fecha</th>
             {% if usuario and usuario["rol"] == "mecanico" %}
@@ -32,7 +32,7 @@
         {% for m in mantenimiento %}
         <tr>
             <td>{{ m.id_mantenimiento }}</td>
-            <td>{{ m.id_vehiculo }}</td>
+            <td>{{ m.matricula }}</td>
             <td>{{ m.descripcion }}</td>
             <td>{{ m.fecha }}</td>
             {% if usuario and usuario["rol"] == "mecanico" %}
@@ -43,10 +43,18 @@
     </table>
     {% if usuario and usuario["rol"] == "mecanico" %}
     <h2 style="text-align:center;">Registrar Mantenimiento</h2>
-    <form method="post" action="/mantenimiento_create">
-        <input type="number" name="id_vehiculo" placeholder="ID Vehículo" required min="1" title="ID de vehículo válido">
+    <form method="post" action="/mantenimiento_create" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+        <select name="matricula" required style="padding:8px; border:1px solid #ccc; border-radius:4px; min-width:200px;">
+            <option value="">Seleccionar vehículo</option>
+            {% for v in vehiculos_list %}
+                <option value="{{ v.matricula }}">{{ v.matricula }}</option>
+            {% endfor %}
+        </select>
+
         <textarea name="descripcion" placeholder="Descripción del mantenimiento" required minlength="5" maxlength="255" title="Descripción, 5-255 caracteres; se permiten -,.,()">{{''}}</textarea>
+
         <input type="date" name="fecha" required>
+
         <button type="submit">Registrar Mantenimiento</button>
     </form>
     {% endif %}

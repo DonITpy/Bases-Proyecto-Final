@@ -8,7 +8,7 @@
             <select name="filtro_vehiculo" style="flex:1; min-width:200px; padding:8px; border:1px solid #ccc; border-radius:4px;">
                 <option value="">Todos los vehículos</option>
                 {% for v in vehiculos_list %}
-                    <option value="{{v.id_vehiculo}}" {% if filtro_vehiculo == v.id_vehiculo|string %}selected{% endif %}>{{v.matricula}}</option>
+                    <option value="{{v.matricula}}" {% if filtro_vehiculo == v.matricula %}selected{% endif %}>{{v.matricula}}</option>
                 {% endfor %}
             </select>
             <button type="submit">Filtrar</button>
@@ -21,7 +21,7 @@
     <table>
         <tr>
             <th>ID</th>
-            <th>ID Vehículo</th>
+            <th>Matrícula</th>
             <th>Litros</th>
             <th>Fecha</th>
             {% if usuario and usuario["rol"] == "mecanico" %}
@@ -31,7 +31,7 @@
         {% for c in consumo %}
         <tr>
             <td>{{ c.id_consumo }}</td>
-            <td>{{ c.id_vehiculo }}</td>
+            <td>{{ c.matricula }}</td>
             <td>{{ c.litros }}</td>
             <td>{{ c.fecha }}</td>
             {% if usuario and usuario["rol"] == "mecanico" %}
@@ -43,10 +43,10 @@
     {% if usuario and usuario["rol"] == "mecanico" %}
     <h2 style="text-align:center;">Registrar Consumo</h2>
     <form method="post" action="/consumo_create" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
-        <select name="id_vehiculo" required style="padding:8px; border:1px solid #ccc; border-radius:4px; min-width:200px;">
+        <select name="matricula" required style="padding:8px; border:1px solid #ccc; border-radius:4px; min-width:200px;">
             <option value="">Seleccionar vehículo</option>
             {% for v in vehiculos_list %}
-                <option value="{{ v.id_vehiculo }}">{{ v.matricula }}</option>
+                <option value="{{ v.matricula }}">{{ v.matricula }}</option>
             {% endfor %}
         </select>
 

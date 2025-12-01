@@ -23,7 +23,7 @@
     <table>
         <tr>
             <th>ID</th>
-            <th>ID Vehículo</th>
+            <th>Matrícula</th>
             <th>Tipo</th>
             <th>Fecha</th>
             <th>Descripción</th>
@@ -34,7 +34,7 @@
         {% for inc in incidentes %}
         <tr>
             <td>{{ inc.id_incidente }}</td>
-            <td>{{ inc.id_vehiculo }}</td>
+            <td>{{ inc.matricula }}</td>
             <td>{{ inc.tipo }}</td>
             <td>{{ inc.fecha }}</td>
             <td>{{ inc.descripcion }}</td>
@@ -46,9 +46,15 @@
     </table>
     {% if usuario and usuario["rol"] == "mecanico" %}
     <h2 style="text-align:center;">Registrar Incidente</h2>
-    <form method="post" action="/incidentes_create">
-        <input type="number" name="id_vehiculo" placeholder="ID Vehículo" required min="1" title="ID de vehículo válido">
-        <select name="tipo" required>
+    <form method="post" action="/incidentes_create" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+        <select name="matricula" required style="padding:8px; border:1px solid #ccc; border-radius:4px; min-width:200px;">
+            <option value="">Seleccionar vehículo</option>
+            {% for v in vehiculos_list %}
+                <option value="{{ v.matricula }}">{{ v.matricula }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="tipo" required style="padding:8px; border:1px solid #ccc; border-radius:4px;">
             <option value="">Seleccionar tipo</option>
             <option value="accidente">Accidente</option>
             <option value="infracción">Infracción</option>
@@ -56,9 +62,12 @@
             <option value="retraso">Retraso</option>
             <option value="otro">Otro</option>
         </select>
-        <input type="date" name="fecha" required>
+
+        <input type="date" name="fecha" required style="padding:8px; border:1px solid #ccc; border-radius:4px;">
+
         <textarea name="descripcion" placeholder="Descripción del incidente" required minlength="5" maxlength="255" title="Descripción, 5-255 caracteres; se permiten -,.,(),:,; , comas">{{''}}</textarea>
-        <button type="submit">Registrar Incidente</button>
+
+        <button type="submit" style="padding:8px 20px; background:#336699; color:white; border:none; border-radius:4px; cursor:pointer;">Registrar Incidente</button>
     </form>
     {% endif %}
 {% endblock %}

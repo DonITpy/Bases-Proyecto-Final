@@ -249,10 +249,18 @@
         <!-- Solo Admin -->
         {% if usuario and usuario["rol"] == "admin" %}
             <a href="/usuarios_web">Usuarios</a>
+            <a href="/vehiculos_web">Vehículos</a>
+            <a href="/flota_web">Flota</a>
+            <a href="/ordenes_web">Órdenes</a>
+            <a href="/viajes_web">Viajes</a>
+            <a href="/mantenimiento_web">Mantenimiento</a>
+            <a href="/consumo_web">Consumo</a>
+            <a href="/incidentes_web">Incidentes</a>
+            <a href="/reportes_web">Reportes</a>
         {% endif %}
         
         <!-- Admin y Logística -->
-        {% if usuario and usuario["rol"] in ["admin", "logistica"] %}
+        {% if usuario and usuario["rol"] in ["logistica"] %}
             <a href="/vehiculos_web">Vehículos</a>
             <a href="/flota_web">Flota</a>
             <a href="/ordenes_web">Órdenes</a>
@@ -264,7 +272,7 @@
         {% endif %}
         
         <!-- Admin, Logística y Conductor -->
-        {% if usuario and usuario["rol"] in ["admin", "logistica"] %}
+        {% if usuario and usuario["rol"] in ["logistica"] %}
             <a href="/conductores_web">Conductores</a>
             <a href="/viajes_web">Viajes</a>
         {% endif %}
