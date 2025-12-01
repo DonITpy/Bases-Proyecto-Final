@@ -9,7 +9,7 @@
             <select name="filtro_vehiculo" style="padding:8px; border:1px solid #ccc; border-radius:4px;">
                 <option value="">Todos los vehículos</option>
                 {% for v in vehiculos_list %}
-                    <option value="{{v.matricula}}" {% if filtro_vehiculo == v.matricula %}selected{% endif %}>{{v.matricula}}</option>
+                    <option value="{{v.id_vehiculo}}" {% if filtro_vehiculo == v.id_vehiculo|string %}selected{% endif %}>{{v.matricula}}</option>
                 {% endfor %}
             </select>
             <button type="submit">Buscar</button>
@@ -23,7 +23,9 @@
         <tr>
             <th>ID</th>
             <th>Matrícula</th>
+            <th>Tipo</th>
             <th>Descripción</th>
+            <th>Costo</th>
             <th>Fecha</th>
             {% if usuario and usuario["rol"] == "mecanico" %}
                 <th>Acciones</th>
@@ -33,7 +35,19 @@
         <tr>
             <td>{{ m.id_mantenimiento }}</td>
             <td>{{ m.matricula }}</td>
+            <td>{{ m.tipo if m.tipo is defined else '' }}</td>
             <td>{{ m.descripcion }}</td>
+            <td>
+                {% if m.costo is defined %}
+                    {{ "%.2f"|format(m.costo) }}
+                {% else %}
+                    {% if m.costo is not defined and m.costo is not none %}
+                        {{ m.costo }}
+                    {% else %}
+                        -
+                    {% endif %}
+                {% endif %}
+            </td>
             <td>{{ m.fecha }}</td>
             {% if usuario and usuario["rol"] == "mecanico" %}
                 <td><a href="/mantenimiento_delete/{{m.id_mantenimiento}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">Eliminar</a></td>
@@ -44,10 +58,10 @@
     {% if usuario and usuario["rol"] == "mecanico" %}
     <h2 style="text-align:center;">Registrar Mantenimiento</h2>
     <form method="post" action="/mantenimiento_create" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
-        <select name="matricula" required style="padding:8px; border:1px solid #ccc; border-radius:4px; min-width:200px;">
+        <select name="id_vehiculo" required style="padding:8px; border:1px solid #ccc; border-radius:4px; min-width:200px;">
             <option value="">Seleccionar vehículo</option>
             {% for v in vehiculos_list %}
-                <option value="{{ v.matricula }}">{{ v.matricula }}</option>
+                <option value="{{ v.id_vehiculo }}">{{ v.matricula }}</option>
             {% endfor %}
         </select>
 

@@ -829,23 +829,35 @@ def mantenimiento_web(request: Request, buscar: str = "", filtro_vehiculo: str =
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
-    query = "SELECT * FROM mantenimiento WHERE 1=1"
+    # ahora hacemos JOIN con vehiculo para obtener la matrícula directamente
+    query = """
+        SELECT m.id_mantenimiento, m.id_vehiculo, m.tipo, m.descripcion, m.costo, m.fecha,
+               v.matricula
+        FROM mantenimiento m
+        JOIN vehiculo v ON v.id_vehiculo = m.id_vehiculo
+        WHERE 1=1
+    """
     params = []
     
     # Búsqueda por descripción
     if buscar:
-        query += " AND descripcion LIKE %s"
+        query += " AND m.descripcion LIKE %s"
         params.append(f"%{buscar}%")
     
-    # Filtro por vehículo
+    # Filtro por vehículo (se espera id_vehiculo)
     if filtro_vehiculo:
-        query += " AND id_vehiculo = %s"
-        params.append(int(filtro_vehiculo))
+        try:
+            params.append(int(filtro_vehiculo))
+            query += " AND m.id_vehiculo = %s"
+        except:
+            # si no es convertible a int, no filtra
+            pass
     
+    query += " ORDER BY m.fecha DESC, m.id_mantenimiento DESC"
     cursor.execute(query, params)
     mant = cursor.fetchall()
     
-    # Obtener lista de vehículos para el filtro
+    # Obtener lista de vehículos para el filtro (id y matricula)
     cursor.execute("SELECT id_vehiculo, matricula FROM vehiculo ORDER BY matricula")
     vehiculos_list = cursor.fetchall()
     db.close()
@@ -858,6 +870,26 @@ def mantenimiento_web(request: Request, buscar: str = "", filtro_vehiculo: str =
         "filtro_vehiculo": filtro_vehiculo,
         "vehiculos_list": vehiculos_list
     })
+
+    if not cursor.fetchone():
+        db.close()
+        db2 = get_db()
+        cursor2 = db2.cursor(dictionary=True)
+        cursor2.execute("""
+            SELECT m.id_mantenimiento, m.id_vehiculo, m.tipo, m.descripcion, m.costo, m.fecha,
+                   v.matricula
+            FROM mantenimiento m
+            JOIN vehiculo v ON v.id_vehiculo = m.id_vehiculo
+            ORDER BY m.fecha DESC, m.id_mantenimiento DESC
+        """)
+        mant = cursor2.fetchall()
+        db2.close()
+        return templates.TemplateResponse("mantenimiento.html", {
+            "request": request, 
+            "mantenimiento": mant, 
+            "usuario": usuario,
+            "error": "El vehículo seleccionado no existe"
+        })
 
 @app.post("/mantenimiento_create")
 def mantenimiento_create(request: Request, id_vehiculo: int = Form(...), descripcion: str = Form(...), fecha: str = Form(...)):
