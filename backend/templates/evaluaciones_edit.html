@@ -7,11 +7,11 @@
     {% endif %}
 
     <form method="post" action="/evaluaciones_update/{{ evaluacion.id_evaluacion }}">
-        <label>Usuario</label>
-        <select name="id_usuario" required>
-            <option value="">Seleccionar usuario</option>
-            {% for u in usuarios %}
-                <option value="{{ u.id_usuario }}" {% if u.id_usuario == evaluacion.id_usuario %}selected{% endif %}>{{ u.nombre }}</option>
+        <label>Conductor</label>
+        <select name="id_conductor" required>
+            <option value="">Seleccionar conductor</option>
+            {% for u in conductores %}
+                <option value="{{ u.id_conductor }}" {% if u.id_conductor == evaluacion.id_conductor %}selected{% endif %}>{{ u.nombre }} {{ u.apellido }}</option>
             {% endfor %}
         </select>
 

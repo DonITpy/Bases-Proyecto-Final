@@ -255,17 +255,17 @@ INSERT INTO licencia (id_licencia, id_conductor, tipo, fecha_emision, fecha_venc
 -- =====================================================
 CREATE TABLE evaluacion (
     id_evaluacion INT PRIMARY KEY AUTO_INCREMENT,
-    id_usuario INT NOT NULL,
+    id_conductor INT NOT NULL,
     fecha DATE NOT NULL,
     puntuacion INT NOT NULL,
     comentarios VARCHAR(255) COLLATE utf8mb4_unicode_ci,
-    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
+    FOREIGN KEY (id_conductor) REFERENCES conductor(id_conductor) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO evaluacion (id_evaluacion, id_usuario, fecha, puntuacion, comentarios) VALUES
-(1,3,'2024-05-10',9,'Conductor puntual y cuidadoso con el vehículo'),
-(2,2,'2024-05-12',8,'Mecánico con buen tiempo de respuesta'),
-(3,4,'2024-05-15',9,'Área de logística organiza bien las rutas');
+INSERT INTO evaluacion (id_evaluacion, id_conductor, fecha, puntuacion, comentarios) VALUES
+(1,1,'2024-05-10',9,'Conductor puntual y cuidadoso con el vehículo'),
+(2,2,'2024-05-12',8,'Buen rendimiento en revisiones'),
+(3,3,'2024-05-15',9,'Cumple rutas asignadas de forma eficiente');
 
 -- =====================================================
 -- FIN - índices útiles

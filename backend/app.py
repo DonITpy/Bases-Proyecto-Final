@@ -2169,7 +2169,7 @@ def evaluaciones_web(request: Request, buscar: str = ""):
         return templates.TemplateResponse("evaluaciones.html", {
             "request": request,
             "evaluaciones": [],
-            "usuarios": [],
+            "conductores": [],
             "usuario": usuario,
             "buscar": buscar,
             "error": "No se pudo conectar a la base de datos."
@@ -2177,32 +2177,34 @@ def evaluaciones_web(request: Request, buscar: str = ""):
 
     cursor = db.cursor(dictionary=True)
 
-    # lista de usuarios para select (admin/logistica)
-    usuarios = []
+    # lista de conductores para el select (admin/logistica)
+    conductores = []
     try:
-        cursor.execute("SELECT id_usuario, nombre FROM usuario ORDER BY nombre")
-        usuarios = cursor.fetchall()
+        cursor.execute("SELECT id_conductor, nombre, apellido FROM conductor ORDER BY nombre, apellido")
+        conductores = cursor.fetchall()
     except:
-        usuarios = []
+        conductores = []
 
     params = []
     query = """
-        SELECT e.id_evaluacion, e.id_usuario, e.fecha, e.puntuacion, e.comentarios,
-               u.nombre AS nombre_usuario
+        SELECT e.id_evaluacion, e.id_conductor, e.fecha, e.puntuacion, e.comentarios,
+               c.nombre AS nombre_conductor, c.apellido AS apellido_conductor
         FROM evaluacion e
-        JOIN usuario u ON u.id_usuario = e.id_usuario
+        JOIN conductor c ON c.id_conductor = e.id_conductor
         WHERE 1=1
     """
 
     if buscar:
-        query += " AND (u.nombre LIKE %s OR e.comentarios LIKE %s)"
+        query += " AND (c.nombre LIKE %s OR c.apellido LIKE %s OR e.comentarios LIKE %s)"
         term = f"%{buscar}%"
-        params.extend([term, term])
+        params.extend([term, term, term])
 
-    # conductor solo ve sus evaluaciones
+    # conductor solo ve sus evaluaciones (si tiene id_conductor en session)
     if usuario.get("rol") == "conductor":
-        query += " AND e.id_usuario = %s"
-        params.append(usuario.get("id_usuario"))
+        id_conductor_usuario = usuario.get("id_conductor")
+        if id_conductor_usuario:
+            query += " AND e.id_conductor = %s"
+            params.append(id_conductor_usuario)
 
     query += " ORDER BY e.id_evaluacion DESC"
 
@@ -2217,14 +2219,14 @@ def evaluaciones_web(request: Request, buscar: str = ""):
     return templates.TemplateResponse("evaluaciones.html", {
         "request": request,
         "evaluaciones": evaluaciones,
-        "usuarios": usuarios,
+        "conductores": conductores,
         "usuario": usuario,
         "buscar": buscar,
         "error": ""
     })
 
 @app.post("/evaluaciones_create")
-def evaluaciones_create(request: Request, id_usuario: int = Form(...), fecha: str = Form(...), puntuacion: int = Form(...), comentarios: str = Form(None)):
+def evaluaciones_create(request: Request, id_conductor: int = Form(...), fecha: str = Form(...), puntuacion: int = Form(...), comentarios: str = Form(None)):
     usuario = request.session.get("usuario")
     if not usuario or usuario.get("rol") not in ["admin", "logistica"]:
         return RedirectResponse("/evaluaciones_web", status_code=303)
@@ -2245,19 +2247,31 @@ def evaluaciones_create(request: Request, id_usuario: int = Form(...), fecha: st
         except:
             error = "Puntuación inválida."
 
+    # validar conductor existe
+    if error is None:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT id_conductor FROM conductor WHERE id_conductor=%s", (id_conductor,))
+        if not cursor.fetchone():
+            db.close()
+            error = "Conductor no existe"
+        else:
+            db.close()
+
     if error:
-        # volver a lista con error
         db = get_db()
         cursor = db.cursor(dictionary=True)
-        cursor.execute("SELECT e.id_evaluacion, e.id_usuario, e.fecha, e.puntuacion, e.comentarios, u.nombre AS nombre_usuario FROM evaluacion e JOIN usuario u ON u.id_usuario=e.id_usuario")
+        cursor.execute("""SELECT e.id_evaluacion, e.id_conductor, e.fecha, e.puntuacion, e.comentarios,
+                                 c.nombre AS nombre_conductor, c.apellido AS apellido_conductor
+                          FROM evaluacion e JOIN conductor c ON c.id_conductor = e.id_conductor""")
         evaluaciones = cursor.fetchall()
-        cursor.execute("SELECT id_usuario, nombre FROM usuario ORDER BY nombre")
-        usuarios = cursor.fetchall()
+        cursor.execute("SELECT id_conductor, nombre, apellido FROM conductor ORDER BY nombre, apellido")
+        conductores = cursor.fetchall()
         db.close()
         return templates.TemplateResponse("evaluaciones.html", {
             "request": request,
             "evaluaciones": evaluaciones,
-            "usuarios": usuarios,
+            "conductores": conductores,
             "usuario": usuario,
             "buscar": "",
             "error": error
@@ -2266,8 +2280,8 @@ def evaluaciones_create(request: Request, id_usuario: int = Form(...), fecha: st
     db = get_db()
     cursor = db.cursor()
     try:
-        cursor.execute("INSERT INTO evaluacion (id_usuario, fecha, puntuacion, comentarios) VALUES (%s,%s,%s,%s)",
-                       (id_usuario, fecha, puntuacion, comentarios))
+        cursor.execute("INSERT INTO evaluacion (id_conductor, fecha, puntuacion, comentarios) VALUES (%s,%s,%s,%s)",
+                       (id_conductor, fecha, puntuacion, comentarios))
         db.commit()
     except Exception as e:
         db.rollback()
@@ -2275,7 +2289,7 @@ def evaluaciones_create(request: Request, id_usuario: int = Form(...), fecha: st
         return templates.TemplateResponse("evaluaciones.html", {
             "request": request,
             "evaluaciones": [],
-            "usuarios": [],
+            "conductores": [],
             "usuario": usuario,
             "buscar": "",
             "error": f"Error al insertar: {str(e)}"
@@ -2310,8 +2324,8 @@ def evaluaciones_edit(request: Request, id: int):
     cursor = db.cursor(dictionary=True)
     cursor.execute("SELECT * FROM evaluacion WHERE id_evaluacion=%s", (id,))
     evaluacion = cursor.fetchone()
-    cursor.execute("SELECT id_usuario, nombre FROM usuario ORDER BY nombre")
-    usuarios = cursor.fetchall()
+    cursor.execute("SELECT id_conductor, nombre, apellido FROM conductor ORDER BY nombre, apellido")
+    conductores = cursor.fetchall()
     db.close()
 
     if not evaluacion:
@@ -2320,13 +2334,13 @@ def evaluaciones_edit(request: Request, id: int):
     return templates.TemplateResponse("evaluaciones_edit.html", {
         "request": request,
         "evaluacion": evaluacion,
-        "usuarios": usuarios,
+        "conductores": conductores,
         "usuario": usuario,
         "error": ""
     })
 
 @app.post("/evaluaciones_update/{id}")
-def evaluaciones_update(request: Request, id: int, id_usuario: int = Form(...), fecha: str = Form(...), puntuacion: int = Form(...), comentarios: str = Form(None)):
+def evaluaciones_update(request: Request, id: int, id_conductor: int = Form(...), fecha: str = Form(...), puntuacion: int = Form(...), comentarios: str = Form(None)):
     usuario = request.session.get("usuario")
     if not usuario or usuario.get("rol") not in ["admin", "logistica"]:
         return RedirectResponse("/evaluaciones_web", status_code=303)
@@ -2345,18 +2359,29 @@ def evaluaciones_update(request: Request, id: int, id_usuario: int = Form(...), 
         except:
             error = "Puntuación inválida."
 
+    # validar conductor
+    if error is None:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT id_conductor FROM conductor WHERE id_conductor=%s", (id_conductor,))
+        if not cursor.fetchone():
+            db.close()
+            error = "Conductor no existe"
+        else:
+            db.close()
+
     if error:
         db = get_db()
         cursor = db.cursor(dictionary=True)
         cursor.execute("SELECT * FROM evaluacion WHERE id_evaluacion=%s", (id,))
         evaluacion = cursor.fetchone()
-        cursor.execute("SELECT id_usuario, nombre FROM usuario ORDER BY nombre")
-        usuarios = cursor.fetchall()
+        cursor.execute("SELECT id_conductor, nombre, apellido FROM conductor ORDER BY nombre, apellido")
+        conductores = cursor.fetchall()
         db.close()
         return templates.TemplateResponse("evaluaciones_edit.html", {
             "request": request,
             "evaluacion": evaluacion,
-            "usuarios": usuarios,
+            "conductores": conductores,
             "usuario": usuario,
             "error": error
         })
@@ -2365,9 +2390,9 @@ def evaluaciones_update(request: Request, id: int, id_usuario: int = Form(...), 
     cursor = db.cursor()
     try:
         cursor.execute("""UPDATE evaluacion
-                          SET id_usuario=%s, fecha=%s, puntuacion=%s, comentarios=%s
+                          SET id_conductor=%s, fecha=%s, puntuacion=%s, comentarios=%s
                           WHERE id_evaluacion=%s""",
-                       (id_usuario, fecha, puntuacion, comentarios, id))
+                       (id_conductor, fecha, puntuacion, comentarios, id))
         db.commit()
     except:
         db.rollback()

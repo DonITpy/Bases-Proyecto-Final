@@ -4,7 +4,7 @@
 
     <div class="search-container">
         <form method="get" action="/evaluaciones_web" class="search-form">
-            <input type="text" name="buscar" placeholder="Buscar por usuario o comentarios..." value="{{buscar}}" style="flex:1; min-width:200px;">
+            <input type="text" name="buscar" placeholder="Buscar por conductor o comentarios..." value="{{buscar}}" style="flex:1; min-width:200px;">
             <button type="submit">Buscar</button>
             <a href="/evaluaciones_web" style="background:#666; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; text-align:center;">Limpiar</a>
         </form>
@@ -19,7 +19,7 @@
     <table>
         <tr>
             <th>ID</th>
-            <th>Usuario</th>
+            <th>Conductor</th>
             <th>Fecha</th>
             <th>Puntuación</th>
             <th>Comentarios</th>
@@ -30,7 +30,7 @@
         {% for e in evaluaciones %}
         <tr>
             <td>{{ e.id_evaluacion }}</td>
-            <td>{{ e.nombre_usuario }}</td>
+            <td>{{ (e.nombre_conductor ~ ' ' ~ e.apellido_conductor).strip() }}</td>
             <td>{{ e.fecha }}</td>
             <td>{{ e.puntuacion }}</td>
             <td>{{ e.comentarios }}</td>
@@ -51,15 +51,15 @@
     {% if usuario and usuario["rol"] in ["admin","logistica"] %}
     <h2 style="text-align:center;">Agregar Evaluación</h2>
     <form method="post" action="/evaluaciones_create">
-        <label>Usuario</label>
-        <select name="id_usuario" required>
-            <option value="">Seleccionar usuario</option>
-            {% if usuarios %}
-                {% for u in usuarios %}
-                    <option value="{{ u.id_usuario }}">{{ u.nombre }}</option>
+        <label>Conductor</label>
+        <select name="id_conductor" required>
+            <option value="">Seleccionar conductor</option>
+            {% if conductores %}
+                {% for c in conductores %}
+                    <option value="{{ c.id_conductor }}">{{ c.nombre }} {{ c.apellido }}</option>
                 {% endfor %}
             {% else %}
-                <option value="" disabled>No hay usuarios disponibles.</option>
+                <option value="" disabled>No hay conductores disponibles.</option>
             {% endif %}
         </select>
 
