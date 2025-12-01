@@ -603,41 +603,50 @@ def viajes_web(request: Request, buscar: str = "", filtro_estado: str = ""):
         return RedirectResponse("/login", status_code=303)
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    
+
+    # seleccionar viajes junto con nombre del conductor
+    base_query = """
+        SELECT v.*, c.nombre AS nombre_conductor, c.apellido AS apellido_conductor
+        FROM viaje v
+        LEFT JOIN conductor c ON v.id_conductor = c.id_conductor
+        WHERE 1=1
+    """
+    params = []
+
     if usuario.get("rol") == "conductor" and usuario.get("id_conductor"):
-        query = "SELECT * FROM viaje WHERE id_conductor = %s"
-        params = [usuario.get("id_conductor")]
-        if buscar:
-            query += " AND (origen LIKE %s OR destino LIKE %s)"
-            params.extend([f"%{buscar}%", f"%{buscar}%"])
-        if filtro_estado:
-            query += " AND estado = %s"
-            params.append(filtro_estado)
-    else:
-        query = "SELECT * FROM viaje WHERE 1=1"
-        params = []
-        if buscar:
-            query += " AND (origen LIKE %s OR destino LIKE %s)"
-            params.extend([f"%{buscar}%", f"%{buscar}%"])
-        if filtro_estado:
-            query += " AND estado = %s"
-            params.append(filtro_estado)
-    
-    cursor.execute(query, params)
+        base_query += " AND v.id_conductor = %s"
+        params.append(usuario.get("id_conductor"))
+
+    if buscar:
+        base_query += " AND (v.origen LIKE %s OR v.destino LIKE %s)"
+        params.extend([f"%{buscar}%", f"%{buscar}%"])
+    if filtro_estado:
+        base_query += " AND v.estado = %s"
+        params.append(filtro_estado)
+
+    base_query += " ORDER BY v.fecha_salida DESC, v.id_viaje DESC"
+    cursor.execute(base_query, params)
     viajes = cursor.fetchall()
+
+    # lista de conductores para el select (creación/edición)
+    cursor.execute("SELECT id_conductor, nombre, apellido FROM conductor ORDER BY nombre, apellido")
+    conductores_list = cursor.fetchall()
+
     db.close()
-    
+
     return templates.TemplateResponse("viajes.html", {
-        "request": request, 
-        "viajes": viajes, 
+        "request": request,
+        "viajes": viajes,
         "usuario": usuario,
         "buscar": buscar,
-        "filtro_estado": filtro_estado
+        "filtro_estado": filtro_estado,
+        "conductores_list": conductores_list
     })
 
 @app.post("/viajes_create")
 def viajes_create(request: Request, origen: str = Form(...), destino: str = Form(...),
-                  fecha_salida: str = Form(...), fecha_estimada: str = Form(None), estado: str = Form(...)):
+                  fecha_salida: str = Form(...), fecha_estimada: str = Form(None),
+                  estado: str = Form(...), id_conductor: int = Form(None)):
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] not in ["admin", "logistica"]:
         return RedirectResponse("/viajes_web", status_code=303)
@@ -645,18 +654,15 @@ def viajes_create(request: Request, origen: str = Form(...), destino: str = Form
     # VALIDACIONES
     error_msg = None
 
-    # Validar origen/destino (se omiten aquí por brevedad; ya existen validaciones previas)
     if not origen or not destino:
         error_msg = "Origen y destino obligatorios"
 
-    # Validar fecha_salida
     if not error_msg:
         try:
             fecha_obj = datetime.strptime(fecha_salida, "%Y-%m-%d")
         except:
             error_msg = "Fecha de salida inválida (use YYYY-MM-DD)"
 
-    # Validar fecha_estimada (opcional) — si existe, no debe ser anterior a fecha_salida
     if not error_msg and fecha_estimada:
         try:
             fecha_est_obj = datetime.strptime(fecha_estimada, "%Y-%m-%d")
@@ -666,30 +672,49 @@ def viajes_create(request: Request, origen: str = Form(...), destino: str = Form
         except:
             error_msg = "Fecha estimada inválida (use YYYY-MM-DD)"
 
-    # Validar estado
     if not error_msg:
         if estado not in ['pendiente', 'en progreso', 'completado', 'cancelado']:
             error_msg = "Estado no válido"
 
+    # validar conductor si se envía
+    if not error_msg and id_conductor:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT id_conductor FROM conductor WHERE id_conductor=%s", (id_conductor,))
+        if not cursor.fetchone():
+            db.close()
+            error_msg = "Conductor seleccionado no existe"
+        else:
+            db.close()
+
     if error_msg:
         db = get_db()
         cursor = db.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM viaje")
+        cursor.execute("""
+            SELECT v.*, c.nombre AS nombre_conductor, c.apellido AS apellido_conductor
+            FROM viaje v
+            LEFT JOIN conductor c ON v.id_conductor = c.id_conductor
+        """)
         viajes = cursor.fetchall()
+        cursor.execute("SELECT id_conductor, nombre, apellido FROM conductor ORDER BY nombre, apellido")
+        conductores_list = cursor.fetchall()
         db.close()
         return templates.TemplateResponse("viajes.html", {
             "request": request,
             "viajes": viajes,
             "usuario": usuario,
-            "error": error_msg
+            "error": error_msg,
+            "conductores_list": conductores_list,
+            "buscar": "",
+            "filtro_estado": ""
         })
 
     db = get_db()
     cursor = db.cursor()
     try:
         cursor.execute(
-            "INSERT INTO viaje (origen, destino, fecha_salida, fecha_estimada, estado) VALUES (%s,%s,%s,%s,%s)",
-            (origen, destino, fecha_salida, fecha_estimada if fecha_estimada else None, estado)
+            "INSERT INTO viaje (origen, destino, fecha_salida, fecha_estimada, estado, id_conductor) VALUES (%s,%s,%s,%s,%s,%s)",
+            (origen, destino, fecha_salida, fecha_estimada if fecha_estimada else None, estado, id_conductor if id_conductor else None)
         )
         db.commit()
         db.close()
@@ -698,14 +723,23 @@ def viajes_create(request: Request, origen: str = Form(...), destino: str = Form
         db.close()
         db2 = get_db()
         cursor2 = db2.cursor(dictionary=True)
-        cursor2.execute("SELECT * FROM viaje")
+        cursor2.execute("""
+            SELECT v.*, c.nombre AS nombre_conductor, c.apellido AS apellido_conductor
+            FROM viaje v
+            LEFT JOIN conductor c ON v.id_conductor = c.id_conductor
+        """)
         viajes = cursor2.fetchall()
+        cursor2.execute("SELECT id_conductor, nombre, apellido FROM conductor ORDER BY nombre, apellido")
+        conductores_list = cursor2.fetchall()
         db2.close()
         return templates.TemplateResponse("viajes.html", {
             "request": request,
             "viajes": viajes,
             "usuario": usuario,
-            "error": f"Error al crear viaje: {str(e)}"
+            "error": f"Error al crear viaje: {str(e)}",
+            "conductores_list": conductores_list,
+            "buscar": "",
+            "filtro_estado": ""
         })
 
 @app.get("/viajes_delete/{id}")
@@ -725,28 +759,29 @@ def viajes_edit(request: Request, id: int):
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] != "admin":
         return RedirectResponse("/viajes_web", status_code=303)
-    
+
     db = get_db()
     cursor = db.cursor(dictionary=True)
     cursor.execute("SELECT * FROM viaje WHERE id_viaje=%s", (id,))
     viaje = cursor.fetchone()
+    cursor.execute("SELECT id_conductor, nombre, apellido FROM conductor ORDER BY nombre, apellido")
+    conductores_list = cursor.fetchall()
     db.close()
-    
+
     if not viaje:
         return RedirectResponse("/viajes_web", status_code=303)
-    
-    return templates.TemplateResponse("viajes_edit.html", {"request": request, "viaje": viaje, "usuario": usuario})
+
+    return templates.TemplateResponse("viajes_edit.html", {"request": request, "viaje": viaje, "usuario": usuario, "conductores_list": conductores_list})
 
 @app.post("/viajes_update/{id}")
 def viajes_update(request: Request, id: int, origen: str = Form(...), destino: str = Form(...),
-                  fecha_salida: str = Form(...), fecha_estimada: str = Form(None), estado: str = Form(...)):
+                  fecha_salida: str = Form(...), fecha_estimada: str = Form(None), estado: str = Form(...), id_conductor: int = Form(None)):
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] != "admin":
         return RedirectResponse("/viajes_web", status_code=303)
 
     error_msg = None
 
-    # Validar fecha_salida
     try:
         fecha_obj = datetime.strptime(fecha_salida, "%Y-%m-%d")
     except:
@@ -764,16 +799,29 @@ def viajes_update(request: Request, id: int, origen: str = Form(...), destino: s
         if estado not in ['pendiente', 'en progreso', 'completado', 'cancelado']:
             error_msg = "Estado no válido"
 
+    if not error_msg and id_conductor:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT id_conductor FROM conductor WHERE id_conductor=%s", (id_conductor,))
+        if not cursor.fetchone():
+            db.close()
+            error_msg = "Conductor seleccionado no existe"
+        else:
+            db.close()
+
     if error_msg:
         db = get_db()
         cursor = db.cursor(dictionary=True)
         cursor.execute("SELECT * FROM viaje WHERE id_viaje=%s", (id,))
         viaje = cursor.fetchone()
+        cursor.execute("SELECT id_conductor, nombre, apellido FROM conductor ORDER BY nombre, apellido")
+        conductores_list = cursor.fetchall()
         db.close()
         return templates.TemplateResponse("viajes_edit.html", {
             "request": request,
             "viaje": viaje,
             "usuario": usuario,
+            "conductores_list": conductores_list,
             "error": error_msg
         })
 
@@ -781,8 +829,8 @@ def viajes_update(request: Request, id: int, origen: str = Form(...), destino: s
     cursor = db.cursor()
     try:
         cursor.execute(
-            "UPDATE viaje SET origen=%s, destino=%s, fecha_salida=%s, fecha_estimada=%s, estado=%s WHERE id_viaje=%s",
-            (origen, destino, fecha_salida, fecha_estimada if fecha_estimada else None, estado, id)
+            "UPDATE viaje SET origen=%s, destino=%s, fecha_salida=%s, fecha_estimada=%s, estado=%s, id_conductor=%s WHERE id_viaje=%s",
+            (origen, destino, fecha_salida, fecha_estimada if fecha_estimada else None, estado, id_conductor if id_conductor else None, id)
         )
         db.commit()
         db.close()
@@ -793,14 +841,17 @@ def viajes_update(request: Request, id: int, origen: str = Form(...), destino: s
         cursor2 = db2.cursor(dictionary=True)
         cursor2.execute("SELECT * FROM viaje WHERE id_viaje=%s", (id,))
         viaje = cursor2.fetchone()
+        cursor2.execute("SELECT id_conductor, nombre, apellido FROM conductor ORDER BY nombre, apellido")
+        conductores_list = cursor2.fetchall()
         db2.close()
         return templates.TemplateResponse("viajes_edit.html", {
             "request": request,
             "viaje": viaje,
             "usuario": usuario,
+            "conductores_list": conductores_list,
             "error": f"Error al actualizar viaje: {str(e)}"
         })
-
+    
 # ==================== MANTENIMIENTO ====================
 @app.get("/mantenimiento_web")
 def mantenimiento_web(request: Request, buscar: str = "", filtro_vehiculo: str = ""):

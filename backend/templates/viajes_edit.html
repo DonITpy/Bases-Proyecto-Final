@@ -8,11 +8,18 @@
     {% endif %}
     
     <form method="post" action="/viajes_update/{{viaje.id_viaje}}" style="width:400px; margin:auto;">
-        <input type="text" name="origen" value="{{viaje.origen}}" placeholder="Origen" required minlength="2" maxlength="50" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{2,50}" title="Solo letras, espacios y guiones">
-        <input type="text" name="destino" value="{{viaje.destino}}" placeholder="Destino" required minlength="2" maxlength="50" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{2,50}" title="Solo letras, espacios y guiones">
+        <input type="text" name="origen" value="{{viaje.origen}}" placeholder="Origen" required minlength="2" maxlength="50">
+        <input type="text" name="destino" value="{{viaje.destino}}" placeholder="Destino" required minlength="2" maxlength="50">
         <input type="date" name="fecha_salida" value="{{viaje.fecha_salida}}" required>
         <label style="display:block; margin:8px 0;">Fecha estimada (opcional)</label>
         <input type="date" name="fecha_estimada" value="{{viaje.fecha_estimada if viaje.fecha_estimada is defined else (viaje.fecha_estimada or '')}}">
+        <label style="display:block; margin:8px 0;">Conductor (opcional)</label>
+        <select name="id_conductor">
+            <option value="">Sin conductor</option>
+            {% for c in conductores_list %}
+                <option value="{{ c.id_conductor }}" {% if viaje.id_conductor == c.id_conductor %}selected{% endif %}>{{ c.nombre }} {{ c.apellido }}</option>
+            {% endfor %}
+        </select>
         <select name="estado" required>
             <option value="">Seleccionar estado</option>
             <option value="pendiente" {% if viaje.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>

@@ -23,13 +23,14 @@
     
     <p class="result-count">Se encontraron {{viajes|length}} viajes</p>
     
-    <table>
+   <table>
         <tr>
             <th>ID</th>
             <th>Origen</th>
             <th>Destino</th>
             <th>Fecha Salida</th>
-            <th>Fecha Estimada</th> <!-- nueva columna -->
+            <th>Fecha Estimada</th>
+            <th>Conductor</th>
             <th>Estado</th>
             {% if usuario and usuario["rol"] == "admin" %}
                 <th>Acciones</th>
@@ -42,6 +43,7 @@
             <td>{{ v.destino }}</td>
             <td>{{ v.fecha_salida }}</td>
             <td>{{ v.fecha_estimada if v.fecha_estimada is defined else (v.fecha_estimada or '-') }}</td>
+            <td>{{ (v.nombre_conductor ~ ' ' ~ v.apellido_conductor).strip() if v.nombre_conductor else '-' }}</td>
             <td>
                 {% if v.estado == 'completado' %}
                     <span style="background:#4CAF50; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;"> {{ v.estado }}</span>
@@ -60,22 +62,26 @@
         </tr>
         {% endfor %}
     </table>
-    {% if not viajes %}
-        <p style="text-align:center; color:#999; margin:30px 0;">No se encontraron viajes que coincidan con tu búsqueda.</p>
-    {% endif %}
-    
-    {% if usuario and usuario["rol"] == "admin" %}
+    <!-- formulario creación: mostrar select de conductores -->
+    {% if usuario and usuario["rol"] in ["admin","logistica"] %}
     <h2 style="text-align:center;">Agregar Viaje</h2>
     <form method="post" action="/viajes_create">
-        <input type="text" name="origen" placeholder="Origen (ej: CDMX)" required minlength="2" maxlength="50" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{2,50}" title="Solo letras, espacios y guiones, 2-50 caracteres">
-        <input type="text" name="destino" placeholder="Destino (ej: Puebla)" required minlength="2" maxlength="50" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{2,50}" title="Solo letras, espacios y guiones, 2-50 caracteres">
+        <input type="text" name="origen" placeholder="Origen (ej: CDMX)" required minlength="2" maxlength="50">
+        <input type="text" name="destino" placeholder="Destino (ej: Puebla)" required minlength="2" maxlength="50">
         <input type="date" name="fecha_salida" required>
         <input type="date" name="fecha_estimada" placeholder="Fecha estimada (opcional)">
+        <select name="id_conductor">
+            <option value="">Asignar conductor (opcional)</option>
+            {% for c in conductores_list %}
+                <option value="{{ c.id_conductor }}">{{ c.nombre }} {{ c.apellido }}</option>
+            {% endfor %}
+        </select>
         <select name="estado" required>
             <option value="">Seleccionar estado</option>
             <option value="pendiente">Pendiente</option>
             <option value="en progreso">En progreso</option>
             <option value="completado">Completado</option>
+            <option value="cancelado">Cancelado</option>
         </select>
         <button type="submit">Agregar Viaje</button>
     </form>
