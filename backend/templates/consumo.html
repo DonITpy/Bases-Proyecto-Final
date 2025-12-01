@@ -7,7 +7,7 @@
             <select name="filtro_vehiculo" style="flex:1; min-width:200px; padding:8px; border:1px solid #ccc; border-radius:4px;">
                 <option value="">Todos los vehículos</option>
                 {% for v in vehiculos_list %}
-                    <option value="{{v.matricula}}" {% if filtro_vehiculo == v.matricula %}selected{% endif %}>{{v.matricula}}</option>
+                    <option value="{{v.id_vehiculo}}" {% if filtro_vehiculo == v.id_vehiculo|string %}selected{% endif %}>{{v.matricula}}</option>
                 {% endfor %}
             </select>
             <input type="text" name="buscar" placeholder="Buscar por matrícula o tipo..." value="{{buscar}}" style="min-width:200px; padding:8px; border:1px solid #ccc; border-radius:4px;">

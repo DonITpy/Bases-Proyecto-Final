@@ -81,25 +81,28 @@ CREATE TABLE vehiculo (
     estado ENUM('activo','mantenimiento','inactivo') NOT NULL DEFAULT 'activo',
     kilometraje INT NOT NULL,
     id_flota INT NULL,
-    CONSTRAINT fk_vehiculo_flota FOREIGN KEY (id_flota) REFERENCES flota(id_flota) ON DELETE SET NULL
+    id_conductor INT NULL,
+    CONSTRAINT fk_vehiculo_flota FOREIGN KEY (id_flota) REFERENCES flota(id_flota) ON DELETE SET NULL,
+    CONSTRAINT fk_vehiculo_conductor FOREIGN KEY (id_conductor) REFERENCES conductor(id_conductor) ON DELETE SET NULL
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO vehiculo (id_vehiculo, matricula, modelo, tipo, capacidad, marca, estado, kilometraje, id_flota) VALUES
-(1,'ABC123','Sprinter 2020','Camioneta',1000,'Mercedes-Benz','activo',25000,3),
-(2,'XYZ789','Transit 2018','Furgoneta',800,'Ford','mantenimiento',74000,3),
-(3,'DEF456','Hilux 2022','Camioneta',1200,'Toyota','activo',15000,1),
-(4,'GHI789','Freightliner 2021','Camión',5000,'Freightliner','activo',50000,4),
-(5,'JKL012','Versa 2023','Sedán',500,'Nissan','activo',8000,2),
-(6,'MNO345','Kenworth 2020','Camión',4500,'Kenworth','inactivo',120000,4),
-(7,'PQR678','RAV4 2021','SUV',700,'Toyota','activo',35000,1),
-(8,'STU901','Volvo 2019','Camión',5500,'Volvo','activo',95000,4),
-(9,'VWX234','Aveo 2022','Sedán',450,'Chevrolet','activo',12000,2),
-(10,'YZA567','CX-5 2020','SUV',650,'Mazda','mantenimiento',42000,1),
-(11,'BCD890','Doblado 2019','Furgoneta',750,'Hyundai','activo',88000,3),
-(12,'EFG123','Tacoma 2021','Camioneta',950,'Toyota','activo',22000,1),
-(13,'HIJ456','F-150 2020','Camioneta',1100,'Ford','activo',60000,1),
-(14,'KLM789','Fortuner 2022','SUV',800,'Toyota','activo',18000,1),
-(15,'NOP012','Ranger 2021','Camioneta',900,'Ford','inactivo',45000,1);
+INSERT INTO vehiculo (id_vehiculo, matricula, modelo, tipo, capacidad, marca, estado, kilometraje, id_flota, id_conductor) VALUES
+(1,'ABC123','Sprinter 2020','Camioneta',1000,'Mercedes-Benz','activo',25000,3,1),
+(2,'XYZ789','Transit 2018','Furgoneta',800,'Ford','mantenimiento',74000,3,2),
+(3,'DEF456','Hilux 2022','Camioneta',1200,'Toyota','activo',15000,1,3),
+(4,'GHI789','Freightliner 2021','Camión',5000,'Freightliner','activo',50000,4,4),
+(5,'JKL012','Versa 2023','Sedán',500,'Nissan','activo',8000,2,5),
+(6,'MNO345','Kenworth 2020','Camión',4500,'Kenworth','inactivo',120000,4,6),
+(7,'PQR678','RAV4 2021','SUV',700,'Toyota','activo',35000,1,7),
+(8,'STU901','Volvo 2019','Camión',5500,'Volvo','activo',95000,4,8),
+-- CORRECCIÓN: id_flota antes era 9 (no existe) -> cambiado a 2
+(9,'VWX234','Aveo 2022','Sedán',450,'Chevrolet','activo',12000,2,9),
+(10,'YZA567','CX-5 2020','SUV',650,'Mazda','mantenimiento',42000,1,10),
+(11,'BCD890','Doblado 2019','Furgoneta',750,'Hyundai','activo',88000,3,11),
+(12,'EFG123','Tacoma 2021','Camioneta',950,'Toyota','activo',22000,1,12),
+(13,'HIJ456','F-150 2020','Camioneta',1100,'Ford','activo',60000,1,NULL),
+(14,'KLM789','Fortuner 2022','SUV',800,'Toyota','activo',18000,1,NULL),
+(15,'NOP012','Ranger 2021','Camioneta',900,'Ford','inactivo',45000,1,NULL);
 
 -- =====================================================
 -- ORDEN DE SERVICIO (estado: pendiente, en progreso, completado, cancelado)
@@ -238,7 +241,7 @@ INSERT INTO incidente (id_incidente, matricula, tipo, fecha, descripcion) VALUES
 CREATE TABLE licencia (
     id_licencia INT PRIMARY KEY AUTO_INCREMENT,
     id_conductor INT NOT NULL,
-    tipo VARCHAR(30) COLLATE utf8mb4_unicode_ci NOT NULL,
+    tipo ENUM('A','A1','A2','B','B1','C','D','E','F','G','H','AM') COLLATE utf8mb4_unicode_ci NOT NULL,
     fecha_emision DATE NOT NULL,
     fecha_vencimiento DATE NOT NULL,
     FOREIGN KEY (id_conductor) REFERENCES conductor(id_conductor) ON DELETE CASCADE

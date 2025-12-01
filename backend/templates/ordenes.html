@@ -2,7 +2,8 @@
 {% block content %}
     <h1>Órdenes de Servicio</h1>
     
-    <!-- BÚSQUEDA -->
+    <!-- BÚSQUEDA (solo para admin/logistica) -->
+    {% if usuario and usuario["rol"] in ["admin", "logistica"] %}
     <div class="search-container">
         <form method="get" action="/ordenes_web" class="search-form">
             <input type="text" name="buscar" placeholder="Buscar por descripción..." value="{{buscar}}" style="flex:1; min-width:200px;">
@@ -10,6 +11,7 @@
             <a href="/ordenes_web" style="background:#666; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; text-align:center;">Limpiar</a>
         </form>
     </div>
+    {% endif %}
     
     <p style="text-align:center; color:#666;">Se encontraron {{ordenes|length}} órdenes</p>
     
@@ -19,7 +21,7 @@
             <th>Descripción</th>
             <th>Fecha</th>
             <th>Estado</th>
-            {% if usuario and usuario["rol"] == "admin" %}
+            {% if usuario and usuario["rol"] in ["admin", "logistica"] %}
                 <th>Acciones</th>
             {% endif %}
         </tr>
@@ -29,15 +31,28 @@
             <td>{{ o.descripcion }}</td>
             <td>{{ o.fecha }}</td>
             <td>{{ o.estado if o.estado is defined else (o.estado or 'pendiente') }}</td>
-            {% if usuario and usuario["rol"] == "admin" %}
+            {% if usuario and usuario["rol"] in ["admin", "logistica"] %}
                 <td>
                     <a href="/ordenes_edit/{{o.id_orden}}" style="color:#336699; margin-right:10px;">Editar</a>
-                    <a href="/ordenes_delete/{{o.id_orden}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">Eliminar</a>
+                    {% if usuario and usuario["rol"] == "admin" %}
+                        <a href="/ordenes_delete/{{o.id_orden}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">Eliminar</a>
+                    {% endif %}
                 </td>
             {% endif %}
         </tr>
         {% endfor %}
     </table>
+    
+    {% if not ordenes %}
+        <p style="text-align:center; color:#999; margin:30px 0;">
+            {% if usuario and usuario["rol"] == "conductor" %}
+                No tienes órdenes asignadas en tus viajes.
+            {% else %}
+                No se encontraron órdenes.
+            {% endif %}
+        </p>
+    {% endif %}
+    
     {% if usuario and usuario["rol"] in ["admin","logistica"] %}
     <h2 style="text-align:center;">Agregar Orden de Servicio</h2>
     <form method="post" action="/ordenes_create">

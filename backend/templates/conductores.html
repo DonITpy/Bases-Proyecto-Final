@@ -2,7 +2,8 @@
 {% block content %}
     <h1>Conductores Registrados</h1>
     
-    <!-- BÚSQUEDA -->
+    <!-- BÚSQUEDA (solo visible para admin) -->
+    {% if usuario and usuario["rol"] == "admin" %}
     <div class="search-container">
         <form method="get" action="/conductores_web" class="search-form">
             <input type="text" name="buscar" placeholder="Buscar por nombre o apellido..." value="{{buscar}}" style="flex:1; min-width:200px;">
@@ -10,6 +11,7 @@
             <a href="/conductores_web" style="background:#666; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; text-align:center;">Limpiar</a>
         </form>
     </div>
+    {% endif %}
     
     {% if error %}
         <div class="error">{{ error }}</div>
@@ -48,7 +50,13 @@
     </table>
     
     {% if not conductores %}
-        <p style="text-align:center; color:#999; margin:30px 0;">No se encontraron conductores que coincidan con tu búsqueda.</p>
+        <p style="text-align:center; color:#999; margin:30px 0;">
+            {% if usuario and usuario["rol"] == "conductor" %}
+                Aquí puedes ver tu información personal.
+            {% else %}
+                No se encontraron conductores que coincidan con tu búsqueda.
+            {% endif %}
+        </p>
     {% endif %}
     
     {% if usuario and usuario["rol"] == "admin" %}

@@ -254,7 +254,7 @@ def vehiculos_delete(request: Request, id: int):
 @app.get("/vehiculos_edit/{id}")
 def vehiculos_edit(request: Request, id: int):
     usuario = request.session.get("usuario")
-    if not usuario or usuario["rol"] != "admin":
+    if not usuario or usuario["rol"] not in ["admin", "mecanico", "logistica"]:
         return RedirectResponse("/vehiculos_web", status_code=303)
     
     db = get_db()
@@ -271,7 +271,7 @@ def vehiculos_edit(request: Request, id: int):
 @app.post("/vehiculos_update/{id}")
 def vehiculos_update(request: Request, id: int, matricula: str = Form(...), modelo: str = Form(...), tipo: str = Form(...), capacidad: int = Form(...), marca: str = Form(...), estado: str = Form(...), kilometraje: int = Form(...)):
     usuario = request.session.get("usuario")
-    if not usuario or usuario["rol"] != "admin":
+    if not usuario or usuario["rol"] not in ["admin", "mecanico", "logistica"]:
         return RedirectResponse("/vehiculos_web", status_code=303)
     
     # VALIDACIONES
@@ -366,21 +366,40 @@ def vehiculos_update(request: Request, id: int, matricula: str = Form(...), mode
             "usuario": usuario,
             "error": f"Error al actualizar: {str(e)}"
         })
-
+  
 # ==================== CONDUCTORES ====================
 @app.get("/conductores_web")
 def conductores_web(request: Request, buscar: str = ""):
     usuario = request.session.get("usuario")
     if not usuario:
         return RedirectResponse("/login", status_code=303)
+    
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
     query = "SELECT * FROM conductor WHERE 1=1"
     params = []
     
-    # Búsqueda por nombre o apellido
-    if buscar:
+    # Si es conductor, solo ve sus propios datos
+    if usuario.get("rol") == "conductor":
+        id_conductor = usuario.get("id_conductor")
+        if id_conductor:
+            query += " AND id_conductor = %s"
+            params.append(id_conductor)
+        else:
+            # Si es conductor pero no tiene id_conductor, no ve nada
+            cursor.execute("SELECT * FROM conductor WHERE 1=0")
+            conductores = cursor.fetchall()
+            db.close()
+            return templates.TemplateResponse("conductores.html", {
+                "request": request, 
+                "conductores": conductores, 
+                "usuario": usuario,
+                "buscar": buscar
+            })
+    
+    # Búsqueda por nombre o apellido (solo para admin)
+    if buscar and usuario.get("rol") == "admin":
         query += " AND (nombre LIKE %s OR apellido LIKE %s)"
         params.extend([f"%{buscar}%", f"%{buscar}%"])
     
@@ -757,7 +776,7 @@ def viajes_delete(request: Request, id: int):
 @app.get("/viajes_edit/{id}")
 def viajes_edit(request: Request, id: int):
     usuario = request.session.get("usuario")
-    if not usuario or usuario["rol"] != "admin":
+    if not usuario or usuario["rol"] not in ["admin", "logistica"]:
         return RedirectResponse("/viajes_web", status_code=303)
 
     db = get_db()
@@ -777,7 +796,7 @@ def viajes_edit(request: Request, id: int):
 def viajes_update(request: Request, id: int, origen: str = Form(...), destino: str = Form(...),
                   fecha_salida: str = Form(...), fecha_estimada: str = Form(None), estado: str = Form(...), id_conductor: int = Form(None)):
     usuario = request.session.get("usuario")
-    if not usuario or usuario["rol"] != "admin":
+    if not usuario or usuario["rol"] not in ["admin", "logistica"]:
         return RedirectResponse("/viajes_web", status_code=303)
 
     error_msg = None
@@ -790,7 +809,8 @@ def viajes_update(request: Request, id: int, origen: str = Form(...), destino: s
     if not error_msg and fecha_estimada:
         try:
             fecha_est_obj = datetime.strptime(fecha_estimada, "%Y-%m-%d")
-            if fecha_est_obj.date() < fecha_obj.date():
+            fecha_salida_obj = datetime.strptime(fecha_salida, "%Y-%m-%d")
+            if fecha_est_obj.date() < fecha_salida_obj.date():
                 error_msg = "La fecha estimada no puede ser anterior a la fecha de salida"
         except:
             error_msg = "Fecha estimada inválida (use YYYY-MM-DD)"
@@ -851,13 +871,14 @@ def viajes_update(request: Request, id: int, origen: str = Form(...), destino: s
             "conductores_list": conductores_list,
             "error": f"Error al actualizar viaje: {str(e)}"
         })
-    
+
 # ==================== MANTENIMIENTO ====================
 @app.get("/mantenimiento_web")
 def mantenimiento_web(request: Request, buscar: str = "", filtro_vehiculo: str = ""):
     usuario = request.session.get("usuario")
     if not usuario:
         return RedirectResponse("/login", status_code=303)
+    
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
@@ -870,22 +891,38 @@ def mantenimiento_web(request: Request, buscar: str = "", filtro_vehiculo: str =
     """
     params = []
     
+    # Si es conductor, solo ve mantenimiento de sus vehículos
+    if usuario.get("rol") == "conductor":
+        id_conductor = usuario.get("id_conductor")
+        if id_conductor:
+            query += " AND v.id_conductor = %s"
+            params.append(id_conductor)
+        else:
+            query += " AND 1=0"
+    
     if buscar:
         query += " AND m.descripcion LIKE %s"
         params.append(f"%{buscar}%")
     
     if filtro_vehiculo:
-        try:
-            query += " AND m.id_vehiculo = %s"
-            params.append(int(filtro_vehiculo))
-        except:
-            pass
+        query += " AND v.id_vehiculo = %s"
+        params.append(filtro_vehiculo)
     
     query += " ORDER BY m.fecha DESC, m.id_mantenimiento DESC"
     cursor.execute(query, params)
     mant = cursor.fetchall()
     
-    cursor.execute("SELECT id_vehiculo, matricula FROM vehiculo ORDER BY matricula")
+    # Lista de vehículos para el filtro
+    vehiculos_query = "SELECT id_vehiculo, matricula FROM vehiculo WHERE 1=1"
+    vehiculos_params = []
+    if usuario.get("rol") == "conductor":
+        id_conductor = usuario.get("id_conductor")
+        if id_conductor:
+            vehiculos_query += " AND id_conductor = %s"
+            vehiculos_params.append(id_conductor)
+    
+    vehiculos_query += " ORDER BY matricula"
+    cursor.execute(vehiculos_query, vehiculos_params)
     vehiculos_list = cursor.fetchall()
     db.close()
     
@@ -1103,25 +1140,53 @@ def consumo_web(request: Request, buscar: str = "", filtro_vehiculo: str = ""):
     usuario = request.session.get("usuario")
     if not usuario:
         return RedirectResponse("/login", status_code=303)
+    
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
     query = "SELECT * FROM consumo WHERE 1=1"
     params = []
     
+    # Si es conductor, solo ve consumo de sus vehículos
+    if usuario.get("rol") == "conductor":
+        id_conductor = usuario.get("id_conductor")
+        if id_conductor:
+            # Obtener las matrículas de los vehículos del conductor
+            query = """
+                SELECT c.* FROM consumo c
+                JOIN vehiculo v ON v.matricula = c.matricula
+                WHERE v.id_conductor = %s
+            """
+            params.append(id_conductor)
+        else:
+            query += " AND 1=0"
+    
     if filtro_vehiculo:
-        query += " AND matricula = %s"
+        if usuario.get("rol") == "conductor":
+            query += " AND v.id_vehiculo = %s"
+        else:
+            query += " AND c.matricula = (SELECT matricula FROM vehiculo WHERE id_vehiculo = %s)"
         params.append(filtro_vehiculo)
     
     if buscar:
-        query += " AND (matricula LIKE %s OR tipo_combustible LIKE %s)"
-        params.extend([f"%{buscar}%", f"%{buscar}%"])
+        query += " AND c.matricula LIKE %s"
+        params.append(f"%{buscar}%")
     
     query += " ORDER BY fecha DESC, id_consumo DESC"
     cursor.execute(query, params)
     cons = cursor.fetchall()
     
-    cursor.execute("SELECT id_vehiculo, matricula FROM vehiculo ORDER BY matricula")
+    # Lista de vehículos para el filtro
+    vehiculos_query = "SELECT id_vehiculo, matricula FROM vehiculo WHERE 1=1"
+    vehiculos_params = []
+    if usuario.get("rol") == "conductor":
+        id_conductor = usuario.get("id_conductor")
+        if id_conductor:
+            vehiculos_query += " AND id_conductor = %s"
+            vehiculos_params.append(id_conductor)
+    
+    vehiculos_query += " ORDER BY matricula"
+    cursor.execute(vehiculos_query, vehiculos_params)
     vehiculos_list = cursor.fetchall()
     db.close()
     
@@ -1345,16 +1410,38 @@ def flota_web(request: Request, buscar: str = ""):
     usuario = request.session.get("usuario")
     if not usuario:
         return RedirectResponse("/login", status_code=303)
+    
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
     query = "SELECT * FROM flota WHERE 1=1"
     params = []
     
-    # Búsqueda por nombre
-    if buscar:
-        query += " AND nombre LIKE %s"
-        params.append(f"%{buscar}%")
+    # Si es conductor, solo ve la flota de sus vehículos
+    if usuario.get("rol") == "conductor":
+        id_conductor = usuario.get("id_conductor")
+        if id_conductor:
+            query = """
+                SELECT DISTINCT f.* FROM flota f
+                JOIN vehiculo v ON v.id_flota = f.id_flota
+                WHERE v.id_conductor = %s OR v.id_conductor IS NULL
+            """
+            params.append(id_conductor)
+        else:
+            cursor.execute("SELECT * FROM flota WHERE 1=0")
+            flotas = cursor.fetchall()
+            db.close()
+            return templates.TemplateResponse("flota.html", {
+                "request": request, 
+                "flota": flotas, 
+                "usuario": usuario,
+                "buscar": buscar
+            })
+    else:
+        # Búsqueda por nombre (admin/otros roles)
+        if buscar:
+            query += " AND nombre LIKE %s"
+            params.append(f"%{buscar}%")
     
     cursor.execute(query, params)
     flotas = cursor.fetchall()
@@ -1550,25 +1637,49 @@ def incidentes_web(request: Request, buscar: str = "", filtro_tipo: str = ""):
     usuario = request.session.get("usuario")
     if not usuario:
         return RedirectResponse("/login", status_code=303)
+    
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
     query = "SELECT * FROM incidente WHERE 1=1"
     params = []
     
+    # Si es conductor, solo ve incidentes de sus vehículos
+    if usuario.get("rol") == "conductor":
+        id_conductor = usuario.get("id_conductor")
+        if id_conductor:
+            query = """
+                SELECT i.* FROM incidente i
+                JOIN vehiculo v ON v.matricula = i.matricula
+                WHERE v.id_conductor = %s
+            """
+            params.append(id_conductor)
+        else:
+            query += " AND 1=0"
+    
     if buscar:
-        query += " AND descripcion LIKE %s"
+        query += " AND i.descripcion LIKE %s"
         params.append(f"%{buscar}%")
     
     if filtro_tipo:
-        query += " AND tipo = %s"
+        query += " AND i.tipo = %s"
         params.append(filtro_tipo)
     
     query += " ORDER BY fecha DESC, id_incidente DESC"
     cursor.execute(query, params)
     inc = cursor.fetchall()
     
-    cursor.execute("SELECT id_vehiculo, matricula FROM vehiculo ORDER BY matricula")
+    # Lista de vehículos para el filtro
+    vehiculos_query = "SELECT id_vehiculo, matricula FROM vehiculo WHERE 1=1"
+    vehiculos_params = []
+    if usuario.get("rol") == "conductor":
+        id_conductor = usuario.get("id_conductor")
+        if id_conductor:
+            vehiculos_query += " AND id_conductor = %s"
+            vehiculos_params.append(id_conductor)
+    
+    vehiculos_query += " ORDER BY matricula"
+    cursor.execute(vehiculos_query, vehiculos_params)
     vehiculos_list = cursor.fetchall()
     db.close()
     
@@ -1774,15 +1885,33 @@ def ordenes_web(request: Request, buscar: str = ""):
     usuario = request.session.get("usuario")
     if not usuario:
         return RedirectResponse("/login", status_code=303)
+    
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
     query = "SELECT * FROM orden_servicio WHERE 1=1"
     params = []
     
-    # Búsqueda por descripción
-    if buscar:
+    # Si es conductor, solo ve órdenes asignadas a sus viajes
+    if usuario.get("rol") == "conductor":
+        id_conductor = usuario.get("id_conductor")
+        if id_conductor:
+            query = """
+                SELECT DISTINCT o.* FROM orden_servicio o
+                JOIN viaje v ON v.id_orden = o.id_orden
+                WHERE v.id_conductor = %s
+            """
+            params.append(id_conductor)
+        else:
+            query += " AND 1=0"
+    
+    # Búsqueda por descripción (solo para admin/logistica)
+    if buscar and usuario.get("rol") not in ["conductor"]:
         query += " AND descripcion LIKE %s"
+        params.append(f"%{buscar}%")
+    elif buscar and usuario.get("rol") == "conductor":
+        # Para conductores, la búsqueda es en órdenes asignadas
+        query += " AND o.descripcion LIKE %s"
         params.append(f"%{buscar}%")
     
     cursor.execute(query, params)
@@ -1878,7 +2007,7 @@ def ordenes_delete(request: Request, id: int):
 @app.get("/ordenes_edit/{id}")
 def ordenes_edit(request: Request, id: int):
     usuario = request.session.get("usuario")
-    if not usuario or usuario["rol"] != "admin":
+    if not usuario or usuario["rol"] not in ["admin", "logistica"]:
         return RedirectResponse("/ordenes_web", status_code=303)
     
     db = get_db()
@@ -1890,12 +2019,12 @@ def ordenes_edit(request: Request, id: int):
     if not orden:
         return RedirectResponse("/ordenes_web", status_code=303)
     
-    return templates.TemplateResponse("ordenes_edit.html", {"request": request, "orden": orden, "usuario": usuario})
+    return templates.TemplateResponse("ordenes_edit.html", {"request": request, "orden": orden, "usuario": usuario, "error": ""})
 
 @app.post("/ordenes_update/{id}")
 def ordenes_update(request: Request, id: int, descripcion: str = Form(...), fecha: str = Form(...), estado: str = Form(...)):
     usuario = request.session.get("usuario")
-    if not usuario or usuario["rol"] != "admin":
+    if not usuario or usuario["rol"] not in ["admin", "logistica"]:
         return RedirectResponse("/ordenes_web", status_code=303)
 
     # VALIDACIONES
@@ -1906,15 +2035,13 @@ def ordenes_update(request: Request, id: int, descripcion: str = Form(...), fech
         error_msg = "La descripción debe tener entre 5 y 255 caracteres"
     elif not all(c.isalnum() or c.isspace() or c in ['-', '.', ',', '(', ')', ':', ';'] for c in descripcion):
         error_msg = "La descripción contiene caracteres inválidos"
-
+    
     # Validar fecha
     elif not fecha:
         error_msg = "La fecha es obligatoria"
     else:
         try:
-            fecha_obj = datetime.strptime(fecha, "%Y-%m-%d")
-            if fecha_obj.date() > datetime.now().date():
-                error_msg = "La fecha de la orden no puede ser en el futuro"
+            datetime.strptime(fecha, "%Y-%m-%d")
         except:
             error_msg = "Formato de fecha inválido (use YYYY-MM-DD)"
 
@@ -1922,7 +2049,7 @@ def ordenes_update(request: Request, id: int, descripcion: str = Form(...), fech
     allowed_estados = ['pendiente', 'en progreso', 'completado', 'cancelado']
     if not error_msg:
         if estado not in allowed_estados:
-            error_msg = "Estado no válido"
+            error_msg = "El estado no es válido"
 
     if error_msg:
         db = get_db()
@@ -1940,8 +2067,10 @@ def ordenes_update(request: Request, id: int, descripcion: str = Form(...), fech
     db = get_db()
     cursor = db.cursor()
     try:
-        cursor.execute("UPDATE orden_servicio SET descripcion=%s, fecha=%s, estado=%s WHERE id_orden=%s",
-                       (descripcion, fecha, estado, id))
+        cursor.execute(
+            "UPDATE orden_servicio SET descripcion=%s, fecha=%s, estado=%s WHERE id_orden=%s",
+            (descripcion, fecha, estado, id)
+        )
         db.commit()
         db.close()
         return RedirectResponse("/ordenes_web", status_code=303)
@@ -1956,9 +2085,9 @@ def ordenes_update(request: Request, id: int, descripcion: str = Form(...), fech
             "request": request,
             "orden": orden,
             "usuario": usuario,
-            "error": f"Error al actualizar orden: {str(e)}"
+            "error": f"Error al actualizar: {str(e)}"
         })
-    
+  
 # ==================== LICENCIAS ====================
 @app.get("/licencias_web")
 def licencias_web(request: Request, buscar: str = ""):
@@ -2036,21 +2165,33 @@ def licencias_create(request: Request, id_conductor: int = Form(...), tipo: str 
 
     # validaciones básicas
     error = None
-    if not tipo or len(tipo) > 10:
-        error = "Tipo inválido (máx 10 caracteres)."
-    try:
-        fe = datetime.strptime(fecha_emision, "%Y-%m-%d").date()
-        fv = datetime.strptime(fecha_vencimiento, "%Y-%m-%d").date()
-        if fv <= fe:
-            error = "La fecha de vencimiento debe ser posterior a la fecha de emisión."
-    except Exception:
-        error = "Formato de fecha inválido. Use YYYY-MM-DD."
+    
+    # validar tipo enum
+    tipos_validos = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'AM', 'A1', 'A2', 'B1']
+    if tipo not in tipos_validos:
+        error = f"Tipo inválido. Opciones válidas: {', '.join(tipos_validos)}"
+    
+    if error is None:
+        try:
+            fe = datetime.strptime(fecha_emision, "%Y-%m-%d").date()
+            fv = datetime.strptime(fecha_vencimiento, "%Y-%m-%d").date()
+            if fv <= fe:
+                error = "La fecha de vencimiento debe ser posterior a la fecha de emisión."
+        except Exception:
+            error = "Formato de fecha inválido. Use YYYY-MM-DD."
 
     if error:
-        # volver a la lista con mensaje de error
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT l.id_licencia, l.id_conductor, l.tipo, l.fecha_emision, l.fecha_vencimiento, c.nombre AS nombre_conductor, c.apellido AS apellido_conductor FROM licencia l JOIN conductor c ON c.id_conductor = l.id_conductor")
+        licencias = cursor.fetchall()
+        cursor.execute("SELECT id_conductor, nombre, apellido FROM conductor ORDER BY nombre, apellido")
+        conductores = cursor.fetchall()
+        db.close()
         return templates.TemplateResponse("licencias.html", {
             "request": request,
-            "licencias": [],
+            "licencias": licencias,
+            "conductores": conductores,
             "usuario": usuario,
             "buscar": "",
             "error": error
@@ -2068,6 +2209,7 @@ def licencias_create(request: Request, id_conductor: int = Form(...), tipo: str 
         return templates.TemplateResponse("licencias.html", {
             "request": request,
             "licencias": [],
+            "conductores": [],
             "usuario": usuario,
             "buscar": "",
             "error": f"Error al insertar: {e}"
@@ -2111,7 +2253,13 @@ def licencias_edit(request: Request, id: int):
     if not licencia:
         return RedirectResponse("/licencias_web", status_code=303)
 
-    return templates.TemplateResponse("licencias_edit.html", {"request": request, "licencia": licencia, "conductores": conductores, "usuario": usuario, "error": ""})
+    return templates.TemplateResponse("licencias_edit.html", {
+        "request": request, 
+        "licencia": licencia, 
+        "conductores": conductores, 
+        "usuario": usuario, 
+        "error": ""
+    })
 
 @app.post("/licencias_update/{id}")
 def licencias_update(request: Request, id: int, id_conductor: int = Form(...), tipo: str = Form(...), fecha_emision: str = Form(...), fecha_vencimiento: str = Form(...)):
@@ -2121,15 +2269,18 @@ def licencias_update(request: Request, id: int, id_conductor: int = Form(...), t
 
     # validaciones
     error = None
-    if not tipo or len(tipo) > 10:
-        error = "Tipo inválido."
-    try:
-        fe = datetime.strptime(fecha_emision, "%Y-%m-%d").date()
-        fv = datetime.strptime(fecha_vencimiento, "%Y-%m-%d").date()
-        if fv <= fe:
-            error = "La fecha de vencimiento debe ser posterior."
-    except Exception:
-        error = "Formato de fecha inválido. Use YYYY-MM-DD."
+    tipos_validos = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'AM', 'A1', 'A2', 'B1']
+    if tipo not in tipos_validos:
+        error = f"Tipo inválido. Opciones válidas: {', '.join(tipos_validos)}"
+    
+    if error is None:
+        try:
+            fe = datetime.strptime(fecha_emision, "%Y-%m-%d").date()
+            fv = datetime.strptime(fecha_vencimiento, "%Y-%m-%d").date()
+            if fv <= fe:
+                error = "La fecha de vencimiento debe ser posterior."
+        except Exception:
+            error = "Formato de fecha inválido. Use YYYY-MM-DD."
 
     if error:
         # volver a formulario de edición con mensaje
@@ -2140,7 +2291,13 @@ def licencias_update(request: Request, id: int, id_conductor: int = Form(...), t
         cursor.execute("SELECT id_conductor, nombre, apellido FROM conductor ORDER BY nombre, apellido")
         conductores = cursor.fetchall()
         db.close()
-        return templates.TemplateResponse("licencias_edit.html", {"request": request, "licencia": licencia, "conductores": conductores, "usuario": usuario, "error": error})
+        return templates.TemplateResponse("licencias_edit.html", {
+            "request": request, 
+            "licencia": licencia, 
+            "conductores": conductores, 
+            "usuario": usuario, 
+            "error": error
+        })
 
     db = get_db()
     cursor = db.cursor()
@@ -2403,36 +2560,36 @@ def evaluaciones_update(request: Request, id: int, id_conductor: int = Form(...)
 
 # ==================== USUARIOS ====================
 @app.get("/usuarios_web")
-def usuarios_web(request: Request):
+def usuarios_web(request: Request, buscar: str = ""):
     usuario = request.session.get("usuario")
     if not usuario or usuario["rol"] != "admin":
         return RedirectResponse("/home", status_code=303)
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM usuario")
+    
+    query = "SELECT * FROM usuario WHERE 1=1"
+    params = []
+    
+    if buscar:
+        query += " AND (nombre LIKE %s OR correo LIKE %s OR rol LIKE %s)"
+        params.extend([f"%{buscar}%", f"%{buscar}%", f"%{buscar}%"])
+    
+    cursor.execute(query, params)
     usuarios = cursor.fetchall()
     db.close()
-    return templates.TemplateResponse("usuarios.html", {"request": request, "usuarios": usuarios, "usuario": usuario})
+    return templates.TemplateResponse("usuarios.html", {
+        "request": request, 
+        "usuarios": usuarios, 
+        "usuario": usuario,
+        "buscar": buscar,
+        "error": ""
+    })
 
 @app.post("/usuarios_create")
 def usuarios_create(request: Request, nombre: str = Form(...), correo: str = Form(...), password: str = Form(...), rol: str = Form(...)):
     usuario_sesion = request.session.get("usuario")
     if not usuario_sesion or usuario_sesion["rol"] != "admin":
         return RedirectResponse("/login", status_code=303)
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("INSERT INTO usuario (nombre, correo, password, rol) VALUES (%s,%s,%s,%s)", (nombre, correo, password, rol))
-    db.commit()
-    new_id = cursor.lastrowid
-    if rol == "conductor":
-        parts = nombre.split(" ", 1)
-        nombre_c = parts[0]
-        apellido_c = parts[1] if len(parts) > 1 else ""
-        cursor.execute("INSERT INTO conductor (nombre, apellido, telefono, direccion, fecha_nacimiento, id_usuario) VALUES (%s,%s,%s,%s,%s,%s)",
-                       (nombre_c, apellido_c, None, None, None, new_id))
-        db.commit()
-    db.close()
-    return RedirectResponse("/usuarios_web", status_code=303)
     
     # VALIDACIONES
     error_msg = None
@@ -2466,7 +2623,8 @@ def usuarios_create(request: Request, nombre: str = Form(...), correo: str = For
         return templates.TemplateResponse("usuarios.html", {
             "request": request, 
             "usuarios": usuarios, 
-            "usuario": usuario_session,
+            "usuario": usuario_sesion,
+            "buscar": "",
             "error": error_msg
         })
     
@@ -2485,7 +2643,8 @@ def usuarios_create(request: Request, nombre: str = Form(...), correo: str = For
         return templates.TemplateResponse("usuarios.html", {
             "request": request, 
             "usuarios": usuarios, 
-            "usuario": usuario_session,
+            "usuario": usuario_sesion,
+            "buscar": "",
             "error": "El correo ya está registrado en el sistema"
         })
     
@@ -2493,6 +2652,17 @@ def usuarios_create(request: Request, nombre: str = Form(...), correo: str = For
         cursor.execute("INSERT INTO usuario (nombre, correo, password, rol) VALUES (%s,%s,%s,%s)",
                        (nombre, correo, password, rol))
         db.commit()
+        
+        # Si es conductor, crear registro en tabla conductor
+        if rol == "conductor":
+            new_id = cursor.lastrowid
+            parts = nombre.split(" ", 1)
+            nombre_c = parts[0]
+            apellido_c = parts[1] if len(parts) > 1 else ""
+            cursor.execute("INSERT INTO conductor (nombre, apellido, telefono, direccion, fecha_nacimiento, id_usuario) VALUES (%s,%s,%s,%s,%s,%s)",
+                           (nombre_c, apellido_c, None, None, None, new_id))
+            db.commit()
+        
         db.close()
         return RedirectResponse("/usuarios_web", status_code=303)
     except Exception as e:
@@ -2505,8 +2675,114 @@ def usuarios_create(request: Request, nombre: str = Form(...), correo: str = For
         return templates.TemplateResponse("usuarios.html", {
             "request": request, 
             "usuarios": usuarios, 
-            "usuario": usuario_session,
+            "usuario": usuario_sesion,
+            "buscar": "",
             "error": f"Error al crear usuario: {str(e)}"
+        })
+
+@app.get("/usuarios_edit/{id}")
+def usuarios_edit(request: Request, id: int):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario["rol"] != "admin":
+        return RedirectResponse("/usuarios_web", status_code=303)
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM usuario WHERE id_usuario=%s", (id,))
+    usuario_edit = cursor.fetchone()
+    db.close()
+    
+    if not usuario_edit:
+        return RedirectResponse("/usuarios_web", status_code=303)
+    
+    return templates.TemplateResponse("usuarios_edit.html", {
+        "request": request, 
+        "usuario_edit": usuario_edit, 
+        "usuario": usuario,
+        "error": ""
+    })
+
+@app.post("/usuarios_update/{id}")
+def usuarios_update(request: Request, id: int, nombre: str = Form(...), correo: str = Form(...), password: str = Form(...), rol: str = Form(...)):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario["rol"] != "admin":
+        return RedirectResponse("/usuarios_web", status_code=303)
+    
+    # VALIDACIONES
+    error_msg = None
+    
+    # Validar nombre
+    if not nombre or len(nombre) < 2 or len(nombre) > 50:
+        error_msg = "El nombre debe tener entre 2 y 50 caracteres"
+    elif not all(c.isalpha() or c.isspace() or c == '-' for c in nombre):
+        error_msg = "El nombre solo debe contener letras, espacios y guiones"
+    
+    # Validar correo
+    elif not correo or len(correo) < 5 or len(correo) > 50:
+        error_msg = "El correo debe tener entre 5 y 50 caracteres"
+    elif '@' not in correo or '.' not in correo:
+        error_msg = "El correo debe tener un formato válido (ejemplo@correo.com)"
+    
+    # Validar password
+    elif not password or len(password) < 6 or len(password) > 128:
+        error_msg = "La contraseña debe tener entre 6 y 128 caracteres"
+    
+    # Validar rol
+    elif rol not in ['admin', 'mecanico', 'conductor', 'logistica', 'observador']:
+        error_msg = "El rol no es válido"
+    
+    if error_msg:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM usuario WHERE id_usuario=%s", (id,))
+        usuario_edit = cursor.fetchone()
+        db.close()
+        return templates.TemplateResponse("usuarios_edit.html", {
+            "request": request,
+            "usuario_edit": usuario_edit,
+            "usuario": usuario,
+            "error": error_msg
+        })
+    
+    db = get_db()
+    cursor = db.cursor()
+    
+    # Validar que el correo no exista (excepto del usuario actual)
+    cursor.execute("SELECT * FROM usuario WHERE correo=%s AND id_usuario!=%s", (correo, id))
+    if cursor.fetchone():
+        db.close()
+        db2 = get_db()
+        cursor2 = db2.cursor(dictionary=True)
+        cursor2.execute("SELECT * FROM usuario WHERE id_usuario=%s", (id,))
+        usuario_edit = cursor2.fetchone()
+        db2.close()
+        return templates.TemplateResponse("usuarios_edit.html", {
+            "request": request,
+            "usuario_edit": usuario_edit,
+            "usuario": usuario,
+            "error": "El correo ya está registrado por otro usuario"
+        })
+    
+    try:
+        cursor.execute(
+            "UPDATE usuario SET nombre=%s, correo=%s, password=%s, rol=%s WHERE id_usuario=%s",
+            (nombre, correo, password, rol, id)
+        )
+        db.commit()
+        db.close()
+        return RedirectResponse("/usuarios_web", status_code=303)
+    except Exception as e:
+        db.close()
+        db2 = get_db()
+        cursor2 = db2.cursor(dictionary=True)
+        cursor2.execute("SELECT * FROM usuario WHERE id_usuario=%s", (id,))
+        usuario_edit = cursor2.fetchone()
+        db2.close()
+        return templates.TemplateResponse("usuarios_edit.html", {
+            "request": request,
+            "usuario_edit": usuario_edit,
+            "usuario": usuario,
+            "error": f"Error al actualizar usuario: {str(e)}"
         })
     
 @app.get("/usuarios_delete/{id}")

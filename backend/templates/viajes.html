@@ -23,7 +23,7 @@
     
     <p class="result-count">Se encontraron {{viajes|length}} viajes</p>
     
-   <table>
+    <table>
         <tr>
             <th>ID</th>
             <th>Origen</th>
@@ -32,7 +32,7 @@
             <th>Fecha Estimada</th>
             <th>Conductor</th>
             <th>Estado</th>
-            {% if usuario and usuario["rol"] == "admin" %}
+            {% if usuario and usuario["rol"] in ["admin", "logistica"] %}
                 <th>Acciones</th>
             {% endif %}
         </tr>
@@ -53,16 +53,18 @@
                     <span style="background:#FF9800; color:white; padding:5px 10px; border-radius:4px; font-size:0.9em;"> {{ v.estado }}</span>
                 {% endif %}
             </td>
-            {% if usuario and usuario["rol"] == "admin" %}
+            {% if usuario and usuario["rol"] in ["admin", "logistica"] %}
                 <td>
                     <a href="/viajes_edit/{{v.id_viaje}}" style="color:#336699; margin-right:10px;">Editar</a>
-                    <a href="/viajes_delete/{{v.id_viaje}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">Eliminar</a>
+                    {% if usuario and usuario["rol"] == "admin" %}
+                        <a href="/viajes_delete/{{v.id_viaje}}" onclick="return confirm('¿Eliminar?');" class="delete-btn">Eliminar</a>
+                    {% endif %}
                 </td>
             {% endif %}
         </tr>
         {% endfor %}
     </table>
-    <!-- formulario creación: mostrar select de conductores -->
+    
     {% if usuario and usuario["rol"] in ["admin","logistica"] %}
     <h2 style="text-align:center;">Agregar Viaje</h2>
     <form method="post" action="/viajes_create">

@@ -33,7 +33,7 @@
             <th>Estado</th>
             <th>Capacidad</th>
             <th>Kilometraje</th>
-            {% if usuario and usuario["rol"] == "admin" %}
+            {% if usuario and usuario["rol"] in ["admin", "mecanico", "logistica"] %}
                 <th>Acciones</th>
             {% endif %}
         </tr>
@@ -55,10 +55,12 @@
             </td>
             <td>{{ v.capacidad }}</td>
             <td>{{ v.kilometraje }}</td>
-            {% if usuario and usuario["rol"] == "admin" %}
+            {% if usuario and usuario["rol"] in ["admin", "mecanico", "logistica"] %}
                 <td>
                     <a href="/vehiculos_edit/{{v.id_vehiculo}}" style="color:#336699; margin-right:10px;">Editar</a>
-                    <a href="/vehiculos_delete/{{v.id_vehiculo}}" onclick="return confirm('¿Eliminar? Este vehículo no debe tener registros vinculados.');" class="delete-btn">Eliminar</a>
+                    {% if usuario and usuario["rol"] == "admin" %}
+                        <a href="/vehiculos_delete/{{v.id_vehiculo}}" onclick="return confirm('¿Eliminar? Este vehículo no debe tener registros vinculados.');" class="delete-btn">Eliminar</a>
+                    {% endif %}
                 </td>
             {% endif %}
         </tr>

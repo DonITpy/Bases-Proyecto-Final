@@ -6,7 +6,7 @@
         <div class="error">{{ error }}</div>
     {% endif %}
 
-    <form method="post" action="/licencias_update/{{ licencia.id_licencia }}">
+    <form method="post" action="/licencias_update/{{ licencia.id_licencia }}" style="width:500px; margin:auto;">
         <label>Conductor</label>
         <select name="id_conductor" required>
             <option value="">Seleccionar conductor</option>
@@ -15,8 +15,22 @@
             {% endfor %}
         </select>
 
-        <label>Tipo</label>
-        <input type="text" name="tipo" maxlength="10" value="{{ licencia.tipo }}" required>
+        <label>Tipo de Licencia</label>
+        <select name="tipo" required>
+            <option value="">Seleccionar tipo</option>
+            <option value="A" {% if licencia.tipo == 'A' %}selected{% endif %}>A - Motos (125cc máx)</option>
+            <option value="A1" {% if licencia.tipo == 'A1' %}selected{% endif %}>A1 - Motos ligeras (125cc)</option>
+            <option value="A2" {% if licencia.tipo == 'A2' %}selected{% endif %}>A2 - Motos (35kW máx)</option>
+            <option value="B" {% if licencia.tipo == 'B' %}selected{% endif %}>B - Autos (hasta 3500kg)</option>
+            <option value="B1" {% if licencia.tipo == 'B1' %}selected{% endif %}>B1 - Cuadriciclos (400kg)</option>
+            <option value="C" {% if licencia.tipo == 'C' %}selected{% endif %}>C - Camiones (más de 3500kg)</option>
+            <option value="D" {% if licencia.tipo == 'D' %}selected{% endif %}>D - Autobús (8+ pasajeros)</option>
+            <option value="E" {% if licencia.tipo == 'E' %}selected{% endif %}>E - Camión articulado</option>
+            <option value="F" {% if licencia.tipo == 'F' %}selected{% endif %}>F - Tractores</option>
+            <option value="G" {% if licencia.tipo == 'G' %}selected{% endif %}>G - Especiales</option>
+            <option value="H" {% if licencia.tipo == 'H' %}selected{% endif %}>H - Ciclomotores</option>
+            <option value="AM" {% if licencia.tipo == 'AM' %}selected{% endif %}>AM - Ciclomotores 50cc</option>
+        </select>
 
         <label>Fecha emisión</label>
         <input type="date" name="fecha_emision" value="{{ licencia.fecha_emision }}" required>
@@ -26,4 +40,8 @@
 
         <button type="submit">Guardar cambios</button>
     </form>
+    
+    <div style="text-align:center; margin-top:20px;">
+        <a href="/licencias_web" style="color:#336699; text-decoration:none;">Volver</a>
+    </div>
 {% endblock %}

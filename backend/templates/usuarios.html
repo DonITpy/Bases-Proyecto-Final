@@ -2,6 +2,14 @@
 {% block content %}
     <h1>Gestión de Usuarios</h1>
     
+    <div class="search-container">
+        <form method="get" action="/usuarios_web" class="search-form">
+            <input type="text" name="buscar" placeholder="Buscar por nombre, correo o rol..." value="{{buscar}}" style="flex:1; min-width:200px;">
+            <button type="submit">Buscar</button>
+            <a href="/usuarios_web" style="background:#666; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; text-align:center;">Limpiar</a>
+        </form>
+    </div>
+    
     {% if error %}
         <div style="background:#ffcccc; color:#cc0000; padding:15px; margin:20px auto; width:80%; text-align:center; border-radius:5px; border:2px solid #cc0000;">
             <strong>⚠️ Error:</strong> {{ error }}
@@ -24,16 +32,19 @@
             <td>{{ u.nombre }}</td>
             <td>{{ u.correo }}</td>
             <td>{{ u.rol }}</td>
-            <td><a href="/usuarios_delete/{{u.id_usuario}}" onclick="return confirm('¿Eliminar usuario?');" class="delete-btn">Eliminar</a></td>
+            <td>
+                <a href="/usuarios_edit/{{u.id_usuario}}" style="color:#336699; margin-right:10px;">Editar</a>
+                <a href="/usuarios_delete/{{u.id_usuario}}" onclick="return confirm('¿Eliminar usuario?');" class="delete-btn">Eliminar</a>
+            </td>
         </tr>
         {% endfor %}
     </table>
     
     <h2 style="text-align:center;">Crear Nuevo Usuario</h2>
     <form method="post" action="/usuarios_create">
-        <input type="text" name="nombre" placeholder="Nombre" required minlength="2" maxlength="50" pattern="[A-Za-záéíóúÁÉÍÓÚ\s\-]{2,50}" title="Solo letras, espacios y guiones">
-        <input type="email" name="correo" placeholder="Correo" required maxlength="50" title="Correo válido">
-        <input type="password" name="password" placeholder="Contraseña" required minlength="6" maxlength="128" title="6-128 caracteres">
+        <input type="text" name="nombre" placeholder="Nombre completo" required minlength="2" maxlength="50">
+        <input type="email" name="correo" placeholder="Correo electrónico" required maxlength="50">
+        <input type="password" name="password" placeholder="Contraseña" required minlength="6" maxlength="128">
         <select name="rol" required>
             <option value="">Seleccionar rol</option>
             <option value="admin">Admin</option>

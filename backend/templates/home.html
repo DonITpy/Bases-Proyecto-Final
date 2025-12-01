@@ -88,7 +88,7 @@
                     {% if usuario["rol"] == "admin" %}
                         Administra todas las órdenes de servicio: crear, editar, cancelar y relacionar con viajes.
                     {% elif usuario["rol"] == "logistica" %}
-                        Crea y actualiza órdenes de servicio para la flota, incluyendo estado y asignación a viajes.
+                        Crea, consulta y actualiza órdenes de servicio para la flota, incluyendo estado y asignación a viajes.
                     {% elif usuario["rol"] == "conductor" %}
                         Consulta las órdenes de servicio asociadas a tus viajes.
                     {% else %}
@@ -104,7 +104,7 @@
                 <h3>Viajes</h3>
                 <p>
                     {% if usuario["rol"] in ["admin","logistica"] %}
-                        Planifica, crea y monitorea viajes. Define origen, destino, fechas, estado y asigna vehículo, conductor y orden de servicio.
+                        Planifica, crea, consulta y actualiza viajes. Define origen, destino, fechas, estado y asigna vehículo, conductor y orden de servicio.
                     {% elif usuario["rol"] == "conductor" %}
                         Consulta tus viajes asignados, su estado y la información asociada a cada ruta.
                     {% else %}
@@ -122,7 +122,7 @@
                     {% if usuario["rol"] == "admin" %}
                         Administra todos los registros de mantenimiento preventivo, correctivo y reparaciones de los vehículos.
                     {% elif usuario["rol"] == "mecanico" %}
-                        Registra y actualiza mantenimientos realizados a los vehículos, incluyendo tipo, fecha y costo.
+                        Registra y consulta mantenimientos realizados a los vehículos, incluyendo tipo, fecha y costo.
                     {% elif usuario["rol"] == "logistica" %}
                         Consulta el historial de mantenimiento para apoyar la planeación de viajes y disponibilidad de la flota.
                     {% else %}
@@ -156,7 +156,7 @@
                     {% if usuario["rol"] == "admin" %}
                         Administra todo el historial de incidentes: creación, actualización y eliminación de registros.
                     {% elif usuario["rol"] == "mecanico" %}
-                        Registra y actualiza incidentes relacionados con el estado físico del vehículo.
+                        Registra y consulta incidentes relacionados con el estado físico del vehículo.
                     {% elif usuario["rol"] == "logistica" %}
                         Consulta incidentes para evaluar riesgos y tomar decisiones operativas.
                     {% else %}
@@ -211,8 +211,8 @@
             <h3>Resumen de Permisos por Rol:</h3>
             <ul style="list-style-position:inside; color:#555;">
                 <li><strong>Admin:</strong> CRUD completo en Usuarios, Conductores, Flota, Vehículos, Órdenes de Servicio, Viajes, Mantenimiento, Consumo, Incidentes, Licencias y Evaluaciones; acceso de lectura a todos los reportes.</li>
-                <li><strong>Mecánico:</strong> Lectura y actualización de Vehículos; creación y actualización de Mantenimientos e Incidentes; acceso de lectura a Reportes.</li>
-                <li><strong>Logística:</strong> Lectura de Conductores, Flota, Mantenimientos, Consumo, Incidentes, Licencias y Reportes; lectura y actualización de Vehículos; creación, lectura y actualización de Órdenes de Servicio, Viajes y Evaluaciones.</li>
+                <li><strong>Mecánico:</strong> Lectura y actualización de Vehículos; creación y consulta de Mantenimientos e Incidentes; acceso de lectura a Reportes.</li>
+                <li><strong>Logística:</strong> Lectura de Conductores, Flota, Mantenimiento, Consumo, Incidentes, Licencias y Reportes; lectura y actualización de Vehículos; creación, lectura y actualización de Órdenes de Servicio y Viajes; creación y consulta de Evaluaciones.</li>
                 <li><strong>Conductor:</strong> Lectura de Conductores, Flota, Vehículos, Órdenes de Servicio, Viajes, Mantenimiento, Licencias, Evaluaciones y Reportes; creación y consulta de Consumo e Incidentes asociados a sus vehículos y viajes.</li>
                 <li><strong>Consultor:</strong> Solo lectura sobre Conductores, Flota, Vehículos, Órdenes de Servicio y Viajes, enfocado a análisis sin modificar datos.</li>
             </ul>

@@ -62,8 +62,22 @@
                 <option value="" disabled>No hay conductores disponibles. Crea uno desde la sección Conductores.</option>
             {% endif %}
         </select>
-        <label>Tipo</label>
-        <input type="text" name="tipo" maxlength="10" placeholder="Ej: A, B, C" required>
+        <label>Tipo de Licencia</label>
+        <select name="tipo" required>
+            <option value="">Seleccionar tipo</option>
+            <option value="A">A - Motos (125cc máx)</option>
+            <option value="A1">A1 - Motos ligeras (125cc)</option>
+            <option value="A2">A2 - Motos (35kW máx)</option>
+            <option value="B">B - Autos (hasta 3500kg)</option>
+            <option value="B1">B1 - Cuadriciclos (400kg)</option>
+            <option value="C">C - Camiones (más de 3500kg)</option>
+            <option value="D">D - Autobús (8+ pasajeros)</option>
+            <option value="E">E - Camión articulado</option>
+            <option value="F">F - Tractores</option>
+            <option value="G">G - Especiales</option>
+            <option value="H">H - Ciclomotores</option>
+            <option value="AM">AM - Ciclomotores 50cc</option>
+        </select>
         <label>Fecha emisión</label>
         <input type="date" name="fecha_emision" required>
         <label>Fecha vencimiento</label>
