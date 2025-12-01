@@ -1810,6 +1810,225 @@ def licencias_update(request: Request, id: int, id_conductor: int = Form(...), t
 
     return RedirectResponse("/licencias_web", status_code=303)
 
+# ==================== EVALUACIONES ====================
+@app.get("/evaluaciones_web")
+def evaluaciones_web(request: Request, buscar: str = ""):
+    usuario = request.session.get("usuario")
+    if not usuario:
+        return RedirectResponse("/login", status_code=303)
+
+    db = get_db()
+    if not db:
+        return templates.TemplateResponse("evaluaciones.html", {
+            "request": request,
+            "evaluaciones": [],
+            "usuarios": [],
+            "usuario": usuario,
+            "buscar": buscar,
+            "error": "No se pudo conectar a la base de datos."
+        })
+
+    cursor = db.cursor(dictionary=True)
+
+    # lista de usuarios para select (admin/logistica)
+    usuarios = []
+    try:
+        cursor.execute("SELECT id_usuario, nombre FROM usuario ORDER BY nombre")
+        usuarios = cursor.fetchall()
+    except:
+        usuarios = []
+
+    params = []
+    query = """
+        SELECT e.id_evaluacion, e.id_usuario, e.fecha, e.puntuacion, e.comentarios,
+               u.nombre AS nombre_usuario
+        FROM evaluacion e
+        JOIN usuario u ON u.id_usuario = e.id_usuario
+        WHERE 1=1
+    """
+
+    if buscar:
+        query += " AND (u.nombre LIKE %s OR e.comentarios LIKE %s)"
+        term = f"%{buscar}%"
+        params.extend([term, term])
+
+    # conductor solo ve sus evaluaciones
+    if usuario.get("rol") == "conductor":
+        query += " AND e.id_usuario = %s"
+        params.append(usuario.get("id_usuario"))
+
+    query += " ORDER BY e.id_evaluacion DESC"
+
+    try:
+        cursor.execute(query, params)
+        evaluaciones = cursor.fetchall()
+    except:
+        evaluaciones = []
+    finally:
+        db.close()
+
+    return templates.TemplateResponse("evaluaciones.html", {
+        "request": request,
+        "evaluaciones": evaluaciones,
+        "usuarios": usuarios,
+        "usuario": usuario,
+        "buscar": buscar,
+        "error": ""
+    })
+
+@app.post("/evaluaciones_create")
+def evaluaciones_create(request: Request, id_usuario: int = Form(...), fecha: str = Form(...), puntuacion: int = Form(...), comentarios: str = Form(None)):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario.get("rol") not in ["admin", "logistica"]:
+        return RedirectResponse("/evaluaciones_web", status_code=303)
+
+    error = None
+    # fecha valida
+    try:
+        fecha_obj = datetime.strptime(fecha, "%Y-%m-%d").date()
+    except:
+        error = "Fecha inválida. Use YYYY-MM-DD."
+
+    # puntuacion valida
+    if error is None:
+        try:
+            p = int(puntuacion)
+            if p < 1 or p > 10:
+                error = "La puntuación debe estar entre 1 y 10."
+        except:
+            error = "Puntuación inválida."
+
+    if error:
+        # volver a lista con error
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT e.id_evaluacion, e.id_usuario, e.fecha, e.puntuacion, e.comentarios, u.nombre AS nombre_usuario FROM evaluacion e JOIN usuario u ON u.id_usuario=e.id_usuario")
+        evaluaciones = cursor.fetchall()
+        cursor.execute("SELECT id_usuario, nombre FROM usuario ORDER BY nombre")
+        usuarios = cursor.fetchall()
+        db.close()
+        return templates.TemplateResponse("evaluaciones.html", {
+            "request": request,
+            "evaluaciones": evaluaciones,
+            "usuarios": usuarios,
+            "usuario": usuario,
+            "buscar": "",
+            "error": error
+        })
+
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute("INSERT INTO evaluacion (id_usuario, fecha, puntuacion, comentarios) VALUES (%s,%s,%s,%s)",
+                       (id_usuario, fecha, puntuacion, comentarios))
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        db.close()
+        return templates.TemplateResponse("evaluaciones.html", {
+            "request": request,
+            "evaluaciones": [],
+            "usuarios": [],
+            "usuario": usuario,
+            "buscar": "",
+            "error": f"Error al insertar: {str(e)}"
+        })
+    db.close()
+    return RedirectResponse("/evaluaciones_web", status_code=303)
+
+@app.get("/evaluaciones_delete/{id}")
+def evaluaciones_delete(request: Request, id: int):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario.get("rol") not in ["admin", "logistica"]:
+        return RedirectResponse("/evaluaciones_web", status_code=303)
+
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute("DELETE FROM evaluacion WHERE id_evaluacion=%s", (id,))
+        db.commit()
+    except:
+        db.rollback()
+    finally:
+        db.close()
+    return RedirectResponse("/evaluaciones_web", status_code=303)
+
+@app.get("/evaluaciones_edit/{id}")
+def evaluaciones_edit(request: Request, id: int):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario.get("rol") not in ["admin", "logistica"]:
+        return RedirectResponse("/evaluaciones_web", status_code=303)
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM evaluacion WHERE id_evaluacion=%s", (id,))
+    evaluacion = cursor.fetchone()
+    cursor.execute("SELECT id_usuario, nombre FROM usuario ORDER BY nombre")
+    usuarios = cursor.fetchall()
+    db.close()
+
+    if not evaluacion:
+        return RedirectResponse("/evaluaciones_web", status_code=303)
+
+    return templates.TemplateResponse("evaluaciones_edit.html", {
+        "request": request,
+        "evaluacion": evaluacion,
+        "usuarios": usuarios,
+        "usuario": usuario,
+        "error": ""
+    })
+
+@app.post("/evaluaciones_update/{id}")
+def evaluaciones_update(request: Request, id: int, id_usuario: int = Form(...), fecha: str = Form(...), puntuacion: int = Form(...), comentarios: str = Form(None)):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario.get("rol") not in ["admin", "logistica"]:
+        return RedirectResponse("/evaluaciones_web", status_code=303)
+
+    error = None
+    try:
+        fecha_obj = datetime.strptime(fecha, "%Y-%m-%d").date()
+    except:
+        error = "Fecha inválida. Use YYYY-MM-DD."
+
+    if error is None:
+        try:
+            p = int(puntuacion)
+            if p < 1 or p > 10:
+                error = "La puntuación debe estar entre 1 y 10."
+        except:
+            error = "Puntuación inválida."
+
+    if error:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM evaluacion WHERE id_evaluacion=%s", (id,))
+        evaluacion = cursor.fetchone()
+        cursor.execute("SELECT id_usuario, nombre FROM usuario ORDER BY nombre")
+        usuarios = cursor.fetchall()
+        db.close()
+        return templates.TemplateResponse("evaluaciones_edit.html", {
+            "request": request,
+            "evaluacion": evaluacion,
+            "usuarios": usuarios,
+            "usuario": usuario,
+            "error": error
+        })
+
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute("""UPDATE evaluacion
+                          SET id_usuario=%s, fecha=%s, puntuacion=%s, comentarios=%s
+                          WHERE id_evaluacion=%s""",
+                       (id_usuario, fecha, puntuacion, comentarios, id))
+        db.commit()
+    except:
+        db.rollback()
+    finally:
+        db.close()
+
+    return RedirectResponse("/evaluaciones_web", status_code=303)
+
 # ==================== USUARIOS ====================
 @app.get("/usuarios_web")
 def usuarios_web(request: Request):

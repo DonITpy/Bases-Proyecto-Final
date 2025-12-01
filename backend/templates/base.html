@@ -257,29 +257,30 @@
             <a href="/consumo_web">Consumo</a>
             <a href="/incidentes_web">Incidentes</a>
             <a href="/licencias_web">Licencias</a>
+            <a href="/evaluaciones_web">Evaluaciones</a>
             <a href="/reportes_web">Reportes</a>
         {% endif %}
         
-        <!-- Admin y Logística -->
+        <!-- Logística -->
         {% if usuario and usuario["rol"] in ["logistica"] %}
             <a href="/vehiculos_web">Vehículos</a>
             <a href="/flota_web">Flota</a>
             <a href="/ordenes_web">Órdenes</a>
             <a href="/licencias_web">Licencias</a>
+            <a href="/evaluaciones_web">Evaluaciones</a>
+            <a href="/conductores_web">Conductores</a>
+            <a href="/viajes_web">Viajes</a>
+            <a href="/reportes_web">Reportes</a>
         {% endif %}
 
+        <!-- Conductor -->
         {% if usuario and usuario["rol"] in ["conductor"] %}
             <a href="/vehiculos_web">Vehículos</a>
             <a href="/viajes_web">Viajes</a>
             <a href="/licencias_web">Licencias</a>
+            <a href="/evaluaciones_web">Evaluaciones</a>
         {% endif %}
-        
-        <!-- Admin, Logística y Conductor -->
-        {% if usuario and usuario["rol"] in ["logistica"] %}
-            <a href="/conductores_web">Conductores</a>
-            <a href="/viajes_web">Viajes</a>
-        {% endif %}
-        
+                
         <!-- Mecánico -->
         {% if usuario and usuario["rol"] in ["mecanico"] %}
             <a href="/mantenimiento_web">Mantenimiento</a>
@@ -289,7 +290,15 @@
         
         <!-- Observador -->
         {% if usuario and usuario["rol"] in ["observador"] %}
-            <a href="/reportes_web">Reportes</a>
+            <a href="/vehiculos_web">Vehículos</a>
+            <a href="/flota_web">Flota</a>
+            <a href="/ordenes_web">Órdenes</a>
+            <a href="/viajes_web">Viajes</a>
+            <a href="/mantenimiento_web">Mantenimiento</a>
+            <a href="/consumo_web">Consumo</a>
+            <a href="/incidentes_web">Incidentes</a>
+            <a href="/licencias_web">Licencias</a>
+            <a href="/evaluaciones_web">Evaluaciones</a>
         {% endif %}
         
         <!-- Salir (todos) -->

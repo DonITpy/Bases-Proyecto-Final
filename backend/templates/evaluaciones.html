@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Evaluaciones</h1>
+
+    <div class="search-container">
+        <form method="get" action="/evaluaciones_web" class="search-form">
+            <input type="text" name="buscar" placeholder="Buscar por usuario o comentarios..." value="{{buscar}}" style="flex:1; min-width:200px;">
+            <button type="submit">Buscar</button>
+            <a href="/evaluaciones_web" style="background:#666; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; text-align:center;">Limpiar</a>
+        </form>
+    </div>
+
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <p class="result-count">Se encontraron {{evaluaciones|length}} evaluaciones</p>
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Usuario</th>
+            <th>Fecha</th>
+            <th>Puntuación</th>
+            <th>Comentarios</th>
+            {% if usuario and usuario["rol"] in ["admin","logistica"] %}
+                <th>Acciones</th>
+            {% endif %}
+        </tr>
+        {% for e in evaluaciones %}
+        <tr>
+            <td>{{ e.id_evaluacion }}</td>
+            <td>{{ e.nombre_usuario }}</td>
+            <td>{{ e.fecha }}</td>
+            <td>{{ e.puntuacion }}</td>
+            <td>{{ e.comentarios }}</td>
+            {% if usuario and usuario["rol"] in ["admin","logistica"] %}
+                <td>
+                    <a href="/evaluaciones_edit/{{ e.id_evaluacion }}" style="color:#336699; margin-right:10px;">Editar</a>
+                    <a href="/evaluaciones_delete/{{ e.id_evaluacion }}" onclick="return confirm('¿Eliminar evaluación?');" class="delete-btn">Eliminar</a>
+                </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+
+    {% if not evaluaciones %}
+        <p style="text-align:center; color:#999; margin:30px 0;">No se encontraron evaluaciones.</p>
+    {% endif %}
+
+    {% if usuario and usuario["rol"] in ["admin","logistica"] %}
+    <h2 style="text-align:center;">Agregar Evaluación</h2>
+    <form method="post" action="/evaluaciones_create">
+        <label>Usuario</label>
+        <select name="id_usuario" required>
+            <option value="">Seleccionar usuario</option>
+            {% if usuarios %}
+                {% for u in usuarios %}
+                    <option value="{{ u.id_usuario }}">{{ u.nombre }}</option>
+                {% endfor %}
+            {% else %}
+                <option value="" disabled>No hay usuarios disponibles.</option>
+            {% endif %}
+        </select>
+
+        <label>Fecha</label>
+        <input type="date" name="fecha" required>
+        <label>Puntuación (1-10)</label>
+        <input type="number" name="puntuacion" min="1" max="10" required>
+        <label>Comentarios</label>
+        <textarea name="comentarios" maxlength="255"></textarea>
+        <button type="submit">Agregar Evaluación</button>
+    </form>
+    {% endif %}
+{% endblock %}

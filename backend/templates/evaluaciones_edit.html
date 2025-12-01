@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Editar Evaluación</h1>
+
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="/evaluaciones_update/{{ evaluacion.id_evaluacion }}">
+        <label>Usuario</label>
+        <select name="id_usuario" required>
+            <option value="">Seleccionar usuario</option>
+            {% for u in usuarios %}
+                <option value="{{ u.id_usuario }}" {% if u.id_usuario == evaluacion.id_usuario %}selected{% endif %}>{{ u.nombre }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Fecha</label>
+        <input type="date" name="fecha" value="{{ evaluacion.fecha }}" required>
+
+        <label>Puntuación (1-10)</label>
+        <input type="number" name="puntuacion" min="1" max="10" value="{{ evaluacion.puntuacion }}" required>
+
+        <label>Comentarios</label>
+        <textarea name="comentarios" maxlength="255">{{ evaluacion.comentarios }}</textarea>
+
+        <button type="submit">Guardar cambios</button>
+    </form>
+{% endblock %}
