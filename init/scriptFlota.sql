@@ -327,7 +327,6 @@ INSERT INTO flota_vehiculo (id_asignacion, id_flota, id_vehiculo, fecha_asignaci
 -- TABLA DE LOGS (auditoría de operaciones)
 -- =====================================================
 -- Tabla de auditoría: registra acciones de crear/modificar/eliminar
--- Nota: En esta sección (generación masiva y auditoría) se utilizó ayuda de IA para estructurar y automatizar la creación de datos.
 CREATE TABLE logs (
     id_log INT PRIMARY KEY AUTO_INCREMENT,
     id_usuario INT NULL,

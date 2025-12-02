@@ -3247,6 +3247,9 @@ def usuarios_delete(request: Request, id: int):
         return RedirectResponse("/usuarios_web", status_code=303)
 
 # ==================== REPORTES ====================
+# Nota: Se contó con asistencia de IA para estructurar la lógica de esta sección
+# (cálculo de KPIs y preparación de datos de reportes), por combinar múltiples
+# consultas, métricas y filtros de fecha de forma consistente.
 @app.get("/reportes_web")
 def reportes_web(request: Request, fecha_inicio: str = "", fecha_fin: str = ""):
     usuario = request.session.get("usuario")
@@ -3762,6 +3765,8 @@ def descargar_conductor_licencias_csv(request: Request, id_conductor: int):
         headers={"Content-Disposition": f"attachment; filename={nombre_archivo}"}
     )
 
+# Nota: Se utilizó asistencia de IA para diseñar la agregación multi-tabla y
+# el formateo del CSV consolidado en este endpoint.
 @app.get("/descargar_reporte_general_csv")
 def descargar_reporte_general_csv(request: Request, fecha_inicio: str = "", fecha_fin: str = ""):
     usuario = request.session.get("usuario")
@@ -3920,6 +3925,8 @@ def descargar_reporte_general_csv(request: Request, fecha_inicio: str = "", fech
 
 # ==================== REPORTES AVANZADOS (ANÁLISIS CRUZADO) ====================
 
+# Nota: Se contó con asistencia de IA para el armado de la consulta cruzada
+# y el cálculo de promedios/agrupaciones de este reporte avanzado.
 @app.get("/descargar_reporte_consumo_combustible_csv")
 def descargar_reporte_consumo_combustible_csv(request: Request, fecha_inicio: str = "", fecha_fin: str = ""):
     usuario = request.session.get("usuario")
@@ -3969,6 +3976,8 @@ def descargar_reporte_consumo_combustible_csv(request: Request, fecha_inicio: st
         headers={"Content-Disposition": "attachment; filename=reporte_consumo_combustible.csv"}
     )
 
+# Nota: Se utilizó asistencia de IA para componer subconsultas y combinarlas
+# en un reporte que suma costos de combustible y mantenimiento por vehículo.
 @app.get("/descargar_reporte_costos_operativos_csv")
 def descargar_reporte_costos_operativos_csv(request: Request, fecha_inicio: str = "", fecha_fin: str = ""):
     usuario = request.session.get("usuario")
@@ -4044,6 +4053,8 @@ def descargar_reporte_costos_operativos_csv(request: Request, fecha_inicio: str 
         headers={"Content-Disposition": "attachment; filename=reporte_costos_operativos.csv"}
     )
 
+# Nota: Asistencia de IA para integrar viajes, evaluaciones e incidentes en
+# un único reporte con métricas por conductor.
 @app.get("/descargar_reporte_desempeno_conductores_csv")
 def descargar_reporte_desempeno_conductores_csv(request: Request, fecha_inicio: str = "", fecha_fin: str = ""):
     usuario = request.session.get("usuario")
@@ -4093,6 +4104,8 @@ def descargar_reporte_desempeno_conductores_csv(request: Request, fecha_inicio: 
         headers={"Content-Disposition": "attachment; filename=reporte_desempeno_conductores.csv"}
     )
 
+# Nota: Asistencia de IA para determinar estados de licencia y cruzarlos con
+# viajes en rango, generando métricas de cumplimiento.
 @app.get("/descargar_reporte_licencias_cumplimiento_csv")
 def descargar_reporte_licencias_cumplimiento_csv(request: Request, fecha_inicio: str = "", fecha_fin: str = ""):
     usuario = request.session.get("usuario")
@@ -4151,6 +4164,8 @@ def descargar_reporte_licencias_cumplimiento_csv(request: Request, fecha_inicio:
         headers={"Content-Disposition": "attachment; filename=reporte_licencias_cumplimiento.csv"}
     )
 
+# Nota: Se contó con asistencia de IA para estandarizar el cálculo de KPIs y
+# su exportación a CSV con columnas normalizadas.
 @app.get("/descargar_reporte_kpis_csv")
 def descargar_reporte_kpis_csv(request: Request, fecha_inicio: str = "", fecha_fin: str = ""):
     usuario = request.session.get("usuario")

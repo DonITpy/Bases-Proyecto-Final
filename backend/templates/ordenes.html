@@ -4,7 +4,7 @@
 {% block content %}
     <h1>Órdenes de Servicio</h1>
     
-    <!-- BÚSQUEDA (solo para admin/logistica) -->
+    <!-- BÚSQUEDA  -->
     {% if usuario and usuario["rol"] in ["admin", "logistica"] %}
     <div class="search-container">
         <form method="get" action="/ordenes_web" class="search-form">

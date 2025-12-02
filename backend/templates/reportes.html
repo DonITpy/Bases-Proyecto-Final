@@ -1,5 +1,5 @@
 {# Esta plantilla extiende de base.html para mantener cabecera, pie y estilos comunes.
-    Comentario agregado según solicitud del usuario. #}
+    Comentario agregado segú. #}
 {% extends "base.html" %}
 {% block content %}
     <h1>Reportes y Descargas</h1>
@@ -26,7 +26,7 @@
         </div>
 
           {# Sección KPI: la estructura y distribución (grid 5+5) se diseñó con ayuda de IA
-              únicamente para esta parte, como solicitó el usuario. #}
+              únicamente para esta parte #}
           {% if usuario.rol == "admin" and kpis %}
         <div style="margin: 25px 0; padding:20px; background:#f7fafc; border: 2px solid #cfe3ff; border-radius:10px;">
             <h2 style="margin-top:0; color:#2c3e50;">Resumen KPI (Vista Previa)</h2>
