@@ -1,3 +1,5 @@
+{# Vista de Conductores: listado, búsqueda (solo admin) y acciones según rol.
+    Esta plantilla extiende de base.html para reutilizar el layout global. #}
 {% extends "base.html" %}
 {% block content %}
     <h1>Conductores Registrados</h1>
@@ -17,7 +19,7 @@
         <div class="error">{{ error }}</div>
     {% endif %}
     
-    <p class="result-count">Se encontraron {{conductores|length}} conductores</p>
+    <p style="text-align:center; color:#666;">Se encontraron {{conductores|length}} conductores</p>
     
     <table>
         <tr>

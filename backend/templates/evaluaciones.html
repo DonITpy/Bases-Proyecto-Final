@@ -1,3 +1,5 @@
+{# Vista de Evaluaciones: listado y acciones según permisos (admin/logística/conductor).
+    Extiende de base.html para unificar estilos y navegación. #}
 {% extends "base.html" %}
 {% block content %}
     <h1>Evaluaciones</h1>
@@ -14,7 +16,7 @@
         <div class="error">{{ error }}</div>
     {% endif %}
 
-    <p class="result-count">Se encontraron {{evaluaciones|length}} evaluaciones</p>
+    <p style="text-align:center; color:#666;">Se encontraron {{evaluaciones|length}} evaluaciones</p>
 
     <table>
         <tr>

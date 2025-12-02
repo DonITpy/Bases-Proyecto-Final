@@ -1,8 +1,9 @@
--- Script organizado y con datos de ejemplo que cubren todos los valores enum/posibles
+-- Configuración de codificación para soportar caracteres internacionales
 SET NAMES utf8mb4;
 SET CHARACTER SET utf8mb4;
 SET COLLATION_CONNECTION=utf8mb4_unicode_ci;
 
+-- Reinicia la base de datos (solo para entornos de desarrollo)
 DROP DATABASE IF EXISTS flota_logistica;
 CREATE DATABASE flota_logistica CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE flota_logistica;
@@ -10,6 +11,7 @@ USE flota_logistica;
 -- =====================================================
 -- FLOTA (mejorada con categoría, ubicación, políticas y estado)
 -- =====================================================
+-- Tabla principal de flotas
 CREATE TABLE flota (
     id_flota INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(40) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -22,6 +24,7 @@ CREATE TABLE flota (
     fecha_creacion DATE NOT NULL
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- Datos de ejemplo iniciales para flotas
 INSERT INTO flota (id_flota, nombre, descripcion, categoria, ubicacion, estado, politica_uso, capacidad_maxima, fecha_creacion) VALUES
 (1,'Flota Norte','Vehículos de la zona Norte','carga_ligera','Ciudad de México - Zona Norte','activa','Uso exclusivo para entregas locales en zona norte. Máximo 8 horas diarias. Requiere autorización para salidas nocturnas.',10,'2024-01-15'),
 (2,'Flota Sur','Vehículos de la zona Sur','reparto','Ciudad de México - Zona Sur','activa','Reparto urbano. Horario: 7:00-19:00. Prohibido circular en contingencias ambientales.',8,'2024-01-20'),
@@ -31,6 +34,7 @@ INSERT INTO flota (id_flota, nombre, descripcion, categoria, ubicacion, estado, 
 -- =====================================================
 -- USUARIOS (roles: admin, mecanico, logistica, conductor, observador)
 -- =====================================================
+-- Tabla de usuarios del sistema (roles y autenticación básica)
 CREATE TABLE usuario (
     id_usuario INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(50) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -49,6 +53,7 @@ INSERT INTO usuario (id_usuario, nombre, correo, password, rol) VALUES
 -- =====================================================
 -- CONDUCTOR
 -- =====================================================
+-- Tabla de conductores
 CREATE TABLE conductor (
     id_conductor INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(60) NOT NULL COLLATE utf8mb4_unicode_ci,
@@ -77,6 +82,7 @@ INSERT INTO conductor (id_conductor, nombre, apellido, telefono, direccion, fech
 -- =====================================================
 -- VEHÍCULO (estado cubre: 'activo','mantenimiento','inactivo')
 -- =====================================================
+-- Tabla de vehículos (incluye categoría para alinearse con flota)
 CREATE TABLE vehiculo (
     id_vehiculo INT PRIMARY KEY AUTO_INCREMENT,
     matricula VARCHAR(20) UNIQUE NOT NULL COLLATE utf8mb4_unicode_ci,
@@ -113,6 +119,7 @@ INSERT INTO vehiculo (id_vehiculo, matricula, modelo, tipo, capacidad, marca, es
 -- =====================================================
 -- ORDEN DE SERVICIO (estado: pendiente, en progreso, completado, cancelado)
 -- =====================================================
+-- Tabla de órdenes de servicio
 CREATE TABLE orden_servicio (
     id_orden INT PRIMARY KEY AUTO_INCREMENT,
     descripcion VARCHAR(255) COLLATE utf8mb4_unicode_ci,
@@ -140,6 +147,7 @@ INSERT INTO orden_servicio (id_orden, descripcion, fecha, estado) VALUES
 -- =====================================================
 -- VIAJE (incluye fecha_estimada y estados: pendiente, en progreso, completado, cancelado)
 -- =====================================================
+-- Tabla de viajes (incluye estado y referencia a vehículo/conductor/orden)
 CREATE TABLE viaje (
     id_viaje INT PRIMARY KEY AUTO_INCREMENT,
     origen VARCHAR(50) COLLATE utf8mb4_unicode_ci,
@@ -175,6 +183,7 @@ INSERT INTO viaje (id_viaje, origen, destino, fecha_salida, fecha_estimada, esta
 -- =====================================================
 -- MANTENIMIENTO (tipo: preventivo, correctivo, reparacion)
 -- =====================================================
+-- Tabla de mantenimiento de vehículos
 CREATE TABLE mantenimiento (
     id_mantenimiento INT PRIMARY KEY AUTO_INCREMENT,
     id_vehiculo INT NOT NULL,
@@ -197,6 +206,7 @@ INSERT INTO mantenimiento (id_mantenimiento, id_vehiculo, tipo, descripcion, cos
 -- =====================================================
 -- CONSUMO (tipo_combustible ejemplos: Gasolina, Diésel, Eléctrico, Gas)
 -- =====================================================
+-- Tabla de consumo de combustible por matrícula de vehículo
 CREATE TABLE consumo (
     id_consumo INT PRIMARY KEY AUTO_INCREMENT,
     matricula VARCHAR(20) COLLATE utf8mb4_unicode_ci,
@@ -227,6 +237,7 @@ INSERT INTO consumo (id_consumo, matricula, litros, fecha, tipo_combustible, cos
 -- =====================================================
 -- INCIDENTE
 -- =====================================================
+-- Tabla de incidentes asociados a un vehículo
 CREATE TABLE incidente (
     id_incidente INT PRIMARY KEY AUTO_INCREMENT,
     matricula VARCHAR(20) COLLATE utf8mb4_unicode_ci,
@@ -244,6 +255,7 @@ INSERT INTO incidente (id_incidente, matricula, tipo, fecha, descripcion) VALUES
 -- =====================================================
 -- LICENCIA
 -- =====================================================
+-- Tabla de licencias de conductores
 CREATE TABLE licencia (
     id_licencia INT PRIMARY KEY AUTO_INCREMENT,
     id_conductor INT NOT NULL,
@@ -262,6 +274,7 @@ INSERT INTO licencia (id_licencia, id_conductor, tipo, fecha_emision, fecha_venc
 -- =====================================================
 -- EVALUACION (puntuacion ejemplo 1..10)
 -- =====================================================
+-- Tabla de evaluaciones de desempeño de conductores
 CREATE TABLE evaluacion (
     id_evaluacion INT PRIMARY KEY AUTO_INCREMENT,
     id_conductor INT NOT NULL,
@@ -280,6 +293,7 @@ INSERT INTO evaluacion (id_evaluacion, id_conductor, fecha, puntuacion, comentar
 -- FLOTA_VEHICULO (tabla intermedia para asignaciones específicas)
 -- NOTA: Se crea al final porque depende de flota y vehiculo
 -- =====================================================
+-- Tabla de asignaciones de vehículos a flotas (intermedia)
 CREATE TABLE flota_vehiculo (
     id_asignacion INT PRIMARY KEY AUTO_INCREMENT,
     id_flota INT NOT NULL,
@@ -310,18 +324,44 @@ INSERT INTO flota_vehiculo (id_asignacion, id_flota, id_vehiculo, fecha_asignaci
 (12,1,12,'2024-03-05',NULL,'Norte - camioneta','activa','alta','Recién incorporado');
 
 -- =====================================================
+-- TABLA DE LOGS (auditoría de operaciones)
+-- =====================================================
+-- Tabla de auditoría: registra acciones de crear/modificar/eliminar
+-- Nota: En esta sección (generación masiva y auditoría) se utilizó ayuda de IA para estructurar y automatizar la creación de datos.
+CREATE TABLE logs (
+    id_log INT PRIMARY KEY AUTO_INCREMENT,
+    id_usuario INT NULL,
+    usuario_nombre VARCHAR(100) COLLATE utf8mb4_unicode_ci,
+    accion ENUM('crear','modificar','eliminar') NOT NULL,
+    tabla VARCHAR(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+    registro_id INT NULL,
+    detalle TEXT COLLATE utf8mb4_unicode_ci,
+    fecha_hora DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE SET NULL
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- =====================================================
 -- FIN - índices útiles
 -- =====================================================
+-- Índices útiles para mejorar rendimiento en consultas por fecha
 ALTER TABLE viaje ADD INDEX (fecha_salida);
 ALTER TABLE mantenimiento ADD INDEX (fecha);
 ALTER TABLE consumo ADD INDEX (fecha);
+ALTER TABLE logs ADD INDEX (fecha_hora);
+ALTER TABLE logs ADD INDEX (tabla);
 
 -- =====================================================
 -- INSERCIÓN MASIVA DE 1000 REGISTROS POR TABLA
+-- Propósito: poblar las tablas con datos realistas para pruebas y análisis.
+-- Metodología: procedimientos almacenados con pools de valores coherentes (nombres, ciudades, modelos, etc.).
+-- Nota: Se empleó ayuda de IA exclusivamente para esta sección de generación masiva.
 -- =====================================================
+
+-- PARTE HECHA CON IA PARA GENERAR DATOS DE PRUEBA ADICIONALES
 
 -- Generar 1000 flotas adicionales
 DELIMITER //
+-- Procedimiento: genera flotas con categorías, ubicaciones y políticas de uso
 CREATE PROCEDURE generar_flotas()
 BEGIN
     DECLARE i INT DEFAULT 5;
@@ -356,6 +396,7 @@ DELIMITER ;
 
 -- Generar 1000 usuarios adicionales
 DELIMITER //
+-- Procedimiento: genera usuarios con nombres y correos únicos
 CREATE PROCEDURE generar_usuarios()
 BEGIN
     DECLARE i INT DEFAULT 6;
@@ -387,6 +428,7 @@ DELIMITER ;
 
 -- Generar 1000 conductores adicionales
 DELIMITER //
+-- Procedimiento: genera conductores con datos personales verosímiles
 CREATE PROCEDURE generar_conductores()
 BEGIN
     DECLARE i INT DEFAULT 13;
@@ -415,6 +457,7 @@ DELIMITER ;
 
 -- Generar 1000 vehículos adicionales
 DELIMITER //
+-- Procedimiento: genera vehículos con marcas/modelos reales
 CREATE PROCEDURE generar_vehiculos()
 BEGIN
     DECLARE i INT DEFAULT 16;
@@ -454,6 +497,7 @@ DELIMITER ;
 
 -- Generar 1000 órdenes de servicio adicionales
 DELIMITER //
+-- Procedimiento: genera órdenes de servicio con descripciones comunes
 CREATE PROCEDURE generar_ordenes()
 BEGIN
     DECLARE i INT DEFAULT 16;
@@ -481,6 +525,7 @@ DELIMITER ;
 
 -- Generar 1000 viajes adicionales
 DELIMITER //
+-- Procedimiento: genera viajes entre ciudades comunes en México
 CREATE PROCEDURE generar_viajes()
 BEGIN
     DECLARE i INT DEFAULT 16;
@@ -515,6 +560,7 @@ DELIMITER ;
 
 -- Generar 1000 mantenimientos adicionales
 DELIMITER //
+-- Procedimiento: genera mantenimientos típicos
 CREATE PROCEDURE generar_mantenimientos()
 BEGIN
     DECLARE i INT DEFAULT 8;
@@ -544,6 +590,7 @@ DELIMITER ;
 
 -- Generar 1000 consumos adicionales
 DELIMITER //
+-- Procedimiento: genera consumos de combustible variados
 CREATE PROCEDURE generar_consumos()
 BEGIN
     DECLARE i INT DEFAULT 16;
@@ -571,6 +618,7 @@ DELIMITER ;
 
 -- Generar 1000 incidentes adicionales
 DELIMITER //
+-- Procedimiento: genera incidentes habituales
 CREATE PROCEDURE generar_incidentes()
 BEGIN
     DECLARE i INT DEFAULT 4;
@@ -600,6 +648,7 @@ DELIMITER ;
 
 -- Generar 1000 licencias adicionales
 DELIMITER //
+-- Procedimiento: genera licencias con tipos y vigencias realistas
 CREATE PROCEDURE generar_licencias()
 BEGIN
     DECLARE i INT DEFAULT 5;
@@ -624,6 +673,7 @@ DELIMITER ;
 
 -- Generar 1000 evaluaciones adicionales
 DELIMITER //
+-- Procedimiento: genera evaluaciones con comentarios frecuentes
 CREATE PROCEDURE generar_evaluaciones()
 BEGIN
     DECLARE i INT DEFAULT 4;

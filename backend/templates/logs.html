@@ -1,0 +1,104 @@
+{# Esta vista de auditoría extiende de base.html para mantener estilos globales.
+    Visible solo para administradores (controlado desde el backend). #}
+{% extends "base.html" %}
+{% block content %}
+    <h1>Registro de Auditoría (Logs)</h1>
+    <p style="text-align:center; color:#666; font-size:14px;">Historial completo de operaciones realizadas en el sistema</p>
+    
+        <!-- BÚSQUEDA Y FILTROS -->
+        <!-- Nota: Los filtros permiten acotar por tabla y acción.
+            Las búsquedas aplican sobre usuario, tabla y detalle del log. -->
+    <div class="search-container" style="text-align:center;">
+        <form method="get" action="/logs_web" class="search-form">
+            <input type="text" name="buscar" placeholder="Buscar por usuario, tabla o detalle..." value="{{buscar}}" style="flex:1; min-width:250px;">
+            <select name="filtro_tabla" style="padding:10px; border:2px solid #e0e0e0; border-radius:6px;">
+                <option value="">Todas las tablas</option>
+                {% for t in tablas %}
+                <option value="{{t.tabla}}" {% if filtro_tabla == t.tabla %}selected{% endif %}>{{t.tabla}}</option>
+                {% endfor %}
+            </select>
+            <select name="filtro_accion" style="padding:10px; border:2px solid #e0e0e0; border-radius:6px;">
+                <option value="">Todas las acciones</option>
+                <option value="crear" {% if filtro_accion == 'crear' %}selected{% endif %}>Crear</option>
+                <option value="modificar" {% if filtro_accion == 'modificar' %}selected{% endif %}>Modificar</option>
+                <option value="eliminar" {% if filtro_accion == 'eliminar' %}selected{% endif %}>Eliminar</option>
+            </select>
+            <button type="submit">Buscar</button>
+            <a href="/logs_web" style="background:#666; color:white; padding:10px 20px; border-radius:6px; text-decoration:none; text-align:center;">Limpiar</a>
+        </form>
+    </div>
+    
+    <p style="text-align:center; color:#666;">Se encontraron {{logs|length}} registros (máximo 1000 más recientes)</p>
+    
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Fecha/Hora</th>
+                    <th>Usuario</th>
+                    <th>Acción</th>
+                    <th>Tabla</th>
+                    <th>ID Registro</th>
+                    <th>Detalle</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.id_log }}</td>
+                    <td style="white-space:nowrap; font-size:0.9em;">{{ log.fecha_hora.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>{{ log.usuario_nombre }}</td>
+                    <td>
+                        {% if log.accion == 'crear' %}
+                            <span style="background:#4CAF50; color:white; padding:4px 10px; border-radius:4px; font-size:0.85em; font-weight:bold;">CREAR</span>
+                        {% elif log.accion == 'modificar' %}
+                            <span style="background:#FF9800; color:white; padding:4px 10px; border-radius:4px; font-size:0.85em; font-weight:bold;">MODIFICAR</span>
+                        {% elif log.accion == 'eliminar' %}
+                            <span style="background:#F44336; color:white; padding:4px 10px; border-radius:4px; font-size:0.85em; font-weight:bold;">ELIMINAR</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-weight:600; color:#2c3e50;">{{ log.tabla }}</td>
+                    <td style="text-align:center;">{{ log.registro_id if log.registro_id else '-' }}</td>
+                    <td style="max-width:350px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ log.detalle }}">
+                        {{ log.detalle if log.detalle else '-' }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% if logs|length == 0 %}
+        <div style="text-align:center; padding:40px; color:#999;">
+            <p style="font-size:18px;">📋 No se encontraron registros de auditoría</p>
+            <p style="font-size:14px;">Los logs aparecerán aquí cuando se realicen operaciones de crear, modificar o eliminar en el sistema.</p>
+        </div>
+    {% endif %}
+    
+    <style>
+        .search-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+        }
+        
+        .search-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .search-form input, .search-form select {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        /* Deja el estilo de tabla al global de base.html */
+    </style>
+{% endblock %}

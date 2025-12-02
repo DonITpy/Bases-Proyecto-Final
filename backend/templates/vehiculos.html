@@ -1,8 +1,11 @@
+{# Esta plantilla extiende de base.html para reutilizar el layout global (navbar, estilos, scripts). #}
 {% extends "base.html" %}
 {% block content %}
     <h1>Vehículos Registrados</h1>
     
-    <!-- BÚSQUEDA Y FILTROS -->
+        <!-- BÚSQUEDA Y FILTROS -->
+        <!-- Nota: El formulario de búsqueda permite filtrar por texto y estado.
+            Si el usuario es conductor, el backend limita los vehículos a los asociados a sus viajes. -->
     <div class="search-container">
         <form method="get" action="/vehiculos_web" class="search-form">
             <input type="text" name="buscar" placeholder="Buscar por matrícula, modelo o marca..." value="{{buscar}}" style="flex:1; min-width:200px;">
@@ -21,7 +24,7 @@
         <div class="error">{{ error }}</div>
     {% endif %}
     
-    <p class="result-count">Se encontraron {{vehiculos|length}} vehículos</p>
+    <p style="text-align:center; color:#666;">Se encontraron {{vehiculos|length}} vehículos</p>
     
     <table>
         <tr>

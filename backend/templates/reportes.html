@@ -1,9 +1,13 @@
+{# Esta plantilla extiende de base.html para mantener cabecera, pie y estilos comunes.
+    Comentario agregado según solicitud del usuario. #}
 {% extends "base.html" %}
 {% block content %}
     <h1>Reportes y Descargas</h1>
     <div style="width:80%; margin:auto; background:#fff; padding:30px; border-radius:10px; box-shadow:0 2px 8px #bbb;">
         
         <!-- Filtro de Fechas -->
+        {# El rango de fechas afecta a las vistas y a todas las descargas CSV
+           añadiendo query params (?fecha_inicio, ?fecha_fin) a las URLs. #}
         <div style="margin-bottom:30px; padding:20px; background:#f0f4f8; border-radius:8px; border:2px solid #336699;">
             <h3 style="margin-top:0;">Filtrar por Rango de Fechas</h3>
             <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:15px; align-items:end;">
@@ -21,7 +25,9 @@
             </div>
         </div>
 
-        {% if usuario.rol == "admin" and kpis %}
+          {# Sección KPI: la estructura y distribución (grid 5+5) se diseñó con ayuda de IA
+              únicamente para esta parte, como solicitó el usuario. #}
+          {% if usuario.rol == "admin" and kpis %}
         <div style="margin: 25px 0; padding:20px; background:#f7fafc; border: 2px solid #cfe3ff; border-radius:10px;">
             <h2 style="margin-top:0; color:#2c3e50;">Resumen KPI (Vista Previa)</h2>
             <div style="display:grid; grid-template-columns: repeat(5, minmax(220px, 1fr)); gap:12px;">
@@ -60,7 +66,7 @@
                     <div style="font-size:20px; font-weight:bold;">$ {{ '%.2f'|format(kpis.costo_total_mantenimiento) }}</div>
                 </div>
                 <div style="background:#ffffff; border-radius:8px; padding:14px; border-left:6px solid #9c27b0;">
-                    <div style="color:#607d8b; font-size:12px;">Vehículos Mantenidos</div>
+                    <div style="color:#607d8b; font-size:12px;">Mantenimiento Completado</div>
                     <div style="font-size:22px; font-weight:bold;">{{ kpis.vehiculos_mantenidos }}</div>
                 </div>
                 <div style="background:#ffffff; border-radius:8px; padding:14px; border-left:6px solid #ff5722;">
@@ -77,6 +83,7 @@
         </div>
         {% endif %}
 
+        {# Sección de descargas CSV: botones para exportar tablas completas según el filtro de fechas. #}
         <h2>Descargar Reportes Generales en CSV</h2>
         <p style="color:#666;">Descarga los datos de tus registros en formato CSV para análisis en Excel u otras herramientas.</p>
         
@@ -88,6 +95,7 @@
             
             <div style="background:#e8f5e9; padding:15px; border-radius:8px; text-align:center;">
                 <h3>Conductores</h3>
+                {# Conductores usa un enlace directo por compatibilidad con esa ruta específica. #}
                 <a href="/descargar_conductores_csv" style="display:inline-block; background:#336699; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; margin-top:10px; font-size:14px; cursor:pointer;">Descargar CSV</a>
             </div>
             
@@ -103,6 +111,7 @@
         </div>
         
         {% if usuario.rol == "admin" %}
+        {# Admin: descarga consolidada de todas las tablas en un solo CSV. #}
         <div style="margin-top:20px; padding:15px; background:#e8eaf6; border-radius:8px; text-align:center;">
             <h3>Reporte General Completo</h3>
             <p style="color:#555; margin:10px 0;">Descarga un archivo CSV con todas las tablas del sistema</p>
@@ -114,6 +123,8 @@
         <hr style="margin:40px 0; border:0; border-top:2px solid #ddd;">
         
         <h2>Reportes Avanzados (Análisis Cruzado)</h2>
+        {# Cada tarjeta dispara un endpoint CSV que cruza varias tablas para análisis.
+           Esta sección es visible solo para administradores. #}
         <p style="color:#666;">Reportes analíticos que cruzan múltiples tablas para obtener información estratégica.</p>
         
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:20px; margin-top:20px;">
@@ -152,7 +163,9 @@
         {% if usuario.rol == "admin" %}
         <hr style="margin:40px 0; border:0; border-top:2px solid #ddd;">
         
-        <h2>Reportes por Conductor</h2>
+          <h2>Reportes por Conductor</h2>
+          {# Permite seleccionar un conductor y descargar sus datos específicos.
+              El selector controla la visibilidad de los botones mediante JS. #}
         <p style="color:#666;">Genera reportes específicos de todas las actividades para un conductor seleccionado.</p>
         
         <div style="margin-top:20px; padding:25px; background:#f9f9f9; border-radius:8px; border:2px solid #336699;">
@@ -223,11 +236,13 @@
     </div>
 
     <script>
+        // Referencias a elementos del DOM usados por filtros y descargas
         const conductorSelect = document.getElementById('conductor-select');
         const reportesConductor = document.getElementById('reportes-conductor');
         const fechaInicio = document.getElementById('fecha-inicio');
         const fechaFin = document.getElementById('fecha-fin');
         
+        // Muestra/oculta la sección de descargas por conductor según selección
         conductorSelect.addEventListener('change', function() {
             if (this.value) {
                 reportesConductor.style.display = 'block';
@@ -236,6 +251,7 @@
             }
         });
         
+        // Aplica el filtro de fechas recargando la vista con query params
         function aplicarFiltroFechas() {
             const inicio = fechaInicio.value;
             const fin = fechaFin.value;
@@ -245,6 +261,7 @@
             window.location.href = `/reportes_web?${params.toString()}`;
         }
         
+        // Construye los query params de fecha para reuso en descargas
         function obtenerParamsFecha() {
             const inicio = fechaInicio.value;
             const fin = fechaFin.value;
@@ -254,11 +271,13 @@
             return params.toString();
         }
         
+        // Descarga CSV general según tipo (vehiculos, viajes, consumo) + fechas opcionales
         function descargarGeneral(tipo) {
             const params = obtenerParamsFecha();
             window.location.href = `/descargar_${tipo}_csv${params ? '?' + params : ''}`;
         }
         
+        // Descarga CSV filtrado por conductor para el tipo solicitado
         function descargarConductor(tipo) {
             const idConductor = conductorSelect.value;
             if (!idConductor) {
@@ -269,11 +288,13 @@
             window.location.href = `/descargar_conductor_${tipo}_csv/${idConductor}${params ? '?' + params : ''}`;
         }
         
+        // Descarga CSV consolidado de todas las tablas (solo admin)
         function descargarReporteGeneral() {
             const params = obtenerParamsFecha();
             window.location.href = `/descargar_reporte_general_csv${params ? '?' + params : ''}`;
         }
         
+        // Descarga CSV de reportes avanzados (análisis cruzado)
         function descargarReporteAvanzado(tipo) {
             const params = obtenerParamsFecha();
             window.location.href = `/descargar_reporte_${tipo}_csv${params ? '?' + params : ''}`;

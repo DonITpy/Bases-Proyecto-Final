@@ -1,3 +1,5 @@
+{# Vista de Flota: listado de flotas y asignación de vehículos (según rol).
+    Extiende de base.html para estilos y navegación uniforme. #}
 {% extends "base.html" %}
 {% block content %}
     <h1>Flotas</h1>
@@ -13,7 +15,7 @@
     </div>
     {% endif %}
     
-    <p class="result-count">Se encontraron {{flota|length}} flotas</p>
+    <p style="text-align:center; color:#666;">Se encontraron {{flota|length}} flotas</p>
     
     <div style="overflow-x:auto;">
     <table>

@@ -16,9 +16,13 @@ from datetime import datetime
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key="supersecret")
 
+# Motor de plantillas Jinja2; todas las páginas extienden de base.html para consistencia visual
 templates = Jinja2Templates(directory="templates")
 
 def get_db():
+    """Obtiene una conexión resiliente a MySQL con reintentos.
+    Importante para ambientes con Docker donde el contenedor puede tardar en estar listo.
+    """
     for _ in range(10):
         try:
             conn = mysql.connector.connect(
@@ -34,6 +38,27 @@ def get_db():
         except:
             time.sleep(2)
     return None
+
+# --- HELPER: REGISTRAR LOG ---
+def registrar_log(id_usuario, usuario_nombre, accion, tabla, registro_id=None, detalle=""):
+    """
+    Registra una operación en la tabla de logs.
+    accion: 'crear', 'modificar', 'eliminar'
+    tabla: nombre de la tabla afectada
+    registro_id: ID del registro afectado
+    detalle: información adicional sobre la operación
+    """
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("""
+            INSERT INTO logs (id_usuario, usuario_nombre, accion, tabla, registro_id, detalle)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (id_usuario, usuario_nombre, accion, tabla, registro_id, detalle))
+        db.commit()
+        db.close()
+    except Exception as e:
+        print(f"Error al registrar log: {e}")
 
 # --- REDIRECCIONAMIENTO ---
 @app.get("/")
@@ -79,6 +104,53 @@ def home(request: Request):
     if not usuario:
         return RedirectResponse("/login", status_code=303)
     return templates.TemplateResponse("home.html", {"request": request, "usuario": usuario})
+
+# ==================== LOGS ====================
+@app.get("/logs_web")
+def logs_web(request: Request, buscar: str = "", filtro_tabla: str = "", filtro_accion: str = ""):
+    usuario = request.session.get("usuario")
+    if not usuario or usuario["rol"] != "admin":
+        return RedirectResponse("/home", status_code=303)
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    query = "SELECT * FROM logs WHERE 1=1"
+    params = []
+    
+    if buscar:
+        query += " AND (usuario_nombre LIKE %s OR detalle LIKE %s OR tabla LIKE %s)"
+        search_param = f"%{buscar}%"
+        params.extend([search_param, search_param, search_param])
+    
+    if filtro_tabla:
+        query += " AND tabla = %s"
+        params.append(filtro_tabla)
+    
+    if filtro_accion:
+        query += " AND accion = %s"
+        params.append(filtro_accion)
+    
+    query += " ORDER BY fecha_hora DESC LIMIT 1000"
+    
+    cursor.execute(query, params)
+    logs = cursor.fetchall()
+    
+    # Obtener listas únicas de tablas para filtros
+    cursor.execute("SELECT DISTINCT tabla FROM logs ORDER BY tabla")
+    tablas = cursor.fetchall()
+    
+    db.close()
+    
+    return templates.TemplateResponse("logs.html", {
+        "request": request,
+        "logs": logs,
+        "usuario": usuario,
+        "buscar": buscar,
+        "filtro_tabla": filtro_tabla,
+        "filtro_accion": filtro_accion,
+        "tablas": tablas
+    })
 
 # ==================== VEHICULOS ====================
 @app.get("/vehiculos_web")
@@ -210,8 +282,20 @@ def vehiculos_create(request: Request, matricula: str = Form(...), modelo: str =
             "INSERT INTO vehiculo (matricula, modelo, tipo, capacidad, marca, estado, kilometraje, categoria) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
             (matricula, modelo, tipo, capacidad, marca, estado, kilometraje, categoria)
         )
+        vehiculo_id = cursor.lastrowid
         db.commit()
         db.close()
+        
+        # Registrar log
+        registrar_log(
+            usuario["id_usuario"],
+            usuario["nombre"],
+            "crear",
+            "vehiculo",
+            vehiculo_id,
+            f"Vehículo {matricula} - {marca} {modelo}"
+        )
+        
         return RedirectResponse("/vehiculos_web", status_code=303)
     except Exception as e:
         db.close()
@@ -234,11 +318,28 @@ def vehiculos_delete(request: Request, id: int):
         return RedirectResponse("/vehiculos_web", status_code=303)
     
     db = get_db()
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
+    
+    # Obtener datos del vehículo antes de eliminar
+    cursor.execute("SELECT matricula, marca, modelo FROM vehiculo WHERE id_vehiculo=%s", (id,))
+    vehiculo = cursor.fetchone()
+    
     try:
         cursor.execute("DELETE FROM vehiculo WHERE id_vehiculo=%s", (id,))
         db.commit()
         db.close()
+        
+        # Registrar log
+        if vehiculo:
+            registrar_log(
+                usuario["id_usuario"],
+                usuario["nombre"],
+                "eliminar",
+                "vehiculo",
+                id,
+                f"Vehículo {vehiculo['matricula']} - {vehiculo['marca']} {vehiculo['modelo']}"
+            )
+        
         return RedirectResponse("/vehiculos_web", status_code=303)
     except Exception as e:
         db.close()
@@ -360,6 +461,17 @@ def vehiculos_update(request: Request, id: int, matricula: str = Form(...), mode
         )
         db.commit()
         db.close()
+        
+        # Registrar log
+        registrar_log(
+            usuario["id_usuario"],
+            usuario["nombre"],
+            "modificar",
+            "vehiculo",
+            id,
+            f"Vehículo {matricula} - {marca} {modelo}"
+        )
+        
         return RedirectResponse("/vehiculos_web", status_code=303)
     except Exception as e:
         db.close()
@@ -431,8 +543,20 @@ def conductores_create(request: Request, nombre: str = Form(...), apellido: str 
     cursor = db.cursor()
     cursor.execute("INSERT INTO conductor (nombre, apellido, telefono, direccion, fecha_nacimiento, id_usuario) VALUES (%s,%s,%s,%s,%s,%s)",
                    (nombre, apellido, telefono, direccion, fecha_nacimiento, id_usuario))
+    conductor_id = cursor.lastrowid
     db.commit()
     db.close()
+    
+    # Registrar log
+    registrar_log(
+        usuario["id_usuario"],
+        usuario["nombre"],
+        "crear",
+        "conductor",
+        conductor_id,
+        f"Conductor {nombre} {apellido}"
+    )
+    
     return RedirectResponse("/conductores_web", status_code=303)
     
     # VALIDACIONES
@@ -516,10 +640,27 @@ def conductores_delete(request: Request, id: int):
     if not usuario or usuario["rol"] != "admin":
         return RedirectResponse("/conductores_web", status_code=303)
     db = get_db()
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
+    
+    # Obtener datos antes de eliminar
+    cursor.execute("SELECT nombre, apellido FROM conductor WHERE id_conductor=%s", (id,))
+    conductor = cursor.fetchone()
+    
     cursor.execute("DELETE FROM conductor WHERE id_conductor=%s", (id,))
     db.commit()
     db.close()
+    
+    # Registrar log
+    if conductor:
+        registrar_log(
+            usuario["id_usuario"],
+            usuario["nombre"],
+            "eliminar",
+            "conductor",
+            id,
+            f"Conductor {conductor['nombre']} {conductor['apellido']}"
+        )
+    
     return RedirectResponse("/conductores_web", status_code=303)
 
 @app.get("/conductores_edit/{id}")
@@ -607,6 +748,17 @@ def conductores_update(request: Request, id: int, nombre: str = Form(...), apell
         )
         db.commit()
         db.close()
+        
+        # Registrar log
+        registrar_log(
+            usuario["id_usuario"],
+            usuario["nombre"],
+            "modificar",
+            "conductor",
+            id,
+            f"Conductor {nombre} {apellido}"
+        )
+        
         return RedirectResponse("/conductores_web", status_code=303)
     except Exception as e:
         db.close()
@@ -762,8 +914,20 @@ def viajes_create(request: Request, origen: str = Form(...), destino: str = Form
             "INSERT INTO viaje (origen, destino, fecha_salida, fecha_estimada, estado, id_conductor, id_vehiculo) VALUES (%s,%s,%s,%s,%s,%s,%s)",
             (origen, destino, fecha_salida, fecha_estimada if fecha_estimada else None, estado, id_conductor if id_conductor else None, id_vehiculo if id_vehiculo else None)
         )
+        viaje_id = cursor.lastrowid
         db.commit()
         db.close()
+        
+        # Registrar log
+        registrar_log(
+            usuario["id_usuario"],
+            usuario["nombre"],
+            "crear",
+            "viaje",
+            viaje_id,
+            f"Viaje {origen} → {destino}"
+        )
+        
         return RedirectResponse("/viajes_web", status_code=303)
     except Exception as e:
         db.close()
@@ -794,10 +958,27 @@ def viajes_delete(request: Request, id: int):
     if not usuario or usuario["rol"] != "admin":
         return RedirectResponse("/viajes_web", status_code=303)
     db = get_db()
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
+    
+    # Obtener datos antes de eliminar
+    cursor.execute("SELECT origen, destino FROM viaje WHERE id_viaje=%s", (id,))
+    viaje = cursor.fetchone()
+    
     cursor.execute("DELETE FROM viaje WHERE id_viaje=%s", (id,))
     db.commit()
     db.close()
+    
+    # Registrar log
+    if viaje:
+        registrar_log(
+            usuario["id_usuario"],
+            usuario["nombre"],
+            "eliminar",
+            "viaje",
+            id,
+            f"Viaje {viaje['origen']} → {viaje['destino']}"
+        )
+    
     return RedirectResponse("/viajes_web", status_code=303)
 
 @app.get("/api/vehiculos_por_conductor/{id_conductor}")
@@ -909,6 +1090,17 @@ def viajes_update(request: Request, id: int, origen: str = Form(...), destino: s
         )
         db.commit()
         db.close()
+        
+        # Registrar log
+        registrar_log(
+            usuario["id_usuario"],
+            usuario["nombre"],
+            "modificar",
+            "viaje",
+            id,
+            f"Viaje {origen} → {destino}"
+        )
+        
         return RedirectResponse("/viajes_web", status_code=303)
     except Exception as e:
         db.close()
@@ -1052,8 +1244,20 @@ def mantenimiento_create(request: Request, id_vehiculo: int = Form(...), tipo: s
     try:
         cursor.execute("INSERT INTO mantenimiento (id_vehiculo, tipo, descripcion, costo, fecha) VALUES (%s,%s,%s,%s,%s)",
                        (id_vehiculo, tipo, descripcion, costo, fecha))
+        mant_id = cursor.lastrowid
         db.commit()
         db.close()
+        
+        # Registrar log
+        registrar_log(
+            usuario["id_usuario"],
+            usuario["nombre"],
+            "crear",
+            "mantenimiento",
+            mant_id,
+            f"Mantenimiento {tipo} - {descripcion[:50]}"
+        )
+        
         return RedirectResponse("/mantenimiento_web", status_code=303)
     except Exception as e:
         db.close()
@@ -1154,6 +1358,17 @@ def mantenimiento_update(request: Request, id: int, id_vehiculo: int = Form(...)
                        (id_vehiculo, tipo, descripcion, costo, fecha, id))
         db.commit()
         db.close()
+        
+        # Registrar log
+        registrar_log(
+            usuario["id_usuario"],
+            usuario["nombre"],
+            "modificar",
+            "mantenimiento",
+            id,
+            f"Mantenimiento {tipo} - {descripcion[:50]}"
+        )
+        
         return RedirectResponse("/mantenimiento_web", status_code=303)
     except Exception as e:
         db.close()
@@ -1179,10 +1394,25 @@ def mantenimiento_delete(request: Request, id: int):
     if not usuario or usuario["rol"] != "admin":
         return RedirectResponse("/mantenimiento_web", status_code=303)
     db = get_db()
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
     try:
+        # Obtener datos antes de eliminar
+        cursor.execute("SELECT tipo, descripcion FROM mantenimiento WHERE id_mantenimiento=%s", (id,))
+        mant = cursor.fetchone()
+        
         cursor.execute("DELETE FROM mantenimiento WHERE id_mantenimiento=%s", (id,))
         db.commit()
+        
+        # Registrar log
+        if mant:
+            registrar_log(
+                usuario["id_usuario"],
+                usuario["nombre"],
+                "eliminar",
+                "mantenimiento",
+                id,
+                f"Mantenimiento {mant['tipo']} - {mant['descripcion'][:50]}"
+            )
     except:
         db.rollback()
     finally:
@@ -1319,8 +1549,20 @@ def consumo_create(request: Request, matricula: str = Form(...), litros: float =
     try:
         cursor.execute("INSERT INTO consumo (matricula, litros, fecha, tipo_combustible, costo) VALUES (%s,%s,%s,%s,%s)",
                        (matricula, litros, fecha, tipo_combustible, costo))
+        consumo_id = cursor.lastrowid
         db.commit()
         db.close()
+        
+        # Registrar log
+        registrar_log(
+            usuario["id_usuario"],
+            usuario["nombre"],
+            "crear",
+            "consumo",
+            consumo_id,
+            f"Consumo {matricula} - {litros}L {tipo_combustible}"
+        )
+        
         return RedirectResponse("/consumo_web", status_code=303)
     except Exception as e:
         db.close()
@@ -1424,6 +1666,17 @@ def consumo_update(request: Request, id: int, matricula: str = Form(...), litros
                        (matricula, litros, fecha, tipo_combustible, costo, id))
         db.commit()
         db.close()
+        
+        # Registrar log
+        registrar_log(
+            usuario["id_usuario"],
+            usuario["nombre"],
+            "modificar",
+            "consumo",
+            id,
+            f"Consumo {matricula} - {litros}L {tipo_combustible}"
+        )
+        
         return RedirectResponse("/consumo_web", status_code=303)
     except Exception as e:
         db.close()
@@ -1449,10 +1702,25 @@ def consumo_delete(request: Request, id: int):
     if not usuario or usuario["rol"] != "admin":
         return RedirectResponse("/consumo_web", status_code=303)
     db = get_db()
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
     try:
+        # Obtener datos antes de eliminar
+        cursor.execute("SELECT matricula, litros, tipo_combustible FROM consumo WHERE id_consumo=%s", (id,))
+        consumo = cursor.fetchone()
+        
         cursor.execute("DELETE FROM consumo WHERE id_consumo=%s", (id,))
         db.commit()
+        
+        # Registrar log
+        if consumo:
+            registrar_log(
+                usuario["id_usuario"],
+                usuario["nombre"],
+                "eliminar",
+                "consumo",
+                id,
+                f"Consumo {consumo['matricula']} - {consumo['litros']}L {consumo['tipo_combustible']}"
+            )
     except:
         db.rollback()
     finally:
@@ -1588,8 +1856,20 @@ def flota_create(request: Request, nombre: str = Form(...), descripcion: str = F
             INSERT INTO flota (nombre, descripcion, categoria, ubicacion, estado, politica_uso, capacidad_maxima, fecha_creacion) 
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
         """, (nombre, descripcion, categoria, ubicacion, estado, politica_uso, capacidad_maxima, fecha_creacion))
+        flota_id = cursor.lastrowid
         db.commit()
         db.close()
+        
+        # Registrar log
+        registrar_log(
+            usuario["id_usuario"],
+            usuario["nombre"],
+            "crear",
+            "flota",
+            flota_id,
+            f"Flota {nombre} - {categoria}"
+        )
+        
         return RedirectResponse("/flota_web", status_code=303)
     except Exception as e:
         db.close()
@@ -1611,10 +1891,27 @@ def flota_delete(request: Request, id: int):
     if not usuario or usuario["rol"] != "admin":
         return RedirectResponse("/flota_web", status_code=303)
     db = get_db()
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
+    
+    # Obtener datos antes de eliminar
+    cursor.execute("SELECT nombre, categoria FROM flota WHERE id_flota=%s", (id,))
+    flota = cursor.fetchone()
+    
     cursor.execute("DELETE FROM flota WHERE id_flota=%s", (id,))
     db.commit()
     db.close()
+    
+    # Registrar log
+    if flota:
+        registrar_log(
+            usuario["id_usuario"],
+            usuario["nombre"],
+            "eliminar",
+            "flota",
+            id,
+            f"Flota {flota['nombre']} - {flota['categoria']}"
+        )
+    
     return RedirectResponse("/flota_web", status_code=303)
 
 @app.get("/flota_edit/{id}")
@@ -1713,6 +2010,17 @@ def flota_update(request: Request, id: int, nombre: str = Form(...), descripcion
         """, (nombre, descripcion, categoria, ubicacion, estado, politica_uso, capacidad_maxima, fecha_creacion, id))
         db.commit()
         db.close()
+        
+        # Registrar log
+        registrar_log(
+            usuario["id_usuario"],
+            usuario["nombre"],
+            "modificar",
+            "flota",
+            id,
+            f"Flota {nombre} - {categoria}"
+        )
+        
         return RedirectResponse("/flota_web", status_code=303)
     except Exception as e:
         db.close()
@@ -2072,8 +2380,20 @@ def ordenes_create(request: Request, descripcion: str = Form(...), fecha: str = 
     try:
         cursor.execute("INSERT INTO orden_servicio (descripcion, fecha, estado) VALUES (%s,%s,%s)",
                        (descripcion, fecha, estado))
+        orden_id = cursor.lastrowid
         db.commit()
         db.close()
+        
+        # Registrar log
+        registrar_log(
+            usuario["id_usuario"],
+            usuario["nombre"],
+            "crear",
+            "orden_servicio",
+            orden_id,
+            f"Orden: {descripcion[:50]}"
+        )
+        
         return RedirectResponse("/ordenes_web", status_code=303)
     except Exception as e:
         db.close()
@@ -2095,10 +2415,27 @@ def ordenes_delete(request: Request, id: int):
     if not usuario or usuario["rol"] != "admin":
         return RedirectResponse("/ordenes_web", status_code=303)
     db = get_db()
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
+    
+    # Obtener datos antes de eliminar
+    cursor.execute("SELECT descripcion FROM orden_servicio WHERE id_orden=%s", (id,))
+    orden = cursor.fetchone()
+    
     cursor.execute("DELETE FROM orden_servicio WHERE id_orden=%s", (id,))
     db.commit()
     db.close()
+    
+    # Registrar log
+    if orden:
+        registrar_log(
+            usuario["id_usuario"],
+            usuario["nombre"],
+            "eliminar",
+            "orden_servicio",
+            id,
+            f"Orden: {orden['descripcion'][:50]}"
+        )
+    
     return RedirectResponse("/ordenes_web", status_code=303)
 
 @app.get("/ordenes_edit/{id}")
@@ -2170,6 +2507,17 @@ def ordenes_update(request: Request, id: int, descripcion: str = Form(...), fech
         )
         db.commit()
         db.close()
+        
+        # Registrar log
+        registrar_log(
+            usuario["id_usuario"],
+            usuario["nombre"],
+            "modificar",
+            "orden_servicio",
+            id,
+            f"Orden: {descripcion[:50]}"
+        )
+        
         return RedirectResponse("/ordenes_web", status_code=303)
     except Exception as e:
         db.close()

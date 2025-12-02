@@ -1,3 +1,5 @@
+{# Vista de Viajes: listado con búsqueda/filtro y creación/edición según rol (admin/logística).
+    Extiende de base.html para estilos globales y navegación. #}
 {% extends "base.html" %}
 {% block content %}
     <h1>Viajes Registrados</h1>
@@ -21,7 +23,7 @@
         <div class="error">{{ error }}</div>
     {% endif %}
     
-    <p class="result-count">Se encontraron {{viajes|length}} viajes</p>
+    <p style="text-align:center; color:#666;">Se encontraron {{viajes|length}} viajes</p>
     
     <table>
         <tr>

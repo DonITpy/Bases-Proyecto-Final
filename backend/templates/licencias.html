@@ -1,3 +1,5 @@
+{# Vista de Licencias: listado de licencias y seguimiento de vigencias.
+    Extiende de base.html para mantener el layout global. #}
 {% extends "base.html" %}
 {% block content %}
     <h1>Licencias</h1>
@@ -14,7 +16,7 @@
         <div class="error">{{ error }}</div>
     {% endif %}
 
-    <p class="result-count">Se encontraron {{licencias|length}} licencias</p>
+    <p style="text-align:center; color:#666;">Se encontraron {{licencias|length}} licencias</p>
 
     <table>
         <tr>
